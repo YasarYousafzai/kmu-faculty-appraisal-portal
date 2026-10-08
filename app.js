@@ -1,7 +1,6 @@
 /**
  * KMU Faculty Annual Performance Appraisal System (v3.0)
- * Official statutory engine implementing KMU/REG/POL/2026/01-REV and
- * companion KMU Faculty Annual Performance Appraisal Calculator.
+ * Official statutory engine implementing KMU/REG/POL/2026/01-REV
  */
 
 // Statutory Profile Configuration Matrix
@@ -84,64 +83,30 @@ const CPD_TARGETS = [
   { id: 'cpd_5', label: 'Presenter / Facilitator at a CPD Event', desc: 'Resource person for conferences, webinars, or workshops.' }
 ];
 
-// State container
+// Global State
 let appraisalState = {
   employee: {
-    name: '',
-    id: '',
+    name: 'Dr. Yasar Mehmood Yousafzai',
+    id: 'KMU-FAC-2016-042',
     designation: 'Associate Professor',
     department: 'Institute of Pathology & Diagnostic Medicine (IPDM)',
     faculty: 'Faculty of Pathology & Diagnostic Medicine (FPDM)',
-    payScale: 'BPS-20',
-    cycle: '2025–2026',
-    appraiser: '',
-    reviewer: '',
-    finalAuthority: 'Vice Chancellor'
+    payScale: 'BPS-20 (Regular)',
+    cycle: '2025–2026 (01 July – 30 June)',
+    appraiser: 'Dean, Faculty of Pathology & Diagnostic Medicine',
+    reviewer: 'Vice Chancellor, KMU'
   },
   selectedProfile: 'Balanced Profile',
-  customWeights: null,
-  sectionA: {
-    qecScore: 82,
-    actualWU: 32,
-    exempted: 'N'
-  },
+  sectionA: { qecScore: 86, actualWU: 34, exempted: 'N' },
   sectionB: {
-    // B1: Publications
-    pub_high_lead: 1,
-    pub_high_co: 2,
-    pub_mod_lead: 2,
-    pub_mod_co: 1,
-    pub_low_lead: 1,
-    pub_low_co: 0,
-    // B2: Books
-    book_int: 0,
-    book_nat: 1,
-    chapter_int: 1,
-    chapter_nat: 0,
-    // B3: Grants Won & Applied
-    grant_int_pi: 0,
-    grant_int_copi: 1,
-    grant_nat_pi: 1,
-    grant_nat_copi: 1,
-    grant_small_pi: 1,
-    grant_applied: 3,
-    // B4: Supervision
-    sup_phd: 1,
-    sup_mphil: 3,
-    sup_clin_sr: 0,
-    sup_clin_jr: 0,
-    // B5: Innovation & Commercialization
-    innov_patent_int: 0,
-    innov_patent_nat: 1,
-    innov_project: 1,
-    innov_overhead: 1
+    pub_high_lead: 2, pub_high_co: 2, pub_mod_lead: 3, pub_mod_co: 2, pub_low_lead: 1, pub_low_co: 0,
+    book_int: 0, book_nat: 1, chapter_int: 2, chapter_nat: 1,
+    grant_int_pi: 0, grant_int_copi: 1, grant_nat_pi: 1, grant_nat_copi: 2, grant_small_pi: 1, grant_applied: 4,
+    sup_phd: 2, sup_mphil: 4, sup_clin_sr: 0, sup_clin_jr: 0,
+    innov_patent_int: 0, innov_patent_nat: 1, innov_project: 1, innov_overhead: 2
   },
   sectionC: {
-    comm_member: 3,
-    comm_chair: 1,
-    policy_doc: 2,
-    facility_charge: 1,
-    additional_appoint: 'N'
+    comm_member: 4, comm_chair: 1, policy_doc: 3, facility_charge: 1, additional_appoint: 'N'
   },
   sectionD: {
     peerScores: {
@@ -149,29 +114,61 @@ let appraisalState = {
       peer_6: 5, peer_7: 6, peer_8: 5, peer_9: 5, peer_10: 5,
       peer_11: 6, peer_12: 6, peer_13: 5
     },
-    cpdScores: {
-      cpd_1: 2, cpd_2: 2, cpd_3: 1, cpd_4: 2, cpd_5: 2
-    }
+    cpdScores: { cpd_1: 2, cpd_2: 2, cpd_3: 1, cpd_4: 2, cpd_5: 2 }
   },
-  sectionE: {
-    clin_admin: 0,
-    clin_volume: 0,
-    clin_oncall: 0,
-    clin_teaching: 0
-  },
-  redFlag: {
-    penalty: 0,
-    refNo: '',
-    refDate: ''
-  },
-  narrative: {
-    strengths: '',
-    areasForImprovement: '',
-    agreedTargets: '',
-    appraiserRemarks: '',
-    reviewerRemarks: '',
-    appealFiled: 'N'
+  sectionE: { clin_admin: 0, clin_volume: 0, clin_oncall: 0, clin_teaching: 0 },
+  redFlag: { penalty: 0, refNo: '', refDate: '' }
+};
+
+// Global Tab Switching function
+window.switchTab = function(tabId) {
+  const contents = document.querySelectorAll('.tab-content');
+  const navItems = document.querySelectorAll('.nav-item');
+  const wizardSteps = document.querySelectorAll('.wizard-step');
+
+  contents.forEach(tab => tab.classList.remove('active'));
+  navItems.forEach(item => item.classList.remove('active'));
+  wizardSteps.forEach(step => step.classList.remove('active'));
+
+  const targetTab = document.getElementById(tabId);
+  const targetNav = document.querySelector(`[data-tab="${tabId}"]`);
+  const targetStep = document.querySelector(`[data-wizard="${tabId}"]`);
+
+  if (targetTab) {
+    targetTab.classList.add('active');
   }
+  if (targetNav) {
+    targetNav.classList.add('active');
+  }
+  if (targetStep) {
+    targetStep.classList.add('active');
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// Global Action: Proceed from Step 1 (ID & Info) to Step 2 (Profile Selection)
+window.goToProfileStep = function() {
+  const nameEl = document.getElementById('input_emp_name');
+  const idEl = document.getElementById('input_emp_id');
+
+  const empName = nameEl?.value?.trim() || 'Dr. Yasar Mehmood Yousafzai';
+  const empId = idEl?.value?.trim() || 'KMU-FAC-2016-042';
+
+  if (nameEl && !nameEl.value.trim()) nameEl.value = empName;
+  if (idEl && !idEl.value.trim()) idEl.value = empId;
+
+  updateElementText('dossier_emp_name', empName);
+  updateElementText('dossier_emp_id', empId);
+
+  window.switchTab('tab-profile');
+  showToast(`✓ Identity Confirmed: ${empName} (${empId}) — Proceeding to Step 2`);
+};
+
+// Global Action: Proceed directly to Section A (Teaching Calculations)
+window.goToTeachingStep = function() {
+  window.switchTab('tab-teaching');
+  showToast(`Active Profile: ${appraisalState.selectedProfile} — Enter Teaching Data`);
 };
 
 // Initialize Application
@@ -179,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initProfileCards();
   initPeerControls();
   initEventListeners();
-  loadFromLocalStorage();
+  loadSampleData();
   calculateAll();
 });
 
@@ -211,15 +208,15 @@ function initProfileCards() {
 }
 
 // Select Profile
-function selectProfile(profileKey) {
+window.selectProfile = function(profileKey) {
   appraisalState.selectedProfile = profileKey;
   initProfileCards();
   toggleClinicalSection();
   calculateAll();
-  showToast(`Profile switched to: ${profileKey}`);
-}
+  showToast(`Profile activated: ${profileKey}`);
+};
 
-// Toggle Clinical Section visibility based on Profile
+// Toggle Clinical Section
 function toggleClinicalSection() {
   const isClinical = appraisalState.selectedProfile === 'Clinical-Focused Profile (Hospital Faculty)';
   const clinNavItem = document.getElementById('navItemClinical');
@@ -228,9 +225,11 @@ function toggleClinicalSection() {
   if (clinNavItem) {
     if (isClinical) {
       clinNavItem.style.display = 'flex';
-      clinPill.textContent = '45%';
-      clinPill.style.background = '#7a1c1c';
-      clinPill.style.color = '#fff';
+      if (clinPill) {
+        clinPill.textContent = '45%';
+        clinPill.style.background = '#7a1c1c';
+        clinPill.style.color = '#fff';
+      }
     } else {
       clinNavItem.style.display = 'none';
     }
@@ -286,7 +285,7 @@ function initPeerControls() {
   }
 }
 
-function setPeerScore(paramId, score) {
+window.setPeerScore = function(paramId, score) {
   appraisalState.sectionD.peerScores[paramId] = score;
   const container = document.getElementById(`chips_${paramId}`);
   if (container) {
@@ -295,9 +294,9 @@ function setPeerScore(paramId, score) {
     });
   }
   calculateAll();
-}
+};
 
-function setCpdScore(targetId, score) {
+window.setCpdScore = function(targetId, score) {
   appraisalState.sectionD.cpdScores[targetId] = score;
   const container = document.getElementById(`chips_${targetId}`);
   if (container) {
@@ -306,13 +305,12 @@ function setCpdScore(targetId, score) {
     });
   }
   calculateAll();
-}
+};
 
-// Global Calculation Engine
+// Calculation Engine
 function calculateAll() {
   const prof = PROFILES[appraisalState.selectedProfile] || PROFILES['Balanced Profile'];
   
-  // Weights
   const wTeaching = prof.teachingWeight / 100;
   const wResearch = prof.researchWeight / 100;
   const wService = prof.serviceWeight / 100;
@@ -320,7 +318,6 @@ function calculateAll() {
   const wClinical = prof.clinicalWeight / 100;
   const minTeachingWU = prof.minTeachingWU;
 
-  // Update DOM Pills for weights
   updateElementText('navPillTeaching', `${prof.teachingWeight}%`);
   updateElementText('navPillResearch', `${prof.researchWeight}%`);
   updateElementText('navPillService', `${prof.serviceWeight}%`);
@@ -329,13 +326,13 @@ function calculateAll() {
     updateElementText('navPillClinical', `${prof.clinicalWeight}%`);
   }
 
-  // --- 1. SECTION A: TEACHING ---
+  // Section A
   const qecScore = Math.min(100, Math.max(0, parseFloat(document.getElementById('input_qec_score')?.value) || 0));
   const actualWU = Math.max(0, parseFloat(document.getElementById('input_actual_wu')?.value) || 0);
   const exempted = document.getElementById('input_wu_exempted')?.value || 'N';
 
   updateElementText('disp_min_wu', minTeachingWU);
-  updateElementText('dossier_min_wu', minTeachingWU);
+  updateElementText('dossier_min_wu', `${minTeachingWU} WU`);
   
   let effectiveTeaching = qecScore;
   if (exempted !== 'Y' && minTeachingWU > 0 && actualWU < minTeachingWU) {
@@ -351,8 +348,7 @@ function calculateAll() {
   updateElementText('disp_weight_a', `${prof.teachingWeight}%`);
   updateElementText('disp_weighted_a', weightedA.toFixed(2));
 
-  // --- 2. SECTION B: RESEARCH ---
-  // B1: Publications
+  // Section B
   const pubHighLead = getInputValue('input_pub_high_lead') * 10;
   const pubHighCo = getInputValue('input_pub_high_co') * 5;
   const pubModLead = getInputValue('input_pub_mod_lead') * 6;
@@ -365,7 +361,6 @@ function calculateAll() {
   updateElementText('disp_sub_b1', subB1Capped.toFixed(1));
   updateElementText('disp_sub_b1_raw', subB1Raw);
 
-  // B2: Books
   const bookInt = getInputValue('input_book_int') * 8;
   const bookNat = getInputValue('input_book_nat') * 5;
   const chapInt = getInputValue('input_chapter_int') * 4;
@@ -376,7 +371,6 @@ function calculateAll() {
   updateElementText('disp_sub_b2', subB2Capped.toFixed(1));
   updateElementText('disp_sub_b2_raw', subB2Raw);
 
-  // B3: Grants Won & Applied
   const grantIntPI = getInputValue('input_grant_int_pi') * 15;
   const grantIntCoPI = getInputValue('input_grant_int_copi') * 4.5;
   const grantNatPI = getInputValue('input_grant_nat_pi') * 8;
@@ -393,7 +387,6 @@ function calculateAll() {
   updateElementText('disp_sub_b3', subB3Capped.toFixed(1));
   updateElementText('disp_sub_b3_raw', subB3Raw);
 
-  // B4: Supervision
   const supPhD = getInputValue('input_sup_phd') * 8;
   const supMPhil = getInputValue('input_sup_mphil') * 4;
   const supClinSr = getInputValue('input_sup_clin_sr') * 8;
@@ -404,7 +397,6 @@ function calculateAll() {
   updateElementText('disp_sub_b4', subB4Capped.toFixed(1));
   updateElementText('disp_sub_b4_raw', subB4Raw);
 
-  // B5: Innovation & Commercialization
   const innPatInt = getInputValue('input_innov_patent_int') * 10;
   const innPatNat = getInputValue('input_innov_patent_nat') * 6;
   const innProj = getInputValue('input_innov_project') * 8;
@@ -415,7 +407,6 @@ function calculateAll() {
   updateElementText('disp_sub_b5', subB5Capped.toFixed(1));
   updateElementText('disp_sub_b5_raw', subB5Raw);
 
-  // Section B Total (Max 200)
   const rawB = Math.min(200, subB1Capped + subB2Capped + subB3Capped + subB4Capped + subB5Capped);
   const weightedB = (rawB / 200) * wResearch * 100;
 
@@ -423,7 +414,7 @@ function calculateAll() {
   updateElementText('disp_weight_b', `${prof.researchWeight}%`);
   updateElementText('disp_weighted_b', weightedB.toFixed(2));
 
-  // --- 3. SECTION C: SERVICE ---
+  // Section C
   const commMember = Math.min(25, getInputValue('input_comm_member') * 5);
   const commChair = Math.min(20, getInputValue('input_comm_chair') * 10);
   const policyDoc = Math.min(30, getInputValue('input_policy_doc') * 10);
@@ -440,10 +431,11 @@ function calculateAll() {
   updateElementText('disp_add_appoint', addAppoint);
 
   updateElementText('disp_raw_c', rawC.toFixed(1));
+  updateElementText('disp_raw_c_card', rawC.toFixed(1));
   updateElementText('disp_weight_c', `${prof.serviceWeight}%`);
   updateElementText('disp_weighted_c', weightedC.toFixed(2));
 
-  // --- 4. SECTION D: PEER EVALUATION & CPD ---
+  // Section D
   let peerCoreSum = 0;
   PEER_PARAMETERS.forEach(p => {
     peerCoreSum += appraisalState.sectionD.peerScores[p.id] || 1;
@@ -465,7 +457,7 @@ function calculateAll() {
   updateElementText('disp_weight_d', `${prof.peerWeight}%`);
   updateElementText('disp_weighted_d', weightedD.toFixed(2));
 
-  // --- 5. SECTION E: CLINICAL ---
+  // Section E
   let rawE = 0;
   let weightedE = 0;
   if (prof.clinicalWeight > 0) {
@@ -477,10 +469,11 @@ function calculateAll() {
     weightedE = (rawE / 100) * wClinical * 100;
   }
   updateElementText('disp_raw_e', rawE.toFixed(1));
+  updateElementText('disp_raw_e_card', rawE.toFixed(1));
   updateElementText('disp_weight_e', `${prof.clinicalWeight}%`);
   updateElementText('disp_weighted_e', weightedE.toFixed(2));
 
-  // --- 6. RED FLAG / DISCIPLINARY PENALTY ---
+  // Red Flag
   const redFlagSelect = parseInt(document.getElementById('input_red_flag')?.value) || 0;
   const refNo = document.getElementById('input_red_flag_ref')?.value?.trim() || '';
   const refDate = document.getElementById('input_red_flag_date')?.value?.trim() || '';
@@ -504,11 +497,10 @@ function calculateAll() {
   }
   updateElementText('disp_red_flag_penalty', `-${validPenalty} pts`);
 
-  // --- 7. CONSOLIDATED FINAL SCORE ---
+  // Consolidated
   const sumWeighted = weightedA + weightedB + weightedC + weightedD + weightedE;
   const finalScore = Math.max(0, sumWeighted - validPenalty);
 
-  // Performance Rating Classification
   let ratingBand = 'Unsatisfactory';
   let ratingClass = 'rating-unsatisfactory';
   let pipStatus = 'MANDATORY PIP (3–6 months)';
@@ -544,6 +536,7 @@ function calculateAll() {
     badge.className = `rating-badge ${ratingClass}`;
   }
   updateElementText('liveProfileName', prof.name);
+  updateElementText('top_pip_status', pipStatus);
 
   // Update Summary Tab KPIs
   updateElementText('kpi_final_score', `${finalScore.toFixed(1)}%`);
@@ -587,12 +580,6 @@ function calculateAll() {
   updateElementText('dossier_final_rating', ratingBand);
   updateElementText('dossier_pip_note', pipStatus);
 
-  // Sync state
-  appraisalState.finalScore = finalScore;
-  appraisalState.ratingBand = ratingBand;
-  appraisalState.pipStatus = pipStatus;
-
-  // Render Visual Bar Representation
   renderScoreBars({
     teaching: (rawA / 100) * 100,
     research: (rawB / 200) * 100,
@@ -600,11 +587,8 @@ function calculateAll() {
     peer: (rawD / 88) * 100,
     clinical: prof.clinicalWeight > 0 ? (rawE / 100) * 100 : 0
   });
-
-  saveToLocalStorage();
 }
 
-// Render percentage bars
 function renderScoreBars(attainment) {
   const container = document.getElementById('domainProgressContainer');
   if (!container) return;
@@ -665,7 +649,6 @@ function renderScoreBars(attainment) {
   `;
 }
 
-// Helpers
 function getInputValue(id) {
   const el = document.getElementById(id);
   return el ? Math.max(0, parseFloat(el.value) || 0) : 0;
@@ -676,36 +659,38 @@ function updateElementText(id, text) {
   if (el) el.textContent = text;
 }
 
-// Tab Switching
-function switchTab(tabId) {
-  document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-
-  const targetTab = document.getElementById(tabId);
-  const targetNav = document.querySelector(`[data-tab="${tabId}"]`);
-
-  if (targetTab) targetTab.classList.add('active');
-  if (targetNav) targetNav.classList.add('active');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-// Attach Event Listeners
 function initEventListeners() {
-  // Navigation clicks
   document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', () => {
       const tabId = item.getAttribute('data-tab');
-      if (tabId) switchTab(tabId);
+      if (tabId) window.switchTab(tabId);
     });
   });
 
-  // Re-calculate on all numeric and select inputs
+  document.querySelectorAll('.wizard-step').forEach(step => {
+    step.addEventListener('click', () => {
+      const tabId = step.getAttribute('data-wizard');
+      if (tabId) window.switchTab(tabId);
+    });
+  });
+
+  ['input_emp_name', 'input_emp_id', 'input_emp_desig', 'input_emp_dept'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          window.goToProfileStep();
+        }
+      });
+    }
+  });
+
   document.querySelectorAll('input, select, textarea').forEach(input => {
     input.addEventListener('input', calculateAll);
     input.addEventListener('change', calculateAll);
   });
 
-  // Sync employee meta info to dossier
   ['emp_name', 'emp_id', 'emp_desig', 'emp_dept', 'emp_cadre', 'emp_cycle', 'emp_appraiser', 'emp_reviewer'].forEach(f => {
     const input = document.getElementById(`input_${f}`);
     if (input) {
@@ -716,60 +701,60 @@ function initEventListeners() {
   });
 }
 
-// Pre-fill Sample Verified Profile (Dr. Yasar Yousafzai / Associate Professor, IPDM)
-function loadSampleData() {
-  document.getElementById('input_emp_name').value = 'Dr. Yasar Mehmood Yousafzai';
-  document.getElementById('input_emp_id').value = 'KMU-FAC-2016-042';
-  document.getElementById('input_emp_desig').value = 'Associate Professor';
-  document.getElementById('input_emp_dept').value = 'Institute of Pathology & Diagnostic Medicine (IPDM)';
-  document.getElementById('input_emp_cadre').value = 'BPS-20 (Regular)';
-  document.getElementById('input_emp_cycle').value = '2025–2026';
-  document.getElementById('input_emp_appraiser').value = 'Dean, Faculty of Pathology & Diagnostic Medicine';
-  document.getElementById('input_emp_reviewer').value = 'Vice Chancellor, KMU';
+window.loadSampleData = function() {
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  };
 
-  // Section A
-  document.getElementById('input_qec_score').value = '86';
-  document.getElementById('input_actual_wu').value = '34';
-  document.getElementById('input_wu_exempted').value = 'N';
+  setVal('input_emp_name', 'Dr. Yasar Mehmood Yousafzai');
+  setVal('input_emp_id', 'KMU-FAC-2016-042');
+  setVal('input_emp_desig', 'Associate Professor');
+  setVal('input_emp_dept', 'Institute of Pathology & Diagnostic Medicine (IPDM)');
+  setVal('input_emp_cadre', 'BPS-20 (Regular)');
+  setVal('input_emp_cycle', '2025–2026 (01 July – 30 June)');
+  setVal('input_emp_appraiser', 'Dean, Faculty of Pathology & Diagnostic Medicine');
+  setVal('input_emp_reviewer', 'Vice Chancellor, KMU');
 
-  // Section B
-  document.getElementById('input_pub_high_lead').value = '2';
-  document.getElementById('input_pub_high_co').value = '2';
-  document.getElementById('input_pub_mod_lead').value = '3';
-  document.getElementById('input_pub_mod_co').value = '2';
-  document.getElementById('input_pub_low_lead').value = '1';
-  document.getElementById('input_pub_low_co').value = '0';
+  setVal('input_qec_score', '86');
+  setVal('input_actual_wu', '34');
+  setVal('input_wu_exempted', 'N');
 
-  document.getElementById('input_book_int').value = '0';
-  document.getElementById('input_book_nat').value = '1';
-  document.getElementById('input_chapter_int').value = '2';
-  document.getElementById('input_chapter_nat').value = '1';
+  setVal('input_pub_high_lead', '2');
+  setVal('input_pub_high_co', '2');
+  setVal('input_pub_mod_lead', '3');
+  setVal('input_pub_mod_co', '2');
+  setVal('input_pub_low_lead', '1');
+  setVal('input_pub_low_co', '0');
 
-  document.getElementById('input_grant_int_pi').value = '0';
-  document.getElementById('input_grant_int_copi').value = '1';
-  document.getElementById('input_grant_nat_pi').value = '1';
-  document.getElementById('input_grant_nat_copi').value = '2';
-  document.getElementById('input_grant_small_pi').value = '1';
-  document.getElementById('input_grant_applied').value = '4';
+  setVal('input_book_int', '0');
+  setVal('input_book_nat', '1');
+  setVal('input_chapter_int', '2');
+  setVal('input_chapter_nat', '1');
 
-  document.getElementById('input_sup_phd').value = '2';
-  document.getElementById('input_sup_mphil').value = '4';
-  document.getElementById('input_sup_clin_sr').value = '0';
-  document.getElementById('input_sup_clin_jr').value = '0';
+  setVal('input_grant_int_pi', '0');
+  setVal('input_grant_int_copi', '1');
+  setVal('input_grant_nat_pi', '1');
+  setVal('input_grant_nat_copi', '2');
+  setVal('input_grant_small_pi', '1');
+  setVal('input_grant_applied', '4');
 
-  document.getElementById('input_innov_patent_int').value = '0';
-  document.getElementById('input_innov_patent_nat').value = '1';
-  document.getElementById('input_innov_project').value = '1';
-  document.getElementById('input_innov_overhead').value = '2';
+  setVal('input_sup_phd', '2');
+  setVal('input_sup_mphil', '4');
+  setVal('input_sup_clin_sr', '0');
+  setVal('input_sup_clin_jr', '0');
 
-  // Section C
-  document.getElementById('input_comm_member').value = '4';
-  document.getElementById('input_comm_chair').value = '1';
-  document.getElementById('input_policy_doc').value = '3';
-  document.getElementById('input_facility_charge').value = '1';
-  document.getElementById('input_additional_appoint').value = 'N';
+  setVal('input_innov_patent_int', '0');
+  setVal('input_innov_patent_nat', '1');
+  setVal('input_innov_project', '1');
+  setVal('input_innov_overhead', '2');
 
-  // Section D
+  setVal('input_comm_member', '4');
+  setVal('input_comm_chair', '1');
+  setVal('input_policy_doc', '3');
+  setVal('input_facility_charge', '1');
+  setVal('input_additional_appoint', 'N');
+
   PEER_PARAMETERS.forEach(p => {
     appraisalState.sectionD.peerScores[p.id] = 5;
   });
@@ -782,87 +767,21 @@ function loadSampleData() {
 
   initPeerControls();
 
-  // Red flag
-  document.getElementById('input_red_flag').value = '0';
-  document.getElementById('input_red_flag_ref').value = '';
-  document.getElementById('input_red_flag_date').value = '';
+  setVal('input_red_flag', '0');
+  setVal('input_red_flag_ref', '');
+  setVal('input_red_flag_date', '');
 
-  // Trigger meta sync
   ['emp_name', 'emp_id', 'emp_desig', 'emp_dept', 'emp_cadre', 'emp_cycle', 'emp_appraiser', 'emp_reviewer'].forEach(f => {
     const val = document.getElementById(`input_${f}`)?.value;
     updateElementText(`dossier_${f}`, val || '—');
   });
 
-  selectProfile('Balanced Profile');
+  window.selectProfile('Balanced Profile');
   calculateAll();
-  showToast('Standard KMU Faculty Profile Loaded Successfully!');
-}
+  showToast('✓ Verified KMU Faculty Profile Loaded!');
+};
 
-// Reset Form
-function resetForm() {
-  if (!confirm('Are you sure you want to clear the form and start a new appraisal record?')) return;
-  localStorage.removeItem('KMU_APPRAISAL_STATE_v3');
-  location.reload();
-}
-
-// Local Storage Persistence
-function saveToLocalStorage() {
-  try {
-    const dataToSave = {
-      profile: appraisalState.selectedProfile,
-      meta: {
-        name: document.getElementById('input_emp_name')?.value || '',
-        id: document.getElementById('input_emp_id')?.value || '',
-        desig: document.getElementById('input_emp_desig')?.value || '',
-        dept: document.getElementById('input_emp_dept')?.value || '',
-        cadre: document.getElementById('input_emp_cadre')?.value || '',
-        cycle: document.getElementById('input_emp_cycle')?.value || '',
-        appraiser: document.getElementById('input_emp_appraiser')?.value || '',
-        reviewer: document.getElementById('input_emp_reviewer')?.value || ''
-      },
-      peerScores: appraisalState.sectionD.peerScores,
-      cpdScores: appraisalState.sectionD.cpdScores
-    };
-    localStorage.setItem('KMU_APPRAISAL_STATE_v3', JSON.stringify(dataToSave));
-  } catch (e) {
-    console.warn('LocalStorage save failed:', e);
-  }
-}
-
-function loadFromLocalStorage() {
-  try {
-    const saved = localStorage.getItem('KMU_APPRAISAL_STATE_v3');
-    if (!saved) {
-      loadSampleData();
-      return;
-    }
-    const data = JSON.parse(saved);
-    if (data.profile) appraisalState.selectedProfile = data.profile;
-    if (data.meta) {
-      document.getElementById('input_emp_name').value = data.meta.name || '';
-      document.getElementById('input_emp_id').value = data.meta.id || '';
-      document.getElementById('input_emp_desig').value = data.meta.desig || '';
-      document.getElementById('input_emp_dept').value = data.meta.dept || '';
-      document.getElementById('input_emp_cadre').value = data.meta.cadre || '';
-      document.getElementById('input_emp_cycle').value = data.meta.cycle || '';
-      document.getElementById('input_emp_appraiser').value = data.meta.appraiser || '';
-      document.getElementById('input_emp_reviewer').value = data.meta.reviewer || '';
-      
-      ['emp_name', 'emp_id', 'emp_desig', 'emp_dept', 'emp_cadre', 'emp_cycle', 'emp_appraiser', 'emp_reviewer'].forEach(f => {
-        const val = document.getElementById(`input_${f}`)?.value;
-        updateElementText(`dossier_${f}`, val || '—');
-      });
-    }
-    if (data.peerScores) appraisalState.sectionD.peerScores = data.peerScores;
-    if (data.cpdScores) appraisalState.sectionD.cpdScores = data.cpdScores;
-    initPeerControls();
-  } catch (e) {
-    console.warn('LocalStorage load failed:', e);
-  }
-}
-
-// Export Dossier JSON
-function exportJSON() {
+window.exportJSON = function() {
   const exportBlob = new Blob([JSON.stringify(appraisalState, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(exportBlob);
   const a = document.createElement('a');
@@ -872,10 +791,9 @@ function exportJSON() {
   a.click();
   URL.revokeObjectURL(url);
   showToast('Appraisal Data Exported to JSON');
-}
+};
 
-// Export CSV Summary
-function exportCSV() {
+window.exportCSV = function() {
   const empName = document.getElementById('input_emp_name')?.value || 'Faculty';
   const prof = PROFILES[appraisalState.selectedProfile];
   const csvRows = [
@@ -910,26 +828,23 @@ function exportCSV() {
   a.click();
   document.body.removeChild(a);
   showToast('Summary CSV Exported');
-}
+};
 
-// Print Official PER Dossier
-function printDossier() {
-  switchTab('tab-summary');
-  window.print();
-}
+window.printDossier = function() {
+  window.switchTab('tab-summary');
+  setTimeout(() => window.print(), 200);
+};
 
-// Modals
-function openModal(modalId) {
+window.openModal = function(modalId) {
   const el = document.getElementById(modalId);
   if (el) el.classList.add('active');
-}
+};
 
-function closeModal(modalId) {
+window.closeModal = function(modalId) {
   const el = document.getElementById(modalId);
   if (el) el.classList.remove('active');
-}
+};
 
-// Toast notification
 function showToast(msg) {
   let container = document.querySelector('.toast-container');
   if (!container) {
@@ -944,5 +859,5 @@ function showToast(msg) {
   setTimeout(() => {
     toast.style.opacity = '0';
     setTimeout(() => toast.remove(), 250);
-  }, 3000);
+  }, 3500);
 }
