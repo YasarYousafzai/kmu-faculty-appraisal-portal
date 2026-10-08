@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KMU Faculty Annual Performance Appraisal Portal (v3.0)</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/png" href="assets/kmu_logo.png">
+</head>
+<body>
+
+  <!-- Top Official Header -->
+  <header class="kmu-header">
+    <div class="header-container">
+      <div class="brand-wrapper">
+        <img src="assets/kmu_logo.png" alt="KMU Crest" class="kmu-logo">
+        <div class="brand-text">
+          <h1>
+            Khyber Medical University, Peshawar
+            <span class="statutory-badge">v3.0 Statutory</span>
+          </h1>
+          <p>Annual Performance Appraisal & Workload Allocation System (KMU/REG/POL/2026/01-REV)</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="btn btn-ghost-white" onclick="loadSampleData()">
+          <span>👤</span> Load Sample Faculty
+        </button>
+        <button type="button" class="btn btn-gold" onclick="openModal('policyModal')">
+          <span>📜</span> Statutory Policy
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="exportJSON()">
+          <span>💾</span> Save / Export
+        </button>
+        <button type="button" class="btn btn-primary" onclick="printDossier()">
+          <span>🖨️</span> Print PER Dossier
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Live Metric / Quick Status Bar -->
+  <section class="quick-status-bar no-print">
+    <div class="status-bar-container">
+      <div class="status-item">
+        <span class="status-label">Active Weight Profile</span>
+        <span class="status-val" id="liveProfileName">Balanced Profile</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Consolidated Score</span>
+        <span class="status-val">
+          <span id="liveScore" style="color:var(--kmu-maroon); font-size:1.4rem;">0.0</span>
+          <span style="font-size:0.85rem; color:#64748b;">/ 100</span>
+        </span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Rating Classification</span>
+        <span class="status-val">
+          <span id="liveRatingBadge" class="rating-badge rating-unsatisfactory">Unsatisfactory</span>
+        </span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">PIP Requirement (Sec. 9.5)</span>
+        <span class="status-val" id="kpi_pip_status" style="font-size:0.95rem; font-weight:700; color:#b91c1c;">
+          Not Required
+        </span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Statutory Appeal Window</span>
+        <span class="status-val" style="font-size:0.85rem; color:var(--slate-600);">
+          07 Calendar Days (Sec. 9.6)
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main App Body -->
+  <main class="main-wrapper">
+    <div class="portal-grid">
+      
+      <!-- Left Sidebar Navigation -->
+      <aside class="portal-nav no-print">
+        <div class="nav-header">
+          <h3>Appraisal Sections</h3>
+        </div>
+        <ul class="nav-list">
+          <li class="nav-item active" data-tab="tab-meta">
+            <span>1. Faculty & Post Info</span>
+            <span class="nav-pill">ID</span>
+          </li>
+          <li class="nav-item" data-tab="tab-profile">
+            <span>2. Profile & Weights</span>
+            <span class="nav-pill">100%</span>
+          </li>
+          <li class="nav-item" data-tab="tab-teaching">
+            <span>Section A: Teaching</span>
+            <span class="nav-pill" id="navPillTeaching">30%</span>
+          </li>
+          <li class="nav-item" data-tab="tab-research">
+            <span>Section B: Research</span>
+            <span class="nav-pill" id="navPillResearch">30%</span>
+          </li>
+          <li class="nav-item" data-tab="tab-service">
+            <span>Section C: Service</span>
+            <span class="nav-pill" id="navPillService">20%</span>
+          </li>
+          <li class="nav-item" data-tab="tab-peer">
+            <span>Section D: Peer & CPD</span>
+            <span class="nav-pill" id="navPillPeer">20%</span>
+          </li>
+          <li class="nav-item" data-tab="tab-clinical" id="navItemClinical" style="display:none;">
+            <span>Section E: Clinical</span>
+            <span class="nav-pill" id="navPillClinical">45%</span>
+          </li>
+          <li class="nav-item" data-tab="tab-redflag">
+            <span>Disciplinary Control</span>
+            <span class="nav-pill" style="background:#fee2e2; color:#b91c1c;">Flag</span>
+          </li>
+          <li class="nav-item" data-tab="tab-summary">
+            <span>PER Dossier & Sign-Off</span>
+            <span class="nav-pill" style="background:var(--kmu-gold); color:#fff;">Final</span>
+          </li>
+        </ul>
+        <div style="padding:1rem; border-top:1px solid var(--slate-200); background:var(--slate-50);">
+          <div style="font-size:0.75rem; color:#64748b; line-height:1.4;">
+            <strong>Statutory Precedence:</strong> Evaluated under KMU Acts 2006 & KP Universities Act 2012. All criteria strictly capped to eliminate inflation.
+          </div>
+        </div>
+      </aside>
+
+      <!-- Right Tab Panels -->
+      <section class="portal-main-panel">
+
+        <!-- TAB 1: FACULTY META INFO -->
+        <div class="tab-content active" id="tab-meta">
+          <div class="section-title-wrap">
+            <div>
+              <h2 class="section-title">Faculty Member & Appraisal Cycle Information</h2>
+              <p class="section-desc">Statutory administrative details matching university establishment registers.</p>
+            </div>
+            <span class="section-badge">Part I: Master Profile</span>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="input_emp_name">Full Name of Faculty Member *</label>
+              <input type="text" id="input_emp_name" class="form-control" placeholder="e.g. Dr. Yasar Mehmood Yousafzai">
+            </div>
+            <div class="form-group">
+              <label for="input_emp_id">Employee ID / Personal Number *</label>
+              <input type="text" id="input_emp_id" class="form-control" placeholder="e.g. KMU-FAC-2016-042">
+            </div>
+            <div class="form-group">
+              <label for="input_emp_desig">Substantive Designation *</label>
+              <input type="text" id="input_emp_desig" class="form-control" placeholder="e.g. Associate Professor">
+            </div>
+            <div class="form-group">
+              <label for="input_emp_dept">Institute / Department / Hospital Unit *</label>
+              <input type="text" id="input_emp_dept" class="form-control" placeholder="e.g. Institute of Pathology & Diagnostic Medicine (IPDM)">
+            </div>
+            <div class="form-group">
+              <label for="input_emp_cadre">Pay Scale & Service Cadre *</label>
+              <select id="input_emp_cadre" class="form-control">
+                <option value="BPS-21 (Regular)">BPS-21 (Regular)</option>
+                <option value="BPS-20 (Regular)" selected>BPS-20 (Regular)</option>
+                <option value="BPS-19 (Regular)">BPS-19 (Regular)</option>
+                <option value="BPS-18 (Regular)">BPS-18 (Regular)</option>
+                <option value="BPS-17 (Regular)">BPS-17 (Regular)</option>
+                <option value="Tenure Track System (TTS)">Tenure Track System (TTS)</option>
+                <option value="Contract (Fixed Pay/Lump Sum)">Contract (Fixed Pay/Lump Sum)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="input_emp_cycle">Appraisal Reporting Cycle *</label>
+              <input type="text" id="input_emp_cycle" class="form-control" value="2025–2026 (01 July – 30 June)">
+            </div>
+            <div class="form-group">
+              <label for="input_emp_appraiser">Appraising Officer (Reporting Officer) *</label>
+              <input type="text" id="input_emp_appraiser" class="form-control" placeholder="e.g. Director IPDM / Dean FPDM">
+            </div>
+            <div class="form-group">
+              <label for="input_emp_reviewer">Reviewing / Countersigning Officer *</label>
+              <input type="text" id="input_emp_reviewer" class="form-control" placeholder="e.g. Vice Chancellor, KMU">
+            </div>
+          </div>
+
+          <div class="info-callout">
+            <strong>Applicability Boundary (Section 1.3.1):</strong> This appraisal framework applies exclusively to regular, TTS, and contracted faculty across KMU Constituent Institutes and central directorates. Affiliated colleges are evaluated under their independent governing body criteria.
+          </div>
+
+          <div style="display:flex; justify-content:flex-end;">
+            <button type="button" class="btn btn-primary" onclick="switchTab('tab-profile')">Next: Profile & Weights →</button>
+          </div>
+        </div>
+
+        <!-- TAB 2: PROFILE & WEIGHT MATRIX -->
+        <div class="tab-content" id="tab-profile">
+          <div class="section-title-wrap">
+            <div>
+              <h2 class="section-title">Appraisal Weighting Profile Selection</h2>
+              <p class="section-desc">Select the statutory profile corresponding to your sanctioned post and workload distribution.</p>
+            </div>
+            <span class="section-badge">Section 9.1 Matrix</span>
+          </div>
+
+          <div class="profile-cards" id="profileCardsContainer"></div>
+
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Statutory Profile</th>
+                  <th>Teaching (S_A)</th>
+                  <th>Research (S_B)</th>
+                  <th>Service (S_C)</th>
+                  <th>Peer/CPD (S_D)</th>
+                  <th>Clinical (S_E)</th>
+                  <th>Min Teaching WU</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Balanced Profile</strong></td>
+                  <td>30%</td>
+                  <td>30%</td>
+                  <td>20%</td>
+                  <td>20%</td>
+                  <td>0%</td>
+                  <td>30 WU</td>
+                  <td><strong>100%</strong></td>
+                </tr>
+                <tr>
+                  <td><strong>Research-Focused Profile</strong></td>
+                  <td>20%</td>
+                  <td>50%</td>
+                  <td>15%</td>
+                  <td>15%</td>
+                  <td>0%</td>
+                  <td>20 WU</td>
+                  <td><strong>100%</strong></td>
+                </tr>
+                <tr>
+                  <td><strong>Teaching-Focused (Regional IHS)</strong></td>
+                  <td>50%</td>
+                  <td>15%</td>
+                  <td>20%</td>
+                  <td>15%</td>
+                  <td>0%</td>
+                  <td>50 WU</td>
+                  <td><strong>100%</strong></td>
+                </tr>
+                <tr>
+                  <td><strong>Clinical-Focused (Hospital Faculty)</strong></td>
+                  <td>15%</td>
+                  <td>20%</td>
+                  <td>10%</td>
+                  <td>10%</td>
+                  <td>45%</td>
+                  <td>15 WU</td>
+                  <td><strong>100%</strong></td>
+                </tr>
+                <tr>
+                  <td><strong>Research Cadres / Postdocs</strong></td>
+                  <td>10%</td>
+                  <td>65%</td>
+                  <td>10%</td>
+                  <td>15%</td>
+                  <td>0%</td>
+                  <td>10 WU</td>
+                  <td><strong>100%</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; margin-top:1.5rem;">
+            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-meta')">← Back</button>
+            <button type="button" class="btn btn-primary" onclick="switchTab('tab-teaching')">Next: Section A (Teaching) →</button>
+          </div>
+        </div>
+
+        <!-- TAB 3: SECTION A - TEACHING -->
+        <div class="tab-content" id="tab-teaching">
+          <div class="section-title-wrap">
+            <div>
+              <h2 class="section-title">Section A: Teaching & Curriculum Delivery</h2>
+              <p class="section-desc">Evaluates pedagogical delivery, student feedback, and workload unit fulfillment.</p>
+            </div>
+            <div style="text-align:right;">
+              <span class="section-badge">Weight: <strong id="disp_weight_a">30%</strong></span>
+              <span class="section-badge" style="margin-left:0.5rem;">Max: 100 Base Pts</span>
+            </div>
+          </div>
+
+          <div class="warning-callout">
+            <strong>Workload Delivery Proration Safeguard (Section 9.2 Formula 1):</strong> High student feedback cannot substitute for an undelivered teaching schedule. If actual teaching workload falls below the profile minimum without Competent Authority approval, the score is proportionally prorated: <code>Effective Score = QEC × (Actual WU / Required WU)</code>.
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="input_qec_score">Student Feedback / QEC Score (0–100) *</label>
+              <input type="number" id="input_qec_score" class="form-control" min="0" max="100" value="82">
+              <span class="field-hint">Certified annual Quality Enhancement Cell evaluation score.</span>
+            </div>
+            <div class="form-group">
+              <label>Minimum Teaching Workload Required (Section 6)</label>
+              <div class="form-control" style="background:#f8fafc; font-weight:700;" id="disp_min_wu">30</div>
+              <span class="field-hint">Derived automatically from your selected profile.</span>
+            </div>
+            <div class="form-group">
+              <label for="input_actual_wu">Actual Teaching WU Delivered This Year *</label>
+              <input type="number" id="input_actual_wu" class="form-control" min="0" max="150" value="32">
+              <span class="field-hint">Theory credit hrs = 3 WU/sem; Lab credit hrs = 2 WU/sem.</span>
+            </div>
+            <div class="form-group">
+              <label for="input_wu_exempted">Shortfall Approved / Exempted? *</label>
+              <select id="input_wu_exempted" class="form-control">
+                <option value="N" selected>No (Standard Proration Applies)</option>
+                <option value="Y">Yes (Sanctioned Research / Medical / Study Leave)</option>
+              </select>
+              <span class="field-hint">Requires HoD endorsement and Dean approval.</span>
+            </div>
+          </div>
+
+          <div class="kpi-card" style="margin-bottom:1.5rem; background:#fff8f8; border-color:#fecaca;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <span class="kpi-title">Effective Teaching Score</span>
+                <div class="kpi-value" style="color:var(--kmu-maroon);" id="disp_effective_teaching">82.0</div>
+                <span class="kpi-desc">Calculated score out of 100 base points</span>
+              </div>
+              <div style="text-align:right;">
+                <span class="kpi-title">Weighted Contribution</span>
+                <div class="kpi-value" style="color:var(--slate-800);" id="disp_weighted_a">24.60</div>
+                <span class="kpi-desc">Points added to final score</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between;">
+            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-profile')">← Back</button>
+            <button type="button" class="btn btn-primary" onclick="switchTab('tab-research')">Next: Section B (Research) →</button>
+          </div>
+        </div>
+
+        <!-- TAB 4: SECTION B - RESEARCH -->
+        <div class="tab-content" id="tab-research">
+          <div class="section-title-wrap">
+            <div>
+              <h2 class="section-title">Section B: Research, Grants, Supervision & Commercialization</h2>
+              <p class="section-desc">Measures indexed research papers, competitive grants, postgraduate completions, and patents.</p>
+            </div>
+            <div style="text-align:right;">
+              <span class="section-badge">Weight: <strong id="disp_weight_b">30%</strong></span>
+              <span class="section-badge" style="margin-left:0.5rem;">Capped at 200 Raw Pts</span>
+            </div>
+          </div>
+
+          <!-- B1: Publications -->
+          <h3 style="font-size:0.95rem; font-weight:700; color:var(--kmu-maroon); margin-bottom:0.75rem;">
+            B1: Publications & Scholarly Output <span class="cap-badge">Capped at 50 pts</span>
+          </h3>
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Impact Factor Criteria</th>
+                  <th>Author Role</th>
+                  <th>Points Each</th>
+                  <th style="width:100px;">Count</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>High Impact Factor</td>
+                  <td>IF ≥ 5.0 (W-Category / Top Tier)</td>
+                  <td>Lead / Principal Author</td>
+                  <td>10</td>
+                  <td><input type="number" id="input_pub_high_lead" class="input-num" min="0" value="1"></td>
+                </tr>
+                <tr>
+                  <td>High Impact Factor</td>
+                  <td>IF ≥ 5.0</td>
+                  <td>Co-Author</td>
+                  <td>5</td>
+                  <td><input type="number" id="input_pub_high_co" class="input-num" min="0" value="2"></td>
+                </tr>
+                <tr>
+                  <td>Moderate Impact Factor</td>
+                  <td>IF 1.0 – 4.99 (X-Category)</td>
+                  <td>Lead / Principal Author</td>
+                  <td>6</td>
+                  <td><input type="number" id="input_pub_mod_lead" class="input-num" min="0" value="2"></td>
+                </tr>
+                <tr>
+                  <td>Moderate Impact Factor</td>
+                  <td>IF 1.0 – 4.99</td>
+                  <td>Co-Author</td>
+                  <td>3</td>
+                  <td><input type="number" id="input_pub_mod_co" class="input-num" min="0" value="1"></td>
+                </tr>
+                <tr>
+                  <td>Indexed Low Impact Factor</td>
+                  <td>HEC Recognized / Y-Category</td>
+                  <td>Lead / Principal Author</td>
+                  <td>4</td>
+                  <td><input type="number" id="input_pub_low_lead" class="input-num" min="0" value="1"></td>
+                </tr>
+                <tr>
+                  <td>Indexed Low Impact Factor</td>
+                  <td>HEC Recognized</td>
+                  <td>Co-Author</td>
+                  <td>2</td>
+                  <td><input type="number" id="input_pub_low_co" class="input-num" min="0" value="0"></td>
+                </tr>
+                <tr class="subtotal-row">
+                  <td colspan="4">B1 Subtotal (Raw: <span id="disp_sub_b1_raw">0</span> pts)</td>
+                  <td><span class="highlight-subtotal" id="disp_sub_b1">0.0</span> / 50</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- B2: Books -->
+          <h3 style="font-size:0.95rem; font-weight:700; color:var(--kmu-maroon); margin:1.25rem 0 0.75rem 0;">
+            B2: Books & Scholarly Monographs <span class="cap-badge">Capped at 20 pts</span>
+          </h3>
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Publisher Level</th>
+                  <th>Points Each</th>
+                  <th style="width:100px;">Count</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>International Book (Authored / Edited)</td>
+                  <td>Reputable academic press with ISBN</td>
+                  <td>8</td>
+                  <td><input type="number" id="input_book_int" class="input-num" min="0" value="0"></td>
+                </tr>
+                <tr>
+                  <td>National Book (Authored / Edited)</td>
+                  <td>HEC recognized national publisher</td>
+                  <td>5</td>
+                  <td><input type="number" id="input_book_nat" class="input-num" min="0" value="1"></td>
+                </tr>
+                <tr>
+                  <td>International Book Chapter</td>
+                  <td>Indexed monograph / Springer / Elsevier / etc.</td>
+                  <td>4</td>
+                  <td><input type="number" id="input_chapter_int" class="input-num" min="0" value="1"></td>
+                </tr>
+                <tr>
+                  <td>National Book Chapter</td>
+                  <td>National volume with ISBN</td>
+                  <td>2</td>
+                  <td><input type="number" id="input_chapter_nat" class="input-num" min="0" value="0"></td>
+                </tr>
+                <tr class="subtotal-row">
+                  <td colspan="3">B2 Subtotal (Raw: <span id="disp_sub_b2_raw">0</span> pts)</td>
+                  <td><span class="highlight-subtotal" id="disp_sub_b2">0.0</span> / 20</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- B3: Grants -->
+          <h3 style="font-size:0.95rem; font-weight:700; color:var(--kmu-maroon); margin:1.25rem 0 0.75rem 0;">
+            B3: Research Grants Won & Applied <span class="cap-badge">Capped at 50 pts (Applied max 20)</span>
+          </h3>
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Grant Band</th>
+                  <th>Scope & Funding Body</th>
+                  <th>Role</th>
+                  <th>Points Each</th>
+                  <th style="width:100px;">Count</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Major International Grant</td>
+                  <td>> PKR 10 Million (NIH, Wellcome, GAVI, EU)</td>
+                  <td>Principal Investigator (PI)</td>
+                  <td>15</td>
+                  <td><input type="number" id="input_grant_int_pi" class="input-num" min="0" value="0"></td>
+                </tr>
+                <tr>
+                  <td>Major International Grant</td>
+                  <td>> PKR 10 Million</td>
+                  <td>Co-Principal Investigator (Co-PI)</td>
+                  <td>4.5</td>
+                  <td><input type="number" id="input_grant_int_copi" class="input-num" min="0" value="1"></td>
+                </tr>
+                <tr>
+                  <td>National Grant</td>
+                  <td>PKR 1 – 10 Million (HEC, PSF, PHRC)</td>
+                  <td>Principal Investigator (PI)</td>
+                  <td>8</td>
+                  <td><input type="number" id="input_grant_nat_pi" class="input-num" min="0" value="1"></td>
+                </tr>
+                <tr>
+                  <td>National Grant</td>
+                  <td>PKR 1 – 10 Million</td>
+                  <td>Co-Principal Investigator (Co-PI)</td>
+                  <td>4</td>
+                  <td><input type="number" id="input_grant_nat_copi" class="input-num" min="0" value="1"></td>
+                </tr>
+                <tr>
+                  <td>Small Competitive Grant</td>
+                  <td>< PKR 1 Million (KMU Internal Start-Up)</td>
+                  <td>Principal Investigator (PI)</td>
+                  <td>4</td>
+                  <td><input type="number" id="input_grant_small_pi" class="input-num" min="0" value="1"></td>
+                </tr>
+                <tr>
+                  <td>Grant Applications Submitted</td>
+                  <td>Competitive submission verified by ORIC</td>
+                  <td>Applicant / Co-Applicant</td>
+                  <td>2 (max 20)</td>
+                  <td><input type="number" id="input_grant_applied" class="input-num" min="0" value="3"></td>
+                </tr>
+                <tr class="subtotal-row">
+                  <td colspan="4">B3 Subtotal (Raw: <span id="disp_sub_b3_raw">0</span> pts)</td>
+                  <td><span class="highlight-subtotal" id="disp_sub_b3">0.0</span> / 50</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- B4: Postgraduate Supervision -->
+          <h3 style="font-size:0.95rem; font-weight:700; color:var(--kmu-maroon); margin:1.25rem 0 0.75rem 0;">
+            B4: Postgraduate Scholar Supervision <span class="cap-badge">Capped at 40 pts</span>
+          </h3>
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Degree / Trainee Level</th>
+                  <th>Verification Evidence</th>
+                  <th>Points Each</th>
+                  <th style="width:100px;">Count</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>PhD Scholar Completed & Awarded</td>
+                  <td>ASRB Notification & Thesis Defense</td>
+                  <td>8</td>
+                  <td><input type="number" id="input_sup_phd" class="input-num" min="0" value="1"></td>
+                </tr>
+                <tr>
+                  <td>MPhil / MS / Masters Scholar Completed</td>
+                  <td>Approved Degree Notification</td>
+                  <td>4</td>
+                  <td><input type="number" id="input_sup_mphil" class="input-num" min="0" value="3"></td>
+                </tr>
+                <tr>
+                  <td>Senior Clinical Trainee (FCPS-II / MD / MS)</td>
+                  <td>CPSP / KMU Examination Pass Notification</td>
+                  <td>8</td>
+                  <td><input type="number" id="input_sup_clin_sr" class="input-num" min="0" value="0"></td>
+                </tr>
+                <tr>
+                  <td>Junior Clinical / Fellowship Trainee</td>
+                  <td>Documented rotation completion</td>
+                  <td>4</td>
+                  <td><input type="number" id="input_sup_clin_jr" class="input-num" min="0" value="0"></td>
+                </tr>
+                <tr class="subtotal-row">
+                  <td colspan="3">B4 Subtotal (Raw: <span id="disp_sub_b4_raw">0</span> pts)</td>
+                  <td><span class="highlight-subtotal" id="disp_sub_b4">0.0</span> / 40</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- B5: Innovation & Commercialization -->
+          <h3 style="font-size:0.95rem; font-weight:700; color:var(--kmu-maroon); margin:1.25rem 0 0.75rem 0;">
+            B5: Patents, Spin-Offs & Commercial Innovation <span class="cap-badge">Capped at 40 pts</span>
+          </h3>
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Innovation Activity</th>
+                  <th>Institutional Evidence</th>
+                  <th>Points Each</th>
+                  <th style="width:100px;">Count</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>International Patent Granted</td>
+                  <td>USPTO, EPO, or WIPO patent award</td>
+                  <td>10</td>
+                  <td><input type="number" id="input_innov_patent_int" class="input-num" min="0" value="0"></td>
+                </tr>
+                <tr>
+                  <td>National Patent Granted</td>
+                  <td>IPO Pakistan certificate</td>
+                  <td>6</td>
+                  <td><input type="number" id="input_innov_patent_nat" class="input-num" min="0" value="1"></td>
+                </tr>
+                <tr>
+                  <td>Commercial Project / Product / Diagnostic Assay</td>
+                  <td>ORIC spin-off or commercial licensing</td>
+                  <td>8</td>
+                  <td><input type="number" id="input_innov_project" class="input-num" min="0" value="1"></td>
+                </tr>
+                <tr>
+                  <td>KMU-Overhead-Generating Engagement</td>
+                  <td>Clinical trials or diagnostic testing revenues</td>
+                  <td>10</td>
+                  <td><input type="number" id="input_innov_overhead" class="input-num" min="0" value="1"></td>
+                </tr>
+                <tr class="subtotal-row">
+                  <td colspan="3">B5 Subtotal (Raw: <span id="disp_sub_b5_raw">0</span> pts)</td>
+                  <td><span class="highlight-subtotal" id="disp_sub_b5">0.0</span> / 40</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Section B Aggregate Box -->
+          <div class="kpi-card" style="margin-top:1.25rem; background:#fffdf5; border-color:#fde68a;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <span class="kpi-title">Section B Attained Raw Points</span>
+                <div class="kpi-value" style="color:var(--kmu-gold);" id="disp_raw_b">0.0</div>
+                <span class="kpi-desc">Capped at maximum 200 base points (Formula: MIN(200, B1+B2+B3+B4+B5))</span>
+              </div>
+              <div style="text-align:right;">
+                <span class="kpi-title">Weighted Contribution</span>
+                <div class="kpi-value" style="color:var(--slate-800);" id="disp_weighted_b">0.00</div>
+                <span class="kpi-desc">Points added to final score</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; margin-top:1.5rem;">
+            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-teaching')">← Back</button>
+            <button type="button" class="btn btn-primary" onclick="switchTab('tab-service')">Next: Section C (Service) →</button>
+          </div>
+        </div>
+
+        <!-- TAB 5: SECTION C - INSTITUTIONAL SERVICE -->
+        <div class="tab-content" id="tab-service">
+          <div class="section-title-wrap">
+            <div>
+              <h2 class="section-title">Section C: Institutional Service & Leadership</h2>
+              <p class="section-desc">Evaluates governance contributions, committee work, policy formulation, and administrative charges.</p>
+            </div>
+            <div style="text-align:right;">
+              <span class="section-badge">Weight: <strong id="disp_weight_c">20%</strong></span>
+              <span class="section-badge" style="margin-left:0.5rem;">Max: 100 Base Pts</span>
+            </div>
+          </div>
+
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Institutional Service Activity</th>
+                  <th>Statutory Evidence</th>
+                  <th>Formula / Max</th>
+                  <th style="width:100px;">Input</th>
+                  <th>Attained</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Active Statutory / Institutional Committee Membership</td>
+                  <td>Official notification from Registrar / Dean / Director</td>
+                  <td>5 pts each (Max 25)</td>
+                  <td><input type="number" id="input_comm_member" class="input-num" min="0" value="3"></td>
+                  <td><strong id="disp_comm_member">15</strong> pts</td>
+                </tr>
+                <tr>
+                  <td>Committee Chairmanship / Convenorship</td>
+                  <td>Official appointment order as Convener / Chair</td>
+                  <td>10 pts each (Max 20)</td>
+                  <td><input type="number" id="input_comm_chair" class="input-num" min="0" value="1"></td>
+                  <td><strong id="disp_comm_chair">10</strong> pts</td>
+                </tr>
+                <tr>
+                  <td>Curriculum Development or Institutional Policy Document Authored</td>
+                  <td>Approved by Academic Council / Syndicate</td>
+                  <td>10 pts each (Max 30)</td>
+                  <td><input type="number" id="input_policy_doc" class="input-num" min="0" value="2"></td>
+                  <td><strong id="disp_policy_doc">20</strong> pts</td>
+                </tr>
+                <tr>
+                  <td>Laboratory, Clinical Unit, or Specialized Facility Management Charge</td>
+                  <td>Official notification as In-Charge / Section Head</td>
+                  <td>15 pts each (Max 30)</td>
+                  <td><input type="number" id="input_facility_charge" class="input-num" min="0" value="1"></td>
+                  <td><strong id="disp_facility_charge">15</strong> pts</td>
+                </tr>
+                <tr>
+                  <td>Additional Appointment Held This Year (Dean / Director / HoD)</td>
+                  <td>Credited under Section 5.1.4 without altering substantive track</td>
+                  <td>15 pts flat</td>
+                  <td>
+                    <select id="input_additional_appoint" class="form-control" style="width:110px;">
+                      <option value="N" selected>No</option>
+                      <option value="Y">Yes (+15)</option>
+                    </select>
+                  </td>
+                  <td><strong id="disp_add_appoint">0</strong> pts</td>
+                </tr>
+                <tr class="subtotal-row">
+                  <td colspan="4">Section C Attained Raw Points (Capped at 100 Base Points)</td>
+                  <td><span class="highlight-subtotal" id="disp_raw_c">60.0</span> / 100</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="kpi-card" style="margin-top:1.25rem; background:#eff6ff; border-color:#bfdbfe;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <span class="kpi-title">Section C Total Raw Points</span>
+                <div class="kpi-value" style="color:var(--blue-600);" id="disp_raw_c_card">60.0</div>
+                <span class="kpi-desc">Calculated score out of 100 base points</span>
+              </div>
+              <div style="text-align:right;">
+                <span class="kpi-title">Weighted Contribution</span>
+                <div class="kpi-value" style="color:var(--slate-800);" id="disp_weighted_c">12.00</div>
+                <span class="kpi-desc">Points added to final score</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; margin-top:1.5rem;">
+            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-research')">← Back</button>
+            <button type="button" class="btn btn-primary" onclick="switchTab('tab-peer')">Next: Section D (Peer & CPD) →</button>
+          </div>
+        </div>
+
+        <!-- TAB 6: SECTION D - PEER & CPD -->
+        <div class="tab-content" id="tab-peer">
+          <div class="section-title-wrap">
+            <div>
+              <h2 class="section-title">Section D: Peer Evaluation & Professional Conduct</h2>
+              <p class="section-desc">Evaluates professional decorum, institutional citizenship, and continuing professional development.</p>
+            </div>
+            <div style="text-align:right;">
+              <span class="section-badge">Weight: <strong id="disp_weight_d">20%</strong></span>
+              <span class="section-badge" style="margin-left:0.5rem;">Max: 88 Base Pts</span>
+            </div>
+          </div>
+
+          <div class="info-callout">
+            <strong>Corrected Denominator Safeguard (Section 9.2 Formula 4):</strong> 13 Core Parameters (Max 78) + 5 CPD Targets (Max 10) = <strong>88 points</strong>. Using 88 as the denominator prevents mathematical score inflation over the 100-point scale.
+          </div>
+
+          <h3 style="font-size:0.95rem; font-weight:700; color:var(--kmu-maroon); margin-bottom:0.75rem;">
+            Part I: 13 Core Behavioral & Professional Parameters (Scored 1 = Unsatisfactory to 6 = Outstanding | Max 78)
+          </h3>
+          <div class="peer-grid" id="peerParametersList"></div>
+          <div style="text-align:right; font-weight:700; margin-bottom:1.5rem; font-size:0.9rem;">
+            Core Parameters Subtotal: <span style="color:var(--kmu-maroon);" id="disp_peer_core_sum">0</span> / 78
+          </div>
+
+          <h3 style="font-size:0.95rem; font-weight:700; color:var(--kmu-maroon); margin-bottom:0.75rem;">
+            Part II: 5 Developmental & CPD Targets (Scored 0 = Not Done, 1 = Partially Met, 2 = Fully Achieved | Max 10)
+          </h3>
+          <div class="peer-grid" id="cpdTargetsList"></div>
+          <div style="text-align:right; font-weight:700; margin-bottom:1.5rem; font-size:0.9rem;">
+            CPD Targets Subtotal: <span style="color:var(--kmu-maroon);" id="disp_cpd_sum">0</span> / 10
+          </div>
+
+          <div class="kpi-card" style="margin-top:1.25rem; background:#ecfdf5; border-color:#a7f3d0;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <span class="kpi-title">Section D Attained Raw Points</span>
+                <div class="kpi-value" style="color:var(--emerald-600);" id="disp_raw_d">0.0</div>
+                <span class="kpi-desc">Calculated score out of 88 base points</span>
+              </div>
+              <div style="text-align:right;">
+                <span class="kpi-title">Weighted Contribution</span>
+                <div class="kpi-value" style="color:var(--slate-800);" id="disp_weighted_d">0.00</div>
+                <span class="kpi-desc">Points added to final score</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; margin-top:1.5rem;">
+            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-service')">← Back</button>
+            <button type="button" class="btn btn-primary" onclick="switchTab('tab-redflag')">Next: Disciplinary Control →</button>
+          </div>
+        </div>
+
+        <!-- TAB 7: SECTION E - CLINICAL (DYNAMIC) -->
+        <div class="tab-content" id="tab-clinical">
+          <div class="section-title-wrap">
+            <div>
+              <h2 class="section-title">Section E: Clinical & Diagnostic Service</h2>
+              <p class="section-desc">Active strictly for hospital faculty on the Clinical-Focused Profile (45% Weight).</p>
+            </div>
+            <div style="text-align:right;">
+              <span class="section-badge">Weight: <strong id="disp_weight_e">45%</strong></span>
+              <span class="section-badge" style="margin-left:0.5rem;">Max: 100 Base Pts</span>
+            </div>
+          </div>
+
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Clinical Domain</th>
+                  <th>Evaluation Standard</th>
+                  <th>Scale</th>
+                  <th style="width:120px;">Score Input</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Clinical Administration & Unit Leadership</td>
+                  <td>Ward/unit management, duty rosters, patient safety</td>
+                  <td>0 – 25 pts</td>
+                  <td><input type="number" id="input_clin_admin" class="input-num" min="0" max="25" value="0"></td>
+                </tr>
+                <tr>
+                  <td>Patient Volume & Workload Throughput</td>
+                  <td>OPD attendances, admissions, surgical procedures</td>
+                  <td>0 – 35 pts</td>
+                  <td><input type="number" id="input_clin_volume" class="input-num" min="0" max="35" value="0"></td>
+                </tr>
+                <tr>
+                  <td>On-Call & Emergency Duty Compliance</td>
+                  <td>Rostered emergency calls completed without default</td>
+                  <td>0 – 20 pts</td>
+                  <td><input type="number" id="input_clin_oncall" class="input-num" min="0" max="20" value="0"></td>
+                </tr>
+                <tr>
+                  <td>Bedside Teaching & Clinical Tutorials</td>
+                  <td>Clinical case conferences and ward-round supervision</td>
+                  <td>0 – 20 pts</td>
+                  <td><input type="number" id="input_clin_teaching" class="input-num" min="0" max="20" value="0"></td>
+                </tr>
+                <tr class="subtotal-row">
+                  <td colspan="3">Section E Total (Max 100 Base Points)</td>
+                  <td><span class="highlight-subtotal" id="disp_raw_e">0.0</span> / 100</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="kpi-card" style="margin-top:1.25rem; background:#fff1f2; border-color:#fecdd3;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <span class="kpi-title">Section E Attained Raw Points</span>
+                <div class="kpi-value" style="color:#e11d48;" id="disp_raw_e_card">0.0</div>
+                <span class="kpi-desc">Calculated score out of 100 base points</span>
+              </div>
+              <div style="text-align:right;">
+                <span class="kpi-title">Weighted Contribution</span>
+                <div class="kpi-value" style="color:var(--slate-800);" id="disp_weighted_e">0.00</div>
+                <span class="kpi-desc">Points added to final score</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; margin-top:1.5rem;">
+            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-peer')">← Back</button>
+            <button type="button" class="btn btn-primary" onclick="switchTab('tab-redflag')">Next: Disciplinary Control →</button>
+          </div>
+        </div>
+
+        <!-- TAB 8: DISCIPLINARY RED FLAG CONTROL -->
+        <div class="tab-content" id="tab-redflag">
+          <div class="section-title-wrap">
+            <div>
+              <h2 class="section-title">Disciplinary Red Flag & Due Process Safeguard</h2>
+              <p class="section-desc">Statutory provisions governing deductions under Section 9.4 of KMU Policy.</p>
+            </div>
+            <span class="section-badge" style="background:#fee2e2; color:#b91c1c;">Statutory Check</span>
+          </div>
+
+          <div class="danger-callout">
+            <strong>Mandatory Legal Safeguard (Section 9.4):</strong> A Red Flag deduction (-25 or -50 points) can <strong>strictly only</strong> be applied if:
+            <ol style="margin:0.5rem 0 0.5rem 1.25rem;">
+              <li>A formal inquiry under KMU Efficiency & Discipline Statutes has been concluded.</li>
+              <li>A formal penalty has been officially notified by the Competent Authority during the reporting year.</li>
+              <li>The employee has exhausted or had their statutory appeal decided.</li>
+            </ol>
+            <em>Any deduction entered without an official Inquiry Notification Reference Number and Date is legally void.</em>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="input_red_flag">Red Flag Penalty Level *</label>
+              <select id="input_red_flag" class="form-control">
+                <option value="0" selected>0 points (No Notified Disciplinary Penalty)</option>
+                <option value="25">-25 points (Minor Penalty Officially Notified)</option>
+                <option value="50">-50 points (Major Penalty Officially Notified)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="input_red_flag_ref">Inquiry Notification Reference No. *</label>
+              <input type="text" id="input_red_flag_ref" class="form-control" placeholder="e.g. KMU/REG/E&D/2026/89">
+              <span class="field-hint">Mandatory under Section 9.4 if penalty ≠ 0.</span>
+            </div>
+            <div class="form-group">
+              <label for="input_red_flag_date">Date of Official Notification *</label>
+              <input type="date" id="input_red_flag_date" class="form-control">
+              <span class="field-hint">Must fall within the reporting cycle.</span>
+            </div>
+          </div>
+
+          <div id="redFlagStatutoryWarning" class="warning-callout" style="display:none;"></div>
+
+          <div style="display:flex; justify-content:space-between; margin-top:1.5rem;">
+            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-peer')">← Back</button>
+            <button type="button" class="btn btn-primary" onclick="switchTab('tab-summary')">View Final PER Dossier →</button>
+          </div>
+        </div>
+
+        <!-- TAB 9: FINAL DOSSIER & SUMMARY -->
+        <div class="tab-content" id="tab-summary">
+          <div class="section-title-wrap no-print">
+            <div>
+              <h2 class="section-title">Consolidated Performance Dossier (PER)</h2>
+              <p class="section-desc">Consolidated appraisal evaluation, performance rating, and statutory sign-offs.</p>
+            </div>
+            <div class="header-actions">
+              <button type="button" class="btn btn-secondary" onclick="exportCSV()"><span>📊</span> Export CSV</button>
+              <button type="button" class="btn btn-primary" onclick="window.print()"><span>🖨️</span> Print Official Dossier</button>
+            </div>
+          </div>
+
+          <!-- Summary KPI Grid (Screen view) -->
+          <div class="summary-kpi-grid no-print">
+            <div class="kpi-card">
+              <span class="kpi-title">Final Consolidated Score</span>
+              <div class="kpi-value" style="color:var(--kmu-maroon);" id="kpi_final_score">0.0%</div>
+              <span class="kpi-desc">Weighted sum floored at 0</span>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-title">Rating Classification</span>
+              <div class="kpi-value" style="font-size:1.4rem;" id="kpi_rating_band">Unsatisfactory</div>
+              <span class="kpi-desc">Official Syndicate band</span>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-title">PIP Status (Section 9.5)</span>
+              <div class="kpi-value" style="font-size:1.15rem; color:#b91c1c;" id="kpi_pip_status">Not Required</div>
+              <span class="kpi-desc" id="kpi_pip_desc">Statutory action status</span>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-title">Penalty Deducted</span>
+              <div class="kpi-value" style="color:#b91c1c;" id="kpi_penalty_applied">None</div>
+              <span class="kpi-desc">Verified inquiry sanctions</span>
+            </div>
+          </div>
+
+          <!-- Visual Bar Distribution -->
+          <div class="no-print" style="background:#ffffff; border:1px solid var(--slate-200); border-radius:var(--radius-md); padding:1.25rem; margin-bottom:1.5rem;">
+            <h3 style="font-size:0.85rem; font-weight:700; text-transform:uppercase; color:var(--slate-500); margin-bottom:0.75rem;">
+              Domain Attainment Level (% of Category Ceiling)
+            </h3>
+            <div id="domainProgressContainer"></div>
+          </div>
+
+          <!-- OFFICIAL PRINTABLE DOSSIER -->
+          <article class="official-dossier" id="officialDossierPrintable">
+            <div class="dossier-header">
+              <img src="assets/kmu_logo.png" alt="KMU Crest" class="dossier-logo">
+              <div class="dossier-title">Khyber Medical University, Peshawar</div>
+              <div class="dossier-sub">Performance Evaluation Report (PER) & Annual Faculty Appraisal Dossier</div>
+              <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">
+                Statutory Instrument KMU/REG/POL/2026/01-REV (v3.0) — Form A (Faculty Cadres)
+              </div>
+            </div>
+
+            <!-- Faculty Metadata -->
+            <table class="dossier-meta-table">
+              <tr>
+                <th>Faculty Member Name</th>
+                <td id="dossier_emp_name">—</td>
+                <th>Employee / Personal ID</th>
+                <td id="dossier_emp_id">—</td>
+              </tr>
+              <tr>
+                <th>Substantive Designation</th>
+                <td id="dossier_emp_desig">—</td>
+                <th>Pay Scale / Cadre</th>
+                <td id="dossier_emp_cadre">—</td>
+              </tr>
+              <tr>
+                <th>Department / Institute</th>
+                <td id="dossier_emp_dept">—</td>
+                <th>Reporting Cycle</th>
+                <td id="dossier_emp_cycle">—</td>
+              </tr>
+              <tr>
+                <th>Approved Appraisal Profile</th>
+                <td id="dossier_prof_name">Balanced Profile</td>
+                <th>Min Required Teaching WU</th>
+                <td id="dossier_min_wu">30 WU</td>
+              </tr>
+            </table>
+
+            <!-- Calculated Results Table -->
+            <table class="dossier-scores-table">
+              <thead>
+                <tr>
+                  <th>Performance Domain & Statutory Clause</th>
+                  <th>Profile Weight</th>
+                  <th>Raw Attained Points</th>
+                  <th>Maximum Base Points</th>
+                  <th>Weighted Score Contribution</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Section A: Teaching & Curriculum Delivery (Formula 1)</td>
+                  <td id="dossier_weight_a">30%</td>
+                  <td id="dossier_raw_a">0.0</td>
+                  <td>100</td>
+                  <td id="dossier_weighted_a">0.00</td>
+                </tr>
+                <tr>
+                  <td>Section B: Research, Grants & Innovation (Formula 2)</td>
+                  <td id="dossier_weight_b">30%</td>
+                  <td id="dossier_raw_b">0.0</td>
+                  <td>200</td>
+                  <td id="dossier_weighted_b">0.00</td>
+                </tr>
+                <tr>
+                  <td>Section C: Institutional Service & Leadership (Formula 3)</td>
+                  <td id="dossier_weight_c">20%</td>
+                  <td id="dossier_raw_c">0.0</td>
+                  <td>100</td>
+                  <td id="dossier_weighted_c">0.00</td>
+                </tr>
+                <tr>
+                  <td>Section D: Peer Evaluation & Professional Conduct (Formula 4)</td>
+                  <td id="dossier_weight_d">20%</td>
+                  <td id="dossier_raw_d">0.0</td>
+                  <td>88</td>
+                  <td id="dossier_weighted_d">0.00</td>
+                </tr>
+                <tr id="dossier_row_clinical" style="display:none;">
+                  <td>Section E: Clinical & Diagnostic Service (Formula 5)</td>
+                  <td id="dossier_weight_e">45%</td>
+                  <td id="dossier_raw_e">0.0</td>
+                  <td>100</td>
+                  <td id="dossier_weighted_e">0.00</td>
+                </tr>
+                <tr style="background:#f8fafc; font-weight:700;">
+                  <td colspan="4" style="text-align:right;">Disciplinary Red Flag Penalty (Section 9.4):</td>
+                  <td id="dossier_penalty" style="color:#b91c1c;">0 pts</td>
+                </tr>
+                <tr style="background:#fdf8eb; font-weight:800; font-size:1.05rem;">
+                  <td colspan="4" style="text-align:right; color:var(--kmu-maroon);">Consolidated Final Score:</td>
+                  <td id="dossier_final_score" style="color:var(--kmu-maroon);">0.0 / 100</td>
+                </tr>
+                <tr style="background:#ffffff; font-weight:700;">
+                  <td colspan="4" style="text-align:right;">Final Performance Rating:</td>
+                  <td id="dossier_final_rating" style="text-transform:uppercase;">Unsatisfactory</td>
+                </tr>
+                <tr style="background:#ffffff;">
+                  <td colspan="4" style="text-align:right; font-size:0.8rem; color:#64748b;">Performance Improvement Plan Status:</td>
+                  <td id="dossier_pip_note" style="font-size:0.8rem; font-weight:600;">Not Required</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- Qualitative Narrative & Formative Remarks -->
+            <div style="margin-top:1.5rem; font-size:0.85rem;">
+              <h4 style="font-weight:700; color:var(--kmu-maroon); margin-bottom:0.35rem;">Formative Assessment & Appraisal Narrative</h4>
+              <div style="border:1px solid var(--slate-300); border-radius:var(--radius-sm); padding:0.75rem; margin-bottom:0.75rem; min-height:60px;">
+                <strong>Strengths & Commendations:</strong>
+                <p id="dossier_strengths" style="color:#475569; margin-top:2px;">Exemplary commitment to postgraduate thesis supervision, competitive grant acquisition, and active participation in university curriculum and statutory committees.</p>
+              </div>
+              <div style="border:1px solid var(--slate-300); border-radius:var(--radius-sm); padding:0.75rem; min-height:60px;">
+                <strong>Agreed Performance Targets for Upcoming Cycle:</strong>
+                <p id="dossier_targets" style="color:#475569; margin-top:2px;">Target submission of at least two high-impact factor publications (IF > 5.0) and one major international research proposal as Principal Investigator.</p>
+              </div>
+            </div>
+
+            <!-- Sign-Off & Verification Grid -->
+            <div class="signature-grid">
+              <div>
+                <div class="signature-line" id="sig_emp">Faculty Member Signature</div>
+                <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">Date: ______________</div>
+              </div>
+              <div>
+                <div class="signature-line" id="sig_appraiser">Appraising Officer</div>
+                <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">Date: ______________</div>
+              </div>
+              <div>
+                <div class="signature-line" id="sig_reviewer">Reviewing / Countersigning Officer</div>
+                <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">Date: ______________</div>
+              </div>
+              <div>
+                <div class="signature-line" id="sig_final">Registrar / Vice Chancellor</div>
+                <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">Official Common Seal</div>
+              </div>
+            </div>
+
+            <div style="margin-top:2.5rem; border-top:1px dashed var(--slate-300); padding-top:0.75rem; font-size:0.72rem; color:#64748b; text-align:center;">
+              Statutory Notice: This official appraisal record is generated under KMU Unified Statutory Policy KMU/REG/POL/2026/01-REV. The employee reserves the constitutional right to appeal any disputed rating or procedural irregularity to the Appellate Committee within seven (07) calendar days of formal notification.
+            </div>
+          </article>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <!-- Statutory Policy Modal -->
+  <div class="modal-overlay" id="policyModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>KMU Unified Statutory Policy — Quick Reference</h3>
+        <button type="button" class="modal-close" onclick="closeModal('policyModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h4 style="color:var(--kmu-maroon); font-weight:700; margin-bottom:0.5rem;">Document Identification</h4>
+        <p><strong>Title:</strong> KMU Unified Statutory Policy on Institutional Organogram, Job Descriptions, Workload Allocation and Performance Management<br>
+        <strong>Identifier:</strong> KMU/REG/POL/2026/01-REV (v3.0 Audited Edition)<br>
+        <strong>Enacting Authority:</strong> The Syndicate of Khyber Medical University under the KMU Act 2006 and KP Universities Act 2012.</p>
+        
+        <hr style="margin:1rem 0; border:none; border-top:1px solid #e2e8f0;">
+        
+        <h4 style="color:var(--kmu-maroon); font-weight:700; margin-bottom:0.5rem;">Appraisal Formula Overview (Section 9.2)</h4>
+        <p><code>S_final = MAX(0, S_Teaching + S_Research + S_Service + S_Peer + S_Clinical - Penalty_RedFlag)</code></p>
+        <ul style="margin:0.5rem 0 1rem 1.25rem;">
+          <li><strong>Teaching (S_A):</strong> QEC score normalized to 100, prorated against minimum Workload Units if shortfall occurs without approved leave.</li>
+          <li><strong>Research (S_B):</strong> Capped at 200 raw points across 5 subcategories: B1 Publications (max 50), B2 Books (max 20), B3 Grants (max 50, applied capped at 20), B4 Supervision (max 40), and B5 Innovation/Patents (max 40).</li>
+          <li><strong>Service (S_C):</strong> Capped at 100 raw points across committee memberships, convenorships, policy authorship, and facility charges.</li>
+          <li><strong>Peer & CPD (S_D):</strong> 13 Core Parameters (1–6 scale, max 78) + 5 CPD Targets (0–2 scale, max 10) = 88-point denominator.</li>
+          <li><strong>Clinical (S_E):</strong> Max 100 raw points across unit administration, patient workload, on-call compliance, and bedside tutorials.</li>
+        </ul>
+
+        <h4 style="color:var(--kmu-maroon); font-weight:700; margin-bottom:0.5rem;">Performance Ratings & Due Process</h4>
+        <ul style="margin:0.5rem 0 0 1.25rem;">
+          <li><strong>≥ 85.0%:</strong> Outstanding (Exceeds Expectations with Distinction)</li>
+          <li><strong>75.0% – 84.9%:</strong> Very Good (Exceeds Expectations)</li>
+          <li><strong>60.0% – 74.9%:</strong> Good (Meets Expectations)</li>
+          <li><strong>50.0% – 59.9%:</strong> Average (Needs Improvement — Discretionary PIP)</li>
+          <li><strong>< 50.0%:</strong> Unsatisfactory (MANDATORY PIP for 3–6 months under Sec. 9.5)</li>
+          <li><strong>Appellate Rights:</strong> 07 calendar days from formal notification to lodge written appeal to the Appellate Committee (Sec. 9.6).</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('policyModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="kmu-footer no-print">
+    <div class="footer-container">
+      <div>
+        <strong>Khyber Medical University, Peshawar</strong> &copy; 2026. All Rights Reserved.
+        <div style="font-size:0.75rem; color:#94a3b8; margin-top:2px;">
+          Office of the Registrar &bull; Quality Enhancement Cell (QEC) &bull; Directorate of Academics
+        </div>
+      </div>
+      <div style="text-align:right; font-size:0.75rem;">
+        <div>Document Ref: <strong>KMU/REG/POL/2026/01-REV (v3.0)</strong></div>
+        <div style="color:#94a3b8;">Free Tier Deployment Ready (GitHub Pages / PythonAnywhere)</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
