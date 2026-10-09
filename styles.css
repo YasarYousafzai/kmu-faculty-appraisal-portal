@@ -186,6 +186,37 @@ body {
   background: rgba(255, 255, 255, 0.25);
 }
 
+/* Draft Recovery Banner */
+.draft-banner {
+  background: #fdf8eb;
+  border-bottom: 2px solid #fcd34d;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: #78350f;
+  box-shadow: var(--shadow-sm);
+}
+
+.draft-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.draft-banner-icon {
+  font-size: 1.2rem;
+}
+
+.draft-banner-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 /* Step Wizard Progress Bar */
 .wizard-progress-bar {
   background: #ffffff;
@@ -491,6 +522,25 @@ body {
 .field-hint {
   font-size: 0.725rem;
   color: var(--slate-500);
+}
+
+/* Step Footer Actions (Save & Return Later / Save & Continue) */
+.step-footer-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--slate-200);
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.step-footer-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 /* Fast Action Bar in Step 1 */
@@ -896,6 +946,7 @@ body {
   border-top: 1px solid var(--slate-200);
   display: flex;
   justify-content: flex-end;
+  gap: 0.75rem;
 }
 
 /* Toast */
@@ -950,7 +1001,7 @@ body {
 
 @media print {
   body { background: #fff; font-size: 11pt; }
-  .kmu-header, .wizard-progress-bar, .quick-status-bar, .portal-nav, .header-actions, .kmu-footer, .btn, .no-print {
+  .kmu-header, .wizard-progress-bar, .draft-banner, .quick-status-bar, .portal-nav, .header-actions, .kmu-footer, .btn, .no-print {
     display: none !important;
   }
   .portal-grid { display: block !important; }
@@ -964,4 +1015,6 @@ body {
   .portal-grid { grid-template-columns: 1fr; }
   .portal-nav { position: static; }
   .signature-grid { grid-template-columns: repeat(2, 1fr); gap: 2rem; }
+  .step-footer-actions { flex-direction: column; align-items: stretch; }
+  .step-footer-actions-right { justify-content: space-between; }
 }

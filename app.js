@@ -1,6 +1,11 @@
 /**
  * KMU Faculty Annual Performance Appraisal System (v3.0)
  * Official statutory engine implementing KMU/REG/POL/2026/01-REV
+ * Features:
+ * - Real-time calculation according to Section 9 formulas and ceilings
+ * - Save & Continue on every section
+ * - Save & Return Later with local persistence and cross-device backup export
+ * - Draft Recovery Banner and automated resume
  */
 
 // Statutory Profile Configuration Matrix
@@ -83,7 +88,7 @@ const CPD_TARGETS = [
   { id: 'cpd_5', label: 'Presenter / Facilitator at a CPD Event', desc: 'Resource person for conferences, webinars, or workshops.' }
 ];
 
-// Global State
+// State container
 let appraisalState = {
   employee: {
     name: 'Dr. Yasar Mehmood Yousafzai',
@@ -134,41 +139,277 @@ window.switchTab = function(tabId) {
   const targetNav = document.querySelector(`[data-tab="${tabId}"]`);
   const targetStep = document.querySelector(`[data-wizard="${tabId}"]`);
 
-  if (targetTab) {
-    targetTab.classList.add('active');
-  }
-  if (targetNav) {
-    targetNav.classList.add('active');
-  }
-  if (targetStep) {
-    targetStep.classList.add('active');
-  }
+  if (targetTab) targetTab.classList.add('active');
+  if (targetNav) targetNav.classList.add('active');
+  if (targetStep) targetStep.classList.add('active');
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// Global Action: Proceed from Step 1 (ID & Info) to Step 2 (Profile Selection)
-window.goToProfileStep = function() {
-  const nameEl = document.getElementById('input_emp_name');
-  const idEl = document.getElementById('input_emp_id');
-
-  const empName = nameEl?.value?.trim() || 'Dr. Yasar Mehmood Yousafzai';
-  const empId = idEl?.value?.trim() || 'KMU-FAC-2016-042';
-
-  if (nameEl && !nameEl.value.trim()) nameEl.value = empName;
-  if (idEl && !idEl.value.trim()) idEl.value = empId;
-
-  updateElementText('dossier_emp_name', empName);
-  updateElementText('dossier_emp_id', empId);
-
-  window.switchTab('tab-profile');
-  showToast(`✓ Identity Confirmed: ${empName} (${empId}) — Proceeding to Step 2`);
+// SAVE AND CONTINUE FUNCTION
+window.saveAndContinue = function(nextTabId, sectionLabel) {
+  saveAllData(nextTabId);
+  window.switchTab(nextTabId);
+  showToast(`✓ Saved! Continuing to ${sectionLabel}`);
 };
 
-// Global Action: Proceed directly to Section A (Teaching Calculations)
+// SAVE AND RETURN LATER FUNCTION
+window.saveAndReturnLater = function() {
+  const currentActiveTab = document.querySelector('.tab-content.active')?.id || 'tab-meta';
+  const savedData = saveAllData(currentActiveTab);
+  
+  const empName = document.getElementById('input_emp_name')?.value || 'Faculty Member';
+  const empId = document.getElementById('input_emp_id')?.value || 'KMU-FAC';
+  const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  
+  const modalTime = document.getElementById('saveModalTime');
+  const modalEmp = document.getElementById('saveModalSummary');
+  const modalStep = document.getElementById('saveModalStep');
+  
+  if (modalTime) modalTime.textContent = timeStr;
+  if (modalEmp) modalEmp.textContent = `${empName} (ID: ${empId})`;
+  if (modalStep) {
+    const stepName = document.querySelector(`[data-wizard="${currentActiveTab}"] span:last-child`)?.textContent || 'Current Section';
+    modalStep.textContent = stepName;
+  }
+  
+  window.openModal('saveReturnModal');
+  showToast(`✓ Progress safely saved! You can resume anytime.`);
+};
+
+// CORE DATA SERIALIZATION ENGINE
+function saveAllData(activeTabId) {
+  const currentTab = activeTabId || document.querySelector('.tab-content.active')?.id || 'tab-meta';
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  const draft = {
+    lastActiveTab: currentTab,
+    savedAt: now.toISOString(),
+    savedTimeFormatted: timeStr,
+    profile: appraisalState.selectedProfile,
+    meta: {
+      name: document.getElementById('input_emp_name')?.value || '',
+      id: document.getElementById('input_emp_id')?.value || '',
+      desig: document.getElementById('input_emp_desig')?.value || '',
+      dept: document.getElementById('input_emp_dept')?.value || '',
+      cadre: document.getElementById('input_emp_cadre')?.value || 'BPS-20 (Regular)',
+      cycle: document.getElementById('input_emp_cycle')?.value || '2025–2026 (01 July – 30 June)',
+      appraiser: document.getElementById('input_emp_appraiser')?.value || '',
+      reviewer: document.getElementById('input_emp_reviewer')?.value || ''
+    },
+    sectionA: {
+      qecScore: document.getElementById('input_qec_score')?.value || '0',
+      actualWU: document.getElementById('input_actual_wu')?.value || '0',
+      exempted: document.getElementById('input_wu_exempted')?.value || 'N'
+    },
+    sectionB: {
+      pub_high_lead: document.getElementById('input_pub_high_lead')?.value || '0',
+      pub_high_co: document.getElementById('input_pub_high_co')?.value || '0',
+      pub_mod_lead: document.getElementById('input_pub_mod_lead')?.value || '0',
+      pub_mod_co: document.getElementById('input_pub_mod_co')?.value || '0',
+      pub_low_lead: document.getElementById('input_pub_low_lead')?.value || '0',
+      pub_low_co: document.getElementById('input_pub_low_co')?.value || '0',
+      book_int: document.getElementById('input_book_int')?.value || '0',
+      book_nat: document.getElementById('input_book_nat')?.value || '0',
+      chapter_int: document.getElementById('input_chapter_int')?.value || '0',
+      chapter_nat: document.getElementById('input_chapter_nat')?.value || '0',
+      grant_int_pi: document.getElementById('input_grant_int_pi')?.value || '0',
+      grant_int_copi: document.getElementById('input_grant_int_copi')?.value || '0',
+      grant_nat_pi: document.getElementById('input_grant_nat_pi')?.value || '0',
+      grant_nat_copi: document.getElementById('input_grant_nat_copi')?.value || '0',
+      grant_small_pi: document.getElementById('input_grant_small_pi')?.value || '0',
+      grant_applied: document.getElementById('input_grant_applied')?.value || '0',
+      sup_phd: document.getElementById('input_sup_phd')?.value || '0',
+      sup_mphil: document.getElementById('input_sup_mphil')?.value || '0',
+      sup_clin_sr: document.getElementById('input_sup_clin_sr')?.value || '0',
+      sup_clin_jr: document.getElementById('input_sup_clin_jr')?.value || '0',
+      innov_patent_int: document.getElementById('input_innov_patent_int')?.value || '0',
+      innov_patent_nat: document.getElementById('input_innov_patent_nat')?.value || '0',
+      innov_project: document.getElementById('input_innov_project')?.value || '0',
+      innov_overhead: document.getElementById('input_innov_overhead')?.value || '0'
+    },
+    sectionC: {
+      comm_member: document.getElementById('input_comm_member')?.value || '0',
+      comm_chair: document.getElementById('input_comm_chair')?.value || '0',
+      policy_doc: document.getElementById('input_policy_doc')?.value || '0',
+      facility_charge: document.getElementById('input_facility_charge')?.value || '0',
+      additional_appoint: document.getElementById('input_additional_appoint')?.value || 'N'
+    },
+    sectionD: {
+      peerScores: appraisalState.sectionD.peerScores,
+      cpdScores: appraisalState.sectionD.cpdScores
+    },
+    sectionE: {
+      clin_admin: document.getElementById('input_clin_admin')?.value || '0',
+      clin_volume: document.getElementById('input_clin_volume')?.value || '0',
+      clin_oncall: document.getElementById('input_clin_oncall')?.value || '0',
+      clin_teaching: document.getElementById('input_clin_teaching')?.value || '0'
+    },
+    redFlag: {
+      penalty: document.getElementById('input_red_flag')?.value || '0',
+      refNo: document.getElementById('input_red_flag_ref')?.value || '',
+      refDate: document.getElementById('input_red_flag_date')?.value || ''
+    }
+  };
+
+  try {
+    localStorage.setItem('KMU_APPRAISAL_DRAFT_v3', JSON.stringify(draft));
+    const indicator = document.getElementById('lastSavedIndicator');
+    if (indicator) {
+      indicator.textContent = `Saved: ${timeStr}`;
+    }
+  } catch (e) {
+    console.warn('Failed to save to localStorage:', e);
+  }
+  return draft;
+}
+
+// RESTORE DRAFT FUNCTION
+window.restoreDraft = function() {
+  try {
+    const raw = localStorage.getItem('KMU_APPRAISAL_DRAFT_v3');
+    if (!raw) return false;
+    const draft = JSON.parse(raw);
+
+    if (draft.profile) {
+      appraisalState.selectedProfile = draft.profile;
+      window.selectProfile(draft.profile);
+    }
+
+    if (draft.meta) {
+      const m = draft.meta;
+      setVal('input_emp_name', m.name);
+      setVal('input_emp_id', m.id);
+      setVal('input_emp_desig', m.desig);
+      setVal('input_emp_dept', m.dept);
+      setVal('input_emp_cadre', m.cadre);
+      setVal('input_emp_cycle', m.cycle);
+      setVal('input_emp_appraiser', m.appraiser);
+      setVal('input_emp_reviewer', m.reviewer);
+
+      updateElementText('dossier_emp_name', m.name || '—');
+      updateElementText('dossier_emp_id', m.id || '—');
+      updateElementText('dossier_emp_desig', m.desig || '—');
+      updateElementText('dossier_emp_dept', m.dept || '—');
+      updateElementText('dossier_emp_cadre', m.cadre || '—');
+      updateElementText('dossier_emp_cycle', m.cycle || '—');
+    }
+
+    if (draft.sectionA) {
+      setVal('input_qec_score', draft.sectionA.qecScore);
+      setVal('input_actual_wu', draft.sectionA.actualWU);
+      setVal('input_wu_exempted', draft.sectionA.exempted);
+    }
+
+    if (draft.sectionB) {
+      Object.keys(draft.sectionB).forEach(key => {
+        setVal(`input_${key}`, draft.sectionB[key]);
+      });
+    }
+
+    if (draft.sectionC) {
+      Object.keys(draft.sectionC).forEach(key => {
+        setVal(`input_${key}`, draft.sectionC[key]);
+      });
+    }
+
+    if (draft.sectionD) {
+      if (draft.sectionD.peerScores) appraisalState.sectionD.peerScores = draft.sectionD.peerScores;
+      if (draft.sectionD.cpdScores) appraisalState.sectionD.cpdScores = draft.sectionD.cpdScores;
+      initPeerControls();
+    }
+
+    if (draft.sectionE) {
+      Object.keys(draft.sectionE).forEach(key => {
+        setVal(`input_${key}`, draft.sectionE[key]);
+      });
+    }
+
+    if (draft.redFlag) {
+      setVal('input_red_flag', draft.redFlag.penalty);
+      setVal('input_red_flag_ref', draft.redFlag.refNo);
+      setVal('input_red_flag_date', draft.redFlag.refDate);
+    }
+
+    calculateAll();
+
+    // Jump to last active tab
+    const targetTab = draft.lastActiveTab || 'tab-meta';
+    window.switchTab(targetTab);
+
+    // Hide draft banner
+    const banner = document.getElementById('draftRecoveryBanner');
+    if (banner) banner.style.display = 'none';
+
+    showToast(`✓ Welcome back! Restored draft from ${draft.savedTimeFormatted || 'previous session'}`);
+    return true;
+  } catch (e) {
+    console.error('Draft restore failed:', e);
+    return false;
+  }
+};
+
+// CHECK EXISTING DRAFT ON PAGE LOAD
+function checkExistingDraft() {
+  try {
+    const raw = localStorage.getItem('KMU_APPRAISAL_DRAFT_v3');
+    if (!raw) return;
+    const draft = JSON.parse(raw);
+    const banner = document.getElementById('draftRecoveryBanner');
+    if (banner && draft.meta) {
+      const empName = draft.meta.name || 'Faculty Member';
+      const empId = draft.meta.id || 'KMU-FAC';
+      const timeStr = draft.savedTimeFormatted || 'earlier';
+      const infoSpan = document.getElementById('draftBannerInfo');
+      if (infoSpan) {
+        infoSpan.innerHTML = `<strong>In-Progress Draft Detected:</strong> Saved for <strong>${empName}</strong> (${empId}) at ${timeStr}.`;
+      }
+      banner.style.display = 'flex';
+    }
+  } catch (e) {}
+}
+
+// CLEAR DRAFT / START FRESH
+window.clearDraftAndStartFresh = function() {
+  if (confirm('Start a fresh appraisal? This will reset all fields.')) {
+    localStorage.removeItem('KMU_APPRAISAL_DRAFT_v3');
+    const banner = document.getElementById('draftRecoveryBanner');
+    if (banner) banner.style.display = 'none';
+    window.loadSampleData();
+    window.switchTab('tab-meta');
+    showToast('Started fresh appraisal form.');
+  }
+};
+
+// DOWNLOAD OFFLINE DRAFT BACKUP (.JSON)
+window.downloadDraftBackup = function() {
+  const raw = localStorage.getItem('KMU_APPRAISAL_DRAFT_v3');
+  const draft = raw ? JSON.parse(raw) : saveAllData();
+  const empName = draft.meta?.name || 'Faculty';
+  const blob = new Blob([JSON.stringify(draft, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `KMU_Appraisal_Draft_${empName.replace(/[^a-zA-Z0-9]/g, '_')}_2026.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ Draft backup file downloaded. You can import this on any device.');
+};
+
+// HELPER: SET VALUE SAFELY
+function setVal(id, val) {
+  const el = document.getElementById(id);
+  if (el && val !== undefined && val !== null) el.value = val;
+}
+
+// Navigation helpers
+window.goToProfileStep = function() {
+  window.saveAndContinue('tab-profile', 'Step 2: Profile Selection');
+};
+
 window.goToTeachingStep = function() {
-  window.switchTab('tab-teaching');
-  showToast(`Active Profile: ${appraisalState.selectedProfile} — Enter Teaching Data`);
+  window.saveAndContinue('tab-teaching', 'Step 3: Teaching Scoring');
 };
 
 // Initialize Application
@@ -176,7 +417,13 @@ document.addEventListener('DOMContentLoaded', () => {
   initProfileCards();
   initPeerControls();
   initEventListeners();
-  loadSampleData();
+  
+  // Check if draft exists, otherwise load sample
+  const restored = window.restoreDraft();
+  if (!restored) {
+    window.loadSampleData();
+  }
+  checkExistingDraft();
   calculateAll();
 });
 
@@ -190,7 +437,7 @@ function initProfileCards() {
     const prof = PROFILES[key];
     const card = document.createElement('div');
     card.className = `profile-card ${key === appraisalState.selectedProfile ? 'selected' : ''}`;
-    card.onclick = () => selectProfile(key);
+    card.onclick = () => window.selectProfile(key);
 
     card.innerHTML = `
       <div class="profile-title">${prof.name}</div>
@@ -680,15 +927,21 @@ function initEventListeners() {
       el.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
-          window.goToProfileStep();
+          window.goToTeachingStep();
         }
       });
     }
   });
 
   document.querySelectorAll('input, select, textarea').forEach(input => {
-    input.addEventListener('input', calculateAll);
-    input.addEventListener('change', calculateAll);
+    input.addEventListener('input', () => {
+      calculateAll();
+      saveAllData();
+    });
+    input.addEventListener('change', () => {
+      calculateAll();
+      saveAllData();
+    });
   });
 
   ['emp_name', 'emp_id', 'emp_desig', 'emp_dept', 'emp_cadre', 'emp_cycle', 'emp_appraiser', 'emp_reviewer'].forEach(f => {
@@ -702,11 +955,6 @@ function initEventListeners() {
 }
 
 window.loadSampleData = function() {
-  const setVal = (id, val) => {
-    const el = document.getElementById(id);
-    if (el) el.value = val;
-  };
-
   setVal('input_emp_name', 'Dr. Yasar Mehmood Yousafzai');
   setVal('input_emp_id', 'KMU-FAC-2016-042');
   setVal('input_emp_desig', 'Associate Professor');
@@ -778,14 +1026,17 @@ window.loadSampleData = function() {
 
   window.selectProfile('Balanced Profile');
   calculateAll();
+  saveAllData('tab-meta');
   showToast('✓ Verified KMU Faculty Profile Loaded!');
 };
 
 window.exportJSON = function() {
-  const exportBlob = new Blob([JSON.stringify(appraisalState, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(exportBlob);
+  const raw = localStorage.getItem('KMU_APPRAISAL_DRAFT_v3');
+  const draft = raw ? JSON.parse(raw) : saveAllData();
+  const empName = draft.meta?.name || 'Faculty';
+  const blob = new Blob([JSON.stringify(draft, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const empName = document.getElementById('input_emp_name')?.value || 'Faculty';
   a.href = url;
   a.download = `KMU_PER_Appraisal_${empName.replace(/[^a-zA-Z0-9]/g, '_')}_2026.json`;
   a.click();
