@@ -445,7 +445,34 @@ window.downloadDraftBackup = function() {
 // HELPER: SET VALUE SAFELY
 function setVal(id, val) {
   const el = document.getElementById(id);
-  if (el && val !== undefined && val !== null) el.value = val;
+  if (!el || val === undefined || val === null) return;
+  if (el.tagName === 'SELECT') {
+    let matched = false;
+    for (let i = 0; i < el.options.length; i++) {
+      if (el.options[i].value === val) {
+        el.selectedIndex = i;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched && typeof val === 'string' && val.trim() !== '') {
+      const lower = val.toLowerCase().trim();
+      for (let i = 0; i < el.options.length; i++) {
+        const optVal = el.options[i].value.toLowerCase();
+        const optText = el.options[i].text.toLowerCase();
+        if (optVal === lower || optText === lower || optVal.includes(lower) || lower.includes(optVal) || optText.includes(lower) || lower.includes(optText)) {
+          el.selectedIndex = i;
+          matched = true;
+          break;
+        }
+      }
+    }
+    if (!matched && el.selectedIndex === -1 && el.options.length > 0) {
+      el.selectedIndex = 0;
+    }
+  } else {
+    el.value = val;
+  }
 }
 
 // Navigation helpers
@@ -621,6 +648,7 @@ function initProfileCards() {
 window.selectProfile = function(profileKey) {
   appraisalState.selectedProfile = profileKey;
   initProfileCards();
+  setVal('profileDropdownSelect', profileKey);
   toggleClinicalSection();
   calculateAll();
   showToast(`Profile activated: ${profileKey}`);
@@ -1139,12 +1167,18 @@ function initEventListeners() {
   ['emp_name', 'emp_desig', 'emp_dept', 'emp_cadre', 'emp_cycle', 'emp_appraiser', 'emp_reviewer'].forEach(f => {
     const input = document.getElementById(`input_${f}`);
     if (input) {
-      input.addEventListener('input', () => {
-        updateElementText(`dossier_${f}`, input.value || '—');
-      });
-      input.addEventListener('change', () => {
-        updateElementText(`dossier_${f}`, input.value || '—');
-      });
+      const syncMeta = () => {
+        const val = input.value || '—';
+        updateElementText(`dossier_${f}`, val);
+        if (f === 'emp_appraiser') {
+          updateElementText('sig_appraiser', `${val} (Appraising Officer)`);
+        }
+        if (f === 'emp_reviewer') {
+          updateElementText('sig_final', `${val} (Countersigning Officer)`);
+        }
+      };
+      input.addEventListener('input', syncMeta);
+      input.addEventListener('change', syncMeta);
     }
   });
 
@@ -1234,8 +1268,14 @@ window.loadSampleData = function() {
   setVal('input_red_flag_date', '');
 
   ['emp_name', 'emp_desig', 'emp_dept', 'emp_cadre', 'emp_cycle', 'emp_appraiser', 'emp_reviewer'].forEach(f => {
-    const val = document.getElementById(`input_${f}`)?.value;
-    updateElementText(`dossier_${f}`, val || '—');
+    const val = document.getElementById(`input_${f}`)?.value || '—';
+    updateElementText(`dossier_${f}`, val);
+    if (f === 'emp_appraiser') {
+      updateElementText('sig_appraiser', `${val} (Appraising Officer)`);
+    }
+    if (f === 'emp_reviewer') {
+      updateElementText('sig_final', `${val} (Countersigning Officer)`);
+    }
   });
 
   ['comm_member_1', 'comm_member_2', 'comm_member_3'].forEach((f, idx) => {

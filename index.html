@@ -376,6 +376,22 @@
             <span class="section-badge">Section 9.1 Matrix</span>
           </div>
 
+          <div class="form-group" style="margin-bottom: 1.25rem; max-width: 540px; background: #fdf8eb; border: 1px solid #fde68a; padding: 1rem 1.25rem; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+            <label for="profileDropdownSelect" style="font-weight:700; color:var(--kmu-maroon); margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem; font-size: 0.9rem;">
+              <span>⚖️</span> Select Weighting Profile (Dropdown):
+            </label>
+            <select id="profileDropdownSelect" class="form-control" onchange="window.selectProfile(this.value)">
+              <option value="Balanced Profile" selected>Balanced Profile (Teaching 30%, Research 30%, Service 20%, Peer 20%)</option>
+              <option value="Research-Focused Profile">Research-Focused Profile (Teaching 20%, Research 50%, Service 15%, Peer 15%)</option>
+              <option value="Teaching-Focused (Regional IHS)">Teaching-Focused / Regional IHS (Teaching 50%, Research 15%, Service 20%, Peer 15%)</option>
+              <option value="Clinical-Focused (Hospital Faculty)">Clinical-Focused / Hospital Faculty (Clinical 45%, Research 20%, Teaching 15%, Service 10%, Peer 10%)</option>
+              <option value="Research Cadres / Postdocs">Research Cadres / Postdocs (Research 65%, Peer 15%, Teaching 10%, Service 10%)</option>
+            </select>
+            <span class="field-hint" style="color:#78350f; margin-top: 4px; display: block;">
+              💡 You can change your appraisal profile using either this dropdown menu or the interactive cards below.
+            </span>
+          </div>
+
           <p style="font-size:0.875rem; color:#475569; margin-bottom:1rem;">
             Click on any card below to activate that profile. All domain weights, minimum teaching workload thresholds, and scoring ceilings will update in real time:
           </p>
@@ -2063,7 +2079,34 @@ window.downloadDraftBackup = function() {
 // HELPER: SET VALUE SAFELY
 function setVal(id, val) {
   const el = document.getElementById(id);
-  if (el && val !== undefined && val !== null) el.value = val;
+  if (!el || val === undefined || val === null) return;
+  if (el.tagName === 'SELECT') {
+    let matched = false;
+    for (let i = 0; i < el.options.length; i++) {
+      if (el.options[i].value === val) {
+        el.selectedIndex = i;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched && typeof val === 'string' && val.trim() !== '') {
+      const lower = val.toLowerCase().trim();
+      for (let i = 0; i < el.options.length; i++) {
+        const optVal = el.options[i].value.toLowerCase();
+        const optText = el.options[i].text.toLowerCase();
+        if (optVal === lower || optText === lower || optVal.includes(lower) || lower.includes(optVal) || optText.includes(lower) || lower.includes(optText)) {
+          el.selectedIndex = i;
+          matched = true;
+          break;
+        }
+      }
+    }
+    if (!matched && el.selectedIndex === -1 && el.options.length > 0) {
+      el.selectedIndex = 0;
+    }
+  } else {
+    el.value = val;
+  }
 }
 
 // Navigation helpers
@@ -2239,6 +2282,7 @@ function initProfileCards() {
 window.selectProfile = function(profileKey) {
   appraisalState.selectedProfile = profileKey;
   initProfileCards();
+  setVal('profileDropdownSelect', profileKey);
   toggleClinicalSection();
   calculateAll();
   showToast(`Profile activated: ${profileKey}`);
@@ -2757,12 +2801,18 @@ function initEventListeners() {
   ['emp_name', 'emp_desig', 'emp_dept', 'emp_cadre', 'emp_cycle', 'emp_appraiser', 'emp_reviewer'].forEach(f => {
     const input = document.getElementById(`input_${f}`);
     if (input) {
-      input.addEventListener('input', () => {
-        updateElementText(`dossier_${f}`, input.value || '—');
-      });
-      input.addEventListener('change', () => {
-        updateElementText(`dossier_${f}`, input.value || '—');
-      });
+      const syncMeta = () => {
+        const val = input.value || '—';
+        updateElementText(`dossier_${f}`, val);
+        if (f === 'emp_appraiser') {
+          updateElementText('sig_appraiser', `${val} (Appraising Officer)`);
+        }
+        if (f === 'emp_reviewer') {
+          updateElementText('sig_final', `${val} (Countersigning Officer)`);
+        }
+      };
+      input.addEventListener('input', syncMeta);
+      input.addEventListener('change', syncMeta);
     }
   });
 
@@ -2852,8 +2902,14 @@ window.loadSampleData = function() {
   setVal('input_red_flag_date', '');
 
   ['emp_name', 'emp_desig', 'emp_dept', 'emp_cadre', 'emp_cycle', 'emp_appraiser', 'emp_reviewer'].forEach(f => {
-    const val = document.getElementById(`input_${f}`)?.value;
-    updateElementText(`dossier_${f}`, val || '—');
+    const val = document.getElementById(`input_${f}`)?.value || '—';
+    updateElementText(`dossier_${f}`, val);
+    if (f === 'emp_appraiser') {
+      updateElementText('sig_appraiser', `${val} (Appraising Officer)`);
+    }
+    if (f === 'emp_reviewer') {
+      updateElementText('sig_final', `${val} (Countersigning Officer)`);
+    }
   });
 
   ['comm_member_1', 'comm_member_2', 'comm_member_3'].forEach((f, idx) => {
