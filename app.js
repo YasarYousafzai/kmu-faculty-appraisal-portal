@@ -143,7 +143,7 @@ window.switchTab = function(tabId) {
   if (targetNav) targetNav.classList.add('active');
   if (targetStep) targetStep.classList.add('active');
 
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (typeof window.scrollTo === 'function') window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 // SAVE AND CONTINUE FUNCTION
@@ -1045,39 +1045,39 @@ window.exportJSON = function() {
 };
 
 window.exportCSV = function() {
-  const empName = document.getElementById('input_emp_name')?.value || 'Faculty';
-  const prof = PROFILES[appraisalState.selectedProfile];
-  const csvRows = [
-    ['Khyber Medical University (KMU) Peshawar — Annual Performance Appraisal Summary'],
-    ['Document Reference', 'KMU/REG/POL/2026/01-REV (v3.0)'],
-    ['Employee Name', empName],
-    ['Employee ID', document.getElementById('input_emp_id')?.value || ''],
-    ['Designation', document.getElementById('input_emp_desig')?.value || ''],
-    ['Department', document.getElementById('input_emp_dept')?.value || ''],
-    ['Appraisal Profile', prof.name],
-    ['Appraisal Cycle', document.getElementById('input_emp_cycle')?.value || ''],
-    [],
-    ['Section', 'Weight (%)', 'Raw Points', 'Max Base', 'Weighted Score'],
-    ['Section A: Teaching', prof.teachingWeight, document.getElementById('disp_raw_a')?.textContent || '', 100, document.getElementById('disp_weighted_a')?.textContent || ''],
-    ['Section B: Research & Innovation', prof.researchWeight, document.getElementById('disp_raw_b')?.textContent || '', 200, document.getElementById('disp_weighted_b')?.textContent || ''],
-    ['Section C: Institutional Service', prof.serviceWeight, document.getElementById('disp_raw_c')?.textContent || '', 100, document.getElementById('disp_weighted_c')?.textContent || ''],
-    ['Section D: Peer & Professional Conduct', prof.peerWeight, document.getElementById('disp_raw_d')?.textContent || '', 88, document.getElementById('disp_weighted_d')?.textContent || ''],
-    ['Section E: Clinical Service', prof.clinicalWeight, document.getElementById('disp_raw_e')?.textContent || '', 100, document.getElementById('disp_weighted_e')?.textContent || ''],
-    ['Disciplinary Red Flag Penalty', '', '', '', document.getElementById('disp_red_flag_penalty')?.textContent || '0'],
-    ['Consolidated Final Score', '', '', '', document.getElementById('liveScore')?.textContent || ''],
-    ['Performance Rating Band', '', '', '', document.getElementById('liveRatingBadge')?.textContent || ''],
-    ['PIP Procedure Status', '', '', '', document.getElementById('kpi_pip_status')?.textContent || '']
+  var empName = document.getElementById('input_emp_name')?.value || 'Faculty';
+  var prof = PROFILES[appraisalState.selectedProfile];
+  var lines = [
+    'Khyber Medical University (KMU) Peshawar — Annual Performance Appraisal Summary',
+    'Document Reference,KMU/REG/POL/2026/01-REV (v3.0)',
+    'Employee Name,' + empName,
+    'Employee ID,' + (document.getElementById('input_emp_id')?.value || ''),
+    'Designation,' + (document.getElementById('input_emp_desig')?.value || ''),
+    'Department,' + (document.getElementById('input_emp_dept')?.value || ''),
+    'Appraisal Profile,' + prof.name,
+    'Appraisal Cycle,' + (document.getElementById('input_emp_cycle')?.value || ''),
+    '',
+    'Section,Weight (%),Raw Points,Max Base,Weighted Score',
+    'Section A: Teaching,' + prof.teachingWeight + ',' + (document.getElementById('disp_raw_a')?.textContent || '') + ',100,' + (document.getElementById('disp_weighted_a')?.textContent || ''),
+    'Section B: Research & Innovation,' + prof.researchWeight + ',' + (document.getElementById('disp_raw_b')?.textContent || '') + ',200,' + (document.getElementById('disp_weighted_b')?.textContent || ''),
+    'Section C: Institutional Service,' + prof.serviceWeight + ',' + (document.getElementById('disp_raw_c')?.textContent || '') + ',100,' + (document.getElementById('disp_weighted_c')?.textContent || ''),
+    'Section D: Peer & Professional Conduct,' + prof.peerWeight + ',' + (document.getElementById('disp_raw_d')?.textContent || '') + ',88,' + (document.getElementById('disp_weighted_d')?.textContent || ''),
+    'Section E: Clinical Service,' + prof.clinicalWeight + ',' + (document.getElementById('disp_raw_e')?.textContent || '') + ',100,' + (document.getElementById('disp_weighted_e')?.textContent || ''),
+    'Disciplinary Red Flag Penalty,,,,' + (document.getElementById('disp_red_flag_penalty')?.textContent || '0'),
+    'Consolidated Final Score,,,,' + (document.getElementById('liveScore')?.textContent || ''),
+    'Performance Rating Band,,,,' + (document.getElementById('liveRatingBadge')?.textContent || ''),
+    'PIP Procedure Status,,,,' + (document.getElementById('kpi_pip_status')?.textContent || '')
   ];
 
-  const csvContent = "data:text/csv;charset=utf-8," + csvRows.map(e => e.join(",")).join("
-");
-  const encodedUri = encodeURI(csvContent);
-  const a = document.createElement("a");
-  a.setAttribute("href", encodedUri);
-  a.setAttribute("download", `KMU_PER_Summary_${empName.replace(/[^a-zA-Z0-9]/g, '_')}.csv`);
+  var blob = new Blob([lines.join(String.fromCharCode(10))], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'KMU_PER_Summary_' + empName.replace(/[^a-zA-Z0-9]/g, '_') + '.csv';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+  URL.revokeObjectURL(url);
   showToast('Summary CSV Exported');
 };
 
@@ -1109,6 +1109,6 @@ function showToast(msg) {
   container.appendChild(toast);
   setTimeout(() => {
     toast.style.opacity = '0';
-    setTimeout(() => toast.remove(), 250);
+    setTimeout(() => { if (toast.remove) toast.remove(); else if (toast.parentNode) toast.parentNode.removeChild(toast); }, 250);
   }, 3500);
 }
