@@ -3,9 +3,15 @@
  * Official statutory engine implementing KMU/REG/POL/2026/01-REV
  * Features:
  * - Real-time calculation according to Section 9 formulas and ceilings
+ * - Calendar year cycle: 01 January to 31 December
+ * - Appraising Officer designated as Concerned Dean
+ * - Non-essential fields for 3 Appraisal Committee Members
+ * - Separate Objective and Subjective (Dean's) scoring and grading scales
+ * - Structured next year's targets section matching guidance and Excel calculator
+ * - Explicit clarification note on teaching workload
+ * - Research Grants Ledger with Funding Agency & Grant Amount directly calculating marks
  * - Save & Continue on every section
  * - Save & Return Later with local persistence and cross-device backup export
- * - Draft Recovery Banner and automated resume
  */
 
 // Statutory Profile Configuration Matrix
@@ -62,7 +68,7 @@ const PROFILES = {
   }
 };
 
-// 13 Core Parameters (Rated 1 - 6, Max 78)
+// 13 Core Parameters (Rated 1 - 6, Max 78) - Evaluated by Concerned Dean
 const PEER_PARAMETERS = [
   { id: 'peer_1', label: '1. Punctuality & Attendance', desc: 'Punctuality at lectures, duties and institutional meetings.' },
   { id: 'peer_2', label: '2. Collegiality & Teamwork', desc: 'Constructive contribution to faculty and departmental harmony.' },
@@ -79,7 +85,7 @@ const PEER_PARAMETERS = [
   { id: 'peer_13', label: '13. Quality & Timeliness of Records', desc: 'Attendance submission, student logs, and file turnaround.' }
 ];
 
-// 5 CPD Targets (Rated 0 - 2, Max 10)
+// 5 CPD Targets (Rated 0 - 2, Max 10) - Evaluated by Concerned Dean
 const CPD_TARGETS = [
   { id: 'cpd_1', label: 'CME/CPD Credit Hours vs Annual Target', desc: 'Approved professional development credit hours earned.' },
   { id: 'cpd_2', label: 'Workshop / Training / Short Course Attended', desc: 'Formally documented capacity-building program.' },
@@ -88,28 +94,39 @@ const CPD_TARGETS = [
   { id: 'cpd_5', label: 'Presenter / Facilitator at a CPD Event', desc: 'Resource person for conferences, webinars, or workshops.' }
 ];
 
+// Sample Grants Ledger
+const DEFAULT_GRANTS = [
+  { id: 'g1', title: 'Molecular Genomic Surveillance of Enteric Pathogens in KP', agency: 'Higher Education Commission (HEC)', amount: 7500000, role: 'PI', status: 'Won', points: 8 },
+  { id: 'g2', title: 'Multi-center Genomic Analysis of SFTSV & Tick-Borne Arboviruses', agency: 'NIH / International Consortium', amount: 15000000, role: 'Co-PI', status: 'Won', points: 4.5 },
+  { id: 'g3', title: 'KMU IPDM Internal Laboratory Innovation & Biobanking Assay Setup', agency: 'KMU Internal Start-Up Grant', amount: 850000, role: 'PI', status: 'Won', points: 4 },
+  { id: 'g4', title: 'Prenatal Beta-Thalassemia Rapid Screening Assay Commercialization', agency: 'Pakistan Science Foundation (PSF)', amount: 6500000, role: 'PI', status: 'Applied', points: 2 },
+  { id: 'g5', title: 'Point-of-Care Molecular Diagnostic Kit for Primary Healthcare', agency: 'Global Challenges Fund (GCF)', amount: 12000000, role: 'Co-PI', status: 'Applied', points: 2 }
+];
+
 // State container
 let appraisalState = {
   employee: {
     name: 'Dr. Yasar Mehmood Yousafzai',
-    id: 'KMU-FAC-2016-042',
     designation: 'Associate Professor',
     department: 'Institute of Pathology & Diagnostic Medicine (IPDM)',
     faculty: 'Faculty of Pathology & Diagnostic Medicine (FPDM)',
     payScale: 'BPS-20 (Regular)',
-    cycle: '2025–2026 (01 July – 30 June)',
+    cycle: '2026 (01 January – 31 December 2026)',
     appraiser: 'Dean, Faculty of Pathology & Diagnostic Medicine',
-    reviewer: 'Vice Chancellor, KMU'
+    reviewer: 'Vice Chancellor, KMU',
+    committeeMember1: 'Prof. Dr. Muhammad Saleem, Professor IBMS',
+    committeeMember2: 'Dr. Bushra Rehman, Assistant Professor IPDM',
+    committeeMember3: 'Dr. Kinza Ayaz, Assistant Professor IPDM'
   },
   selectedProfile: 'Balanced Profile',
   sectionA: { qecScore: 86, actualWU: 34, exempted: 'N' },
   sectionB: {
     pub_high_lead: 2, pub_high_co: 2, pub_mod_lead: 3, pub_mod_co: 2, pub_low_lead: 1, pub_low_co: 0,
     book_int: 0, book_nat: 1, chapter_int: 2, chapter_nat: 1,
-    grant_int_pi: 0, grant_int_copi: 1, grant_nat_pi: 1, grant_nat_copi: 2, grant_small_pi: 1, grant_applied: 4,
     sup_phd: 2, sup_mphil: 4, sup_clin_sr: 0, sup_clin_jr: 0,
     innov_patent_int: 0, innov_patent_nat: 1, innov_project: 1, innov_overhead: 2
   },
+  grantsList: [...DEFAULT_GRANTS],
   sectionC: {
     comm_member: 4, comm_chair: 1, policy_doc: 3, facility_charge: 1, additional_appoint: 'N'
   },
@@ -122,6 +139,13 @@ let appraisalState = {
     cpdScores: { cpd_1: 2, cpd_2: 2, cpd_3: 1, cpd_4: 2, cpd_5: 2 }
   },
   sectionE: { clin_admin: 0, clin_volume: 0, clin_oncall: 0, clin_teaching: 0 },
+  nextYearTargets: {
+    teaching: 'Deliver minimum 34 teaching Workload Units across BS and MPhil pathology courses; maintain verified course folders on CMS and target QEC student evaluation score >85%.',
+    publications: 'Publish at least 3 peer-reviewed original research manuscripts in indexed W/X category journals with Impact Factor >= 5.0.',
+    grants: 'Submit at least 2 major competitive research grant proposals to national (HEC/PSF) and international funding agencies (Wellcome/NIH) with minimum target volume >PKR 10 Million.',
+    supervision: 'Supervise 2 enrolled PhD scholars through ASRB milestone defense and guide 4 MPhil candidates towards successful thesis completion.',
+    service_cpd: 'Maintain diagnostic quality standards for IPDM laboratories, complete 30 CME/CPD credit hours, and lead curriculum module revision.'
+  },
   redFlag: { penalty: 0, refNo: '', refDate: '' }
 };
 
@@ -143,7 +167,9 @@ window.switchTab = function(tabId) {
   if (targetNav) targetNav.classList.add('active');
   if (targetStep) targetStep.classList.add('active');
 
-  if (typeof window.scrollTo === 'function') window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (typeof window.scrollTo === 'function') {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 };
 
 // SAVE AND CONTINUE FUNCTION
@@ -156,10 +182,9 @@ window.saveAndContinue = function(nextTabId, sectionLabel) {
 // SAVE AND RETURN LATER FUNCTION
 window.saveAndReturnLater = function() {
   const currentActiveTab = document.querySelector('.tab-content.active')?.id || 'tab-meta';
-  const savedData = saveAllData(currentActiveTab);
+  saveAllData(currentActiveTab);
   
   const empName = document.getElementById('input_emp_name')?.value || 'Faculty Member';
-  const empId = document.getElementById('input_emp_id')?.value || 'KMU-FAC';
   const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   
   const modalTime = document.getElementById('saveModalTime');
@@ -167,7 +192,7 @@ window.saveAndReturnLater = function() {
   const modalStep = document.getElementById('saveModalStep');
   
   if (modalTime) modalTime.textContent = timeStr;
-  if (modalEmp) modalEmp.textContent = `${empName} (ID: ${empId})`;
+  if (modalEmp) modalEmp.textContent = empName;
   if (modalStep) {
     const stepName = document.querySelector(`[data-wizard="${currentActiveTab}"] span:last-child`)?.textContent || 'Current Section';
     modalStep.textContent = stepName;
@@ -190,13 +215,15 @@ function saveAllData(activeTabId) {
     profile: appraisalState.selectedProfile,
     meta: {
       name: document.getElementById('input_emp_name')?.value || '',
-      id: document.getElementById('input_emp_id')?.value || '',
       desig: document.getElementById('input_emp_desig')?.value || '',
       dept: document.getElementById('input_emp_dept')?.value || '',
       cadre: document.getElementById('input_emp_cadre')?.value || 'BPS-20 (Regular)',
-      cycle: document.getElementById('input_emp_cycle')?.value || '2025–2026 (01 July – 30 June)',
+      cycle: document.getElementById('input_emp_cycle')?.value || '2026 (01 January – 31 December 2026)',
       appraiser: document.getElementById('input_emp_appraiser')?.value || '',
-      reviewer: document.getElementById('input_emp_reviewer')?.value || ''
+      reviewer: document.getElementById('input_emp_reviewer')?.value || '',
+      committeeMember1: document.getElementById('input_comm_member_1')?.value || '',
+      committeeMember2: document.getElementById('input_comm_member_2')?.value || '',
+      committeeMember3: document.getElementById('input_comm_member_3')?.value || ''
     },
     sectionA: {
       qecScore: document.getElementById('input_qec_score')?.value || '0',
@@ -214,12 +241,6 @@ function saveAllData(activeTabId) {
       book_nat: document.getElementById('input_book_nat')?.value || '0',
       chapter_int: document.getElementById('input_chapter_int')?.value || '0',
       chapter_nat: document.getElementById('input_chapter_nat')?.value || '0',
-      grant_int_pi: document.getElementById('input_grant_int_pi')?.value || '0',
-      grant_int_copi: document.getElementById('input_grant_int_copi')?.value || '0',
-      grant_nat_pi: document.getElementById('input_grant_nat_pi')?.value || '0',
-      grant_nat_copi: document.getElementById('input_grant_nat_copi')?.value || '0',
-      grant_small_pi: document.getElementById('input_grant_small_pi')?.value || '0',
-      grant_applied: document.getElementById('input_grant_applied')?.value || '0',
       sup_phd: document.getElementById('input_sup_phd')?.value || '0',
       sup_mphil: document.getElementById('input_sup_mphil')?.value || '0',
       sup_clin_sr: document.getElementById('input_sup_clin_sr')?.value || '0',
@@ -229,6 +250,7 @@ function saveAllData(activeTabId) {
       innov_project: document.getElementById('input_innov_project')?.value || '0',
       innov_overhead: document.getElementById('input_innov_overhead')?.value || '0'
     },
+    grantsList: appraisalState.grantsList,
     sectionC: {
       comm_member: document.getElementById('input_comm_member')?.value || '0',
       comm_chair: document.getElementById('input_comm_chair')?.value || '0',
@@ -245,6 +267,14 @@ function saveAllData(activeTabId) {
       clin_volume: document.getElementById('input_clin_volume')?.value || '0',
       clin_oncall: document.getElementById('input_clin_oncall')?.value || '0',
       clin_teaching: document.getElementById('input_clin_teaching')?.value || '0'
+    },
+    nextYearTargets: {
+      teaching: document.getElementById('input_target_teaching')?.value || '',
+      publications: document.getElementById('input_target_pubs')?.value || '',
+      grants: document.getElementById('input_target_grants')?.value || '',
+      supervision: document.getElementById('input_target_sup')?.value || '',
+      service_cpd: document.getElementById('input_target_service')?.value || '',
+      skills_leadership: document.getElementById('input_target_skills')?.value || ''
     },
     redFlag: {
       penalty: document.getElementById('input_red_flag')?.value || '0',
@@ -280,20 +310,24 @@ window.restoreDraft = function() {
     if (draft.meta) {
       const m = draft.meta;
       setVal('input_emp_name', m.name);
-      setVal('input_emp_id', m.id);
       setVal('input_emp_desig', m.desig);
       setVal('input_emp_dept', m.dept);
       setVal('input_emp_cadre', m.cadre);
       setVal('input_emp_cycle', m.cycle);
       setVal('input_emp_appraiser', m.appraiser);
       setVal('input_emp_reviewer', m.reviewer);
+      setVal('input_comm_member_1', m.committeeMember1);
+      setVal('input_comm_member_2', m.committeeMember2);
+      setVal('input_comm_member_3', m.committeeMember3);
 
       updateElementText('dossier_emp_name', m.name || '—');
-      updateElementText('dossier_emp_id', m.id || '—');
       updateElementText('dossier_emp_desig', m.desig || '—');
       updateElementText('dossier_emp_dept', m.dept || '—');
       updateElementText('dossier_emp_cadre', m.cadre || '—');
       updateElementText('dossier_emp_cycle', m.cycle || '—');
+      updateElementText('sig_comm_1_name', m.committeeMember1 || 'Prof. Dr. Muhammad Saleem');
+      updateElementText('sig_comm_2_name', m.committeeMember2 || 'Dr. Bushra Rehman');
+      updateElementText('sig_comm_3_name', m.committeeMember3 || 'Dr. Kinza Ayaz');
     }
 
     if (draft.sectionA) {
@@ -306,6 +340,11 @@ window.restoreDraft = function() {
       Object.keys(draft.sectionB).forEach(key => {
         setVal(`input_${key}`, draft.sectionB[key]);
       });
+    }
+
+    if (draft.grantsList && Array.isArray(draft.grantsList)) {
+      appraisalState.grantsList = draft.grantsList;
+      renderGrantsTable();
     }
 
     if (draft.sectionC) {
@@ -326,6 +365,15 @@ window.restoreDraft = function() {
       });
     }
 
+    if (draft.nextYearTargets) {
+      setVal('input_target_teaching', draft.nextYearTargets.teaching);
+      setVal('input_target_pubs', draft.nextYearTargets.publications);
+      setVal('input_target_grants', draft.nextYearTargets.grants);
+      setVal('input_target_sup', draft.nextYearTargets.supervision);
+      setVal('input_target_service', draft.nextYearTargets.service_cpd);
+      setVal('input_target_skills', draft.nextYearTargets.skills_leadership || appraisalState.nextYearTargets.skills_leadership);
+    }
+
     if (draft.redFlag) {
       setVal('input_red_flag', draft.redFlag.penalty);
       setVal('input_red_flag_ref', draft.redFlag.refNo);
@@ -334,15 +382,13 @@ window.restoreDraft = function() {
 
     calculateAll();
 
-    // Jump to last active tab
     const targetTab = draft.lastActiveTab || 'tab-meta';
     window.switchTab(targetTab);
 
-    // Hide draft banner
     const banner = document.getElementById('draftRecoveryBanner');
     if (banner) banner.style.display = 'none';
 
-    showToast(`✓ Welcome back! Restored draft from ${draft.savedTimeFormatted || 'previous session'}`);
+    showToast(`✓ Restored draft from ${draft.savedTimeFormatted || 'previous session'}`);
     return true;
   } catch (e) {
     console.error('Draft restore failed:', e);
@@ -359,11 +405,10 @@ function checkExistingDraft() {
     const banner = document.getElementById('draftRecoveryBanner');
     if (banner && draft.meta) {
       const empName = draft.meta.name || 'Faculty Member';
-      const empId = draft.meta.id || 'KMU-FAC';
       const timeStr = draft.savedTimeFormatted || 'earlier';
       const infoSpan = document.getElementById('draftBannerInfo');
       if (infoSpan) {
-        infoSpan.innerHTML = `<strong>In-Progress Draft Detected:</strong> Saved for <strong>${empName}</strong> (${empId}) at ${timeStr}.`;
+        infoSpan.innerHTML = `<strong>In-Progress Draft Detected:</strong> Saved for <strong>${empName}</strong> at ${timeStr}.`;
       }
       banner.style.display = 'flex';
     }
@@ -394,7 +439,7 @@ window.downloadDraftBackup = function() {
   a.download = `KMU_Appraisal_Draft_${empName.replace(/[^a-zA-Z0-9]/g, '_')}_2026.json`;
   a.click();
   URL.revokeObjectURL(url);
-  showToast('✓ Draft backup file downloaded. You can import this on any device.');
+  showToast('✓ Draft backup file downloaded.');
 };
 
 // HELPER: SET VALUE SAFELY
@@ -412,18 +457,136 @@ window.goToTeachingStep = function() {
   window.saveAndContinue('tab-teaching', 'Step 3: Teaching Scoring');
 };
 
+// --- RESEARCH GRANTS LEDGER FUNCTIONS ---
+function computeGrantPoints(amount, role, status) {
+  if (status === 'Applied') {
+    return 2.0; // 2 points per application submitted
+  }
+  // Won / Awarded:
+  const amtNum = parseFloat(amount) || 0;
+  if (amtNum >= 10000000) { // Major International/National > 10M PKR
+    return role === 'PI' ? 15.0 : 4.5;
+  } else if (amtNum >= 1000000) { // National 1M - 10M PKR
+    return role === 'PI' ? 8.0 : 4.0;
+  } else { // Small competitive grant < 1M PKR
+    return role === 'PI' ? 4.0 : 2.0;
+  }
+}
+
+function formatCurrencyPKR(amount) {
+  const num = parseFloat(amount) || 0;
+  if (num >= 10000000) {
+    return `PKR ${(num / 1000000).toFixed(2)} M (>10M Major)`;
+  } else if (num >= 1000000) {
+    return `PKR ${(num / 1000000).toFixed(2)} M (1-10M National)`;
+  } else {
+    return `PKR ${(num / 1000).toFixed(0)} K (<1M Small)`;
+  }
+}
+
+function renderGrantsTable() {
+  const tbody = document.getElementById('grantsTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  let wonTotal = 0;
+  let appliedTotal = 0;
+
+  appraisalState.grantsList.forEach((grant, idx) => {
+    const pts = computeGrantPoints(grant.amount, grant.role, grant.status);
+    grant.points = pts;
+    if (grant.status === 'Won') wonTotal += pts;
+    if (grant.status === 'Applied') appliedTotal += pts;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${grant.title}</strong></td>
+      <td><span style="font-weight:600; color:var(--kmu-maroon);">${grant.agency}</span></td>
+      <td>${formatCurrencyPKR(grant.amount)}</td>
+      <td><strong>${grant.role}</strong></td>
+      <td>
+        <span class="grant-table-badge ${grant.status === 'Won' ? 'grant-badge-won' : 'grant-badge-applied'}">
+          ${grant.status === 'Won' ? 'Won / Awarded' : 'Applied'}
+        </span>
+      </td>
+      <td><strong style="color:var(--emerald-600);">${pts} pts</strong></td>
+      <td style="text-align:center;">
+        <button type="button" class="btn btn-secondary" style="padding:2px 8px; font-size:0.75rem;" onclick="deleteGrantRecord('${grant.id}')">✕</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  const appliedCapped = Math.min(20, appliedTotal);
+  const subB3Capped = Math.min(50, wonTotal + appliedCapped);
+
+  updateElementText('disp_sub_b3_won', wonTotal.toFixed(1));
+  updateElementText('disp_sub_b3_applied', appliedTotal.toFixed(1));
+  updateElementText('disp_sub_b3', subB3Capped.toFixed(1));
+  updateElementText('disp_sub_b3_raw', (wonTotal + appliedTotal).toFixed(1));
+  
+  // Recalculate research score
+  calculateAll();
+}
+
+window.addGrantRecord = function() {
+  const title = document.getElementById('input_new_grant_title')?.value?.trim();
+  const agency = document.getElementById('input_new_grant_agency')?.value?.trim();
+  const amountStr = document.getElementById('input_new_grant_amount')?.value?.trim();
+  const role = document.getElementById('input_new_grant_role')?.value || 'PI';
+  const status = document.getElementById('input_new_grant_status')?.value || 'Won';
+
+  if (!title || !agency || !amountStr) {
+    alert('Please enter the Project Title, Funding Agency, and Grant Amount (in PKR).');
+    return;
+  }
+
+  // Parse amount in PKR (handles 12M, 12000000, 7.5, etc.)
+  let amount = parseFloat(amountStr);
+  if (amount < 1000) {
+    // If entered in Millions e.g. 7.5
+    amount = amount * 1000000;
+  }
+
+  const newGrant = {
+    id: 'g_' + Date.now(),
+    title: title,
+    agency: agency,
+    amount: amount,
+    role: role,
+    status: status,
+    points: computeGrantPoints(amount, role, status)
+  };
+
+  appraisalState.grantsList.push(newGrant);
+  renderGrantsTable();
+
+  // Reset input fields
+  document.getElementById('input_new_grant_title').value = '';
+  document.getElementById('input_new_grant_agency').value = '';
+  document.getElementById('input_new_grant_amount').value = '';
+
+  showToast(`✓ Grant Added: ${title} (${formatCurrencyPKR(amount)})`);
+};
+
+window.deleteGrantRecord = function(grantId) {
+  appraisalState.grantsList = appraisalState.grantsList.filter(g => g.id !== grantId);
+  renderGrantsTable();
+  showToast('Grant removed from ledger.');
+};
+
 // Initialize Application
 document.addEventListener('DOMContentLoaded', () => {
   initProfileCards();
   initPeerControls();
   initEventListeners();
   
-  // Check if draft exists, otherwise load sample
   const restored = window.restoreDraft();
   if (!restored) {
     window.loadSampleData();
   }
   checkExistingDraft();
+  renderGrantsTable();
   calculateAll();
 });
 
@@ -446,7 +609,7 @@ function initProfileCards() {
         <li><span>Teaching:</span> <strong>${prof.teachingWeight}%</strong> (Min WU: ${prof.minTeachingWU})</li>
         <li><span>Research & Innovation:</span> <strong>${prof.researchWeight}%</strong></li>
         <li><span>Institutional Service:</span> <strong>${prof.serviceWeight}%</strong></li>
-        <li><span>Peer & CPD:</span> <strong>${prof.peerWeight}%</strong></li>
+        <li><span>Dean's Peer & CPD:</span> <strong>${prof.peerWeight}%</strong></li>
         ${prof.clinicalWeight > 0 ? `<li><span style="color:#b91c1c; font-weight:700;">Clinical Service:</span> <strong style="color:#b91c1c;">${prof.clinicalWeight}%</strong></li>` : ''}
       </ul>
     `;
@@ -554,7 +717,7 @@ window.setCpdScore = function(targetId, score) {
   calculateAll();
 };
 
-// Calculation Engine
+// Global Calculation Engine
 function calculateAll() {
   const prof = PROFILES[appraisalState.selectedProfile] || PROFILES['Balanced Profile'];
   
@@ -573,7 +736,7 @@ function calculateAll() {
     updateElementText('navPillClinical', `${prof.clinicalWeight}%`);
   }
 
-  // Section A
+  // --- 1. SECTION A: TEACHING ---
   const qecScore = Math.min(100, Math.max(0, parseFloat(document.getElementById('input_qec_score')?.value) || 0));
   const actualWU = Math.max(0, parseFloat(document.getElementById('input_actual_wu')?.value) || 0);
   const exempted = document.getElementById('input_wu_exempted')?.value || 'N';
@@ -595,7 +758,7 @@ function calculateAll() {
   updateElementText('disp_weight_a', `${prof.teachingWeight}%`);
   updateElementText('disp_weighted_a', weightedA.toFixed(2));
 
-  // Section B
+  // --- 2. SECTION B: RESEARCH ---
   const pubHighLead = getInputValue('input_pub_high_lead') * 10;
   const pubHighCo = getInputValue('input_pub_high_co') * 5;
   const pubModLead = getInputValue('input_pub_mod_lead') * 6;
@@ -618,21 +781,20 @@ function calculateAll() {
   updateElementText('disp_sub_b2', subB2Capped.toFixed(1));
   updateElementText('disp_sub_b2_raw', subB2Raw);
 
-  const grantIntPI = getInputValue('input_grant_int_pi') * 15;
-  const grantIntCoPI = getInputValue('input_grant_int_copi') * 4.5;
-  const grantNatPI = getInputValue('input_grant_nat_pi') * 8;
-  const grantNatCoPI = getInputValue('input_grant_nat_copi') * 4;
-  const grantSmallPI = getInputValue('input_grant_small_pi') * 4;
-  const grantWonSum = grantIntPI + grantIntCoPI + grantNatPI + grantNatCoPI + grantSmallPI;
+  // Grants calculated directly from grantsList ledger
+  let wonSum = 0;
+  let appliedSum = 0;
+  appraisalState.grantsList.forEach(g => {
+    const pts = computeGrantPoints(g.amount, g.role, g.status);
+    if (g.status === 'Won') wonSum += pts;
+    if (g.status === 'Applied') appliedSum += pts;
+  });
+  const subB3Capped = Math.min(50, wonSum + Math.min(20, appliedSum));
 
-  const grantAppliedRaw = getInputValue('input_grant_applied') * 2;
-  const grantAppliedCapped = Math.min(20, grantAppliedRaw);
-
-  const subB3Raw = grantWonSum + grantAppliedRaw;
-  const subB3Capped = Math.min(50, grantWonSum + grantAppliedCapped);
-
+  updateElementText('disp_sub_b3_won', wonSum.toFixed(1));
+  updateElementText('disp_sub_b3_applied', appliedSum.toFixed(1));
   updateElementText('disp_sub_b3', subB3Capped.toFixed(1));
-  updateElementText('disp_sub_b3_raw', subB3Raw);
+  updateElementText('disp_sub_b3_raw', (wonSum + appliedSum).toFixed(1));
 
   const supPhD = getInputValue('input_sup_phd') * 8;
   const supMPhil = getInputValue('input_sup_mphil') * 4;
@@ -661,7 +823,7 @@ function calculateAll() {
   updateElementText('disp_weight_b', `${prof.researchWeight}%`);
   updateElementText('disp_weighted_b', weightedB.toFixed(2));
 
-  // Section C
+  // --- 3. SECTION C: SERVICE ---
   const commMember = Math.min(25, getInputValue('input_comm_member') * 5);
   const commChair = Math.min(20, getInputValue('input_comm_chair') * 10);
   const policyDoc = Math.min(30, getInputValue('input_policy_doc') * 10);
@@ -682,7 +844,7 @@ function calculateAll() {
   updateElementText('disp_weight_c', `${prof.serviceWeight}%`);
   updateElementText('disp_weighted_c', weightedC.toFixed(2));
 
-  // Section D
+  // --- 4. SECTION D: PEER EVALUATION & CPD (SUBJECTIVE - DEAN'S EVALUATION) ---
   let peerCoreSum = 0;
   PEER_PARAMETERS.forEach(p => {
     peerCoreSum += appraisalState.sectionD.peerScores[p.id] || 1;
@@ -704,7 +866,7 @@ function calculateAll() {
   updateElementText('disp_weight_d', `${prof.peerWeight}%`);
   updateElementText('disp_weighted_d', weightedD.toFixed(2));
 
-  // Section E
+  // --- 5. SECTION E: CLINICAL ---
   let rawE = 0;
   let weightedE = 0;
   if (prof.clinicalWeight > 0) {
@@ -720,7 +882,7 @@ function calculateAll() {
   updateElementText('disp_weight_e', `${prof.clinicalWeight}%`);
   updateElementText('disp_weighted_e', weightedE.toFixed(2));
 
-  // Red Flag
+  // --- 6. RED FLAG / DISCIPLINARY PENALTY ---
   const redFlagSelect = parseInt(document.getElementById('input_red_flag')?.value) || 0;
   const refNo = document.getElementById('input_red_flag_ref')?.value?.trim() || '';
   const refDate = document.getElementById('input_red_flag_date')?.value?.trim() || '';
@@ -744,10 +906,18 @@ function calculateAll() {
   }
   updateElementText('disp_red_flag_penalty', `-${validPenalty} pts`);
 
-  // Consolidated
-  const sumWeighted = weightedA + weightedB + weightedC + weightedD + weightedE;
-  const finalScore = Math.max(0, sumWeighted - validPenalty);
+  // --- 7. SEPARATE OBJECTIVE VS SUBJECTIVE SCORES ---
+  const objectiveScore = weightedA + weightedB + weightedC + weightedE;
+  const objectiveMaxWeight = (prof.teachingWeight + prof.researchWeight + prof.serviceWeight + prof.clinicalWeight);
+  const objectivePercent = objectiveMaxWeight > 0 ? (objectiveScore / objectiveMaxWeight) * 100 : 0;
 
+  const subjectiveScore = weightedD; // Concerned Dean's Qualitative Assessment
+  const subjectiveMaxWeight = prof.peerWeight;
+  const subjectivePercent = subjectiveMaxWeight > 0 ? (subjectiveScore / subjectiveMaxWeight) * 100 : 0;
+
+  const finalScore = Math.max(0, (objectiveScore + subjectiveScore) - validPenalty);
+
+  // Performance Rating Classification
   let ratingBand = 'Unsatisfactory';
   let ratingClass = 'rating-unsatisfactory';
   let pipStatus = 'MANDATORY PIP (3–6 months)';
@@ -775,7 +945,19 @@ function calculateAll() {
     pipDesc = 'Needs Improvement. Reviewing Officer may mandate targeted 3-month mentoring.';
   }
 
-  // Update Status Bar
+  // Objective Grading scale
+  let objGrade = 'Meets Expectations';
+  if (objectivePercent >= 85) objGrade = 'Outstanding';
+  else if (objectivePercent >= 75) objGrade = 'Very Good';
+  else if (objectivePercent < 50) objGrade = 'Unsatisfactory';
+
+  // Subjective (Dean's) Grading scale
+  let subjGrade = 'Satisfactory Conduct';
+  if (subjectivePercent >= 85) subjGrade = 'Distinguished Decorum & Leadership';
+  else if (subjectivePercent >= 75) subjGrade = 'Commendable Conduct';
+  else if (subjectivePercent < 60) subjGrade = 'Remediation Recommended';
+
+  // Update Status Bar & KPIs
   updateElementText('liveScore', finalScore.toFixed(1));
   const badge = document.getElementById('liveRatingBadge');
   if (badge) {
@@ -785,12 +967,17 @@ function calculateAll() {
   updateElementText('liveProfileName', prof.name);
   updateElementText('top_pip_status', pipStatus);
 
-  // Update Summary Tab KPIs
   updateElementText('kpi_final_score', `${finalScore.toFixed(1)}%`);
   updateElementText('kpi_rating_band', ratingBand);
   updateElementText('kpi_pip_status', pipStatus);
   updateElementText('kpi_pip_desc', pipDesc);
   updateElementText('kpi_penalty_applied', validPenalty > 0 ? `-${validPenalty} pts` : 'None');
+
+  // Update Split Objective vs Subjective DOM Displays
+  updateElementText('disp_objective_score', `${objectiveScore.toFixed(2)} / ${objectiveMaxWeight}%`);
+  updateElementText('disp_objective_pct', `${objectivePercent.toFixed(1)}% (${objGrade})`);
+  updateElementText('disp_subjective_score', `${subjectiveScore.toFixed(2)} / ${subjectiveMaxWeight}%`);
+  updateElementText('disp_subjective_pct', `${subjectivePercent.toFixed(1)}% (${subjGrade})`);
 
   // Update Official Dossier Document Table
   updateElementText('dossier_prof_name', prof.name);
@@ -822,10 +1009,27 @@ function calculateAll() {
     }
   }
 
+  updateElementText('dossier_objective_total', `${objectiveScore.toFixed(2)} / ${objectiveMaxWeight}% (${objectivePercent.toFixed(1)}%)`);
+  updateElementText('dossier_subjective_total', `${subjectiveScore.toFixed(2)} / ${subjectiveMaxWeight}% (${subjectivePercent.toFixed(1)}%)`);
   updateElementText('dossier_penalty', validPenalty > 0 ? `-${validPenalty} pts (${refNo})` : '0 pts');
   updateElementText('dossier_final_score', `${finalScore.toFixed(1)} / 100`);
   updateElementText('dossier_final_rating', ratingBand);
   updateElementText('dossier_pip_note', pipStatus);
+
+  // Sync targets to printable dossier
+  const tTeaching = document.getElementById('input_target_teaching')?.value || appraisalState.nextYearTargets.teaching;
+  const tPubs = document.getElementById('input_target_pubs')?.value || appraisalState.nextYearTargets.publications;
+  const tGrants = document.getElementById('input_target_grants')?.value || appraisalState.nextYearTargets.grants;
+  const tSup = document.getElementById('input_target_sup')?.value || appraisalState.nextYearTargets.supervision;
+  const tService = document.getElementById('input_target_service')?.value || appraisalState.nextYearTargets.service_cpd;
+  const tSkills = document.getElementById('input_target_skills')?.value || appraisalState.nextYearTargets.skills_leadership;
+
+  updateElementText('dossier_target_teaching', tTeaching);
+  updateElementText('dossier_target_pubs', tPubs);
+  updateElementText('dossier_target_grants', tGrants);
+  updateElementText('dossier_target_sup', tSup);
+  updateElementText('dossier_target_service', tService);
+  updateElementText('dossier_target_skills', tSkills);
 
   renderScoreBars({
     teaching: (rawA / 100) * 100,
@@ -844,7 +1048,7 @@ function renderScoreBars(attainment) {
   container.innerHTML = `
     <div style="margin-bottom:0.75rem;">
       <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:600; margin-bottom:4px;">
-        <span>Teaching & Curriculum</span>
+        <span>Teaching & Curriculum (Objective)</span>
         <span>${attainment.teaching.toFixed(1)}%</span>
       </div>
       <div style="background:#e2e8f0; border-radius:9999px; height:8px; overflow:hidden;">
@@ -854,7 +1058,7 @@ function renderScoreBars(attainment) {
 
     <div style="margin-bottom:0.75rem;">
       <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:600; margin-bottom:4px;">
-        <span>Research, Grants & Innovation</span>
+        <span>Research, Grants & Innovation (Objective)</span>
         <span>${attainment.research.toFixed(1)}%</span>
       </div>
       <div style="background:#e2e8f0; border-radius:9999px; height:8px; overflow:hidden;">
@@ -864,7 +1068,7 @@ function renderScoreBars(attainment) {
 
     <div style="margin-bottom:0.75rem;">
       <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:600; margin-bottom:4px;">
-        <span>Institutional Service</span>
+        <span>Institutional Service (Objective)</span>
         <span>${attainment.service.toFixed(1)}%</span>
       </div>
       <div style="background:#e2e8f0; border-radius:9999px; height:8px; overflow:hidden;">
@@ -874,7 +1078,7 @@ function renderScoreBars(attainment) {
 
     <div style="margin-bottom:0.75rem;">
       <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:600; margin-bottom:4px;">
-        <span>Peer Conduct & CPD</span>
+        <span>Dean's Peer Evaluation & CPD (Subjective)</span>
         <span>${attainment.peer.toFixed(1)}%</span>
       </div>
       <div style="background:#e2e8f0; border-radius:9999px; height:8px; overflow:hidden;">
@@ -885,7 +1089,7 @@ function renderScoreBars(attainment) {
     ${isClinical ? `
     <div style="margin-bottom:0.75rem;">
       <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:600; margin-bottom:4px;">
-        <span style="color:#b91c1c;">Clinical & Diagnostic Care</span>
+        <span style="color:#b91c1c;">Clinical & Diagnostic Care (Objective)</span>
         <span>${attainment.clinical.toFixed(1)}%</span>
       </div>
       <div style="background:#e2e8f0; border-radius:9999px; height:8px; overflow:hidden;">
@@ -921,18 +1125,6 @@ function initEventListeners() {
     });
   });
 
-  ['input_emp_name', 'input_emp_id', 'input_emp_desig', 'input_emp_dept'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          window.goToTeachingStep();
-        }
-      });
-    }
-  });
-
   document.querySelectorAll('input, select, textarea').forEach(input => {
     input.addEventListener('input', () => {
       calculateAll();
@@ -944,25 +1136,44 @@ function initEventListeners() {
     });
   });
 
-  ['emp_name', 'emp_id', 'emp_desig', 'emp_dept', 'emp_cadre', 'emp_cycle', 'emp_appraiser', 'emp_reviewer'].forEach(f => {
+  ['emp_name', 'emp_desig', 'emp_dept', 'emp_cadre', 'emp_cycle', 'emp_appraiser', 'emp_reviewer'].forEach(f => {
     const input = document.getElementById(`input_${f}`);
     if (input) {
       input.addEventListener('input', () => {
         updateElementText(`dossier_${f}`, input.value || '—');
       });
+      input.addEventListener('change', () => {
+        updateElementText(`dossier_${f}`, input.value || '—');
+      });
+    }
+  });
+
+  ['comm_member_1', 'comm_member_2', 'comm_member_3'].forEach((f, idx) => {
+    const input = document.getElementById(`input_${f}`);
+    if (input) {
+      const syncComm = () => {
+        const val = input.value || '—';
+        updateElementText(`dossier_${f}`, val);
+        updateElementText(`sig_comm_${idx + 1}_name`, val);
+      };
+      input.addEventListener('input', syncComm);
+      input.addEventListener('change', syncComm);
     }
   });
 }
 
 window.loadSampleData = function() {
   setVal('input_emp_name', 'Dr. Yasar Mehmood Yousafzai');
-  setVal('input_emp_id', 'KMU-FAC-2016-042');
   setVal('input_emp_desig', 'Associate Professor');
   setVal('input_emp_dept', 'Institute of Pathology & Diagnostic Medicine (IPDM)');
   setVal('input_emp_cadre', 'BPS-20 (Regular)');
-  setVal('input_emp_cycle', '2025–2026 (01 July – 30 June)');
+  setVal('input_emp_cycle', '2026 (01 January – 31 December 2026)');
   setVal('input_emp_appraiser', 'Dean, Faculty of Pathology & Diagnostic Medicine');
   setVal('input_emp_reviewer', 'Vice Chancellor, KMU');
+
+  setVal('input_comm_member_1', 'Prof. Dr. Muhammad Saleem, Professor IBMS');
+  setVal('input_comm_member_2', 'Dr. Bushra Rehman, Assistant Professor IPDM');
+  setVal('input_comm_member_3', 'Dr. Kinza Ayaz, Assistant Professor IPDM');
 
   setVal('input_qec_score', '86');
   setVal('input_actual_wu', '34');
@@ -980,12 +1191,8 @@ window.loadSampleData = function() {
   setVal('input_chapter_int', '2');
   setVal('input_chapter_nat', '1');
 
-  setVal('input_grant_int_pi', '0');
-  setVal('input_grant_int_copi', '1');
-  setVal('input_grant_nat_pi', '1');
-  setVal('input_grant_nat_copi', '2');
-  setVal('input_grant_small_pi', '1');
-  setVal('input_grant_applied', '4');
+  appraisalState.grantsList = [...DEFAULT_GRANTS];
+  renderGrantsTable();
 
   setVal('input_sup_phd', '2');
   setVal('input_sup_mphil', '4');
@@ -1015,13 +1222,26 @@ window.loadSampleData = function() {
 
   initPeerControls();
 
+  setVal('input_target_teaching', appraisalState.nextYearTargets.teaching);
+  setVal('input_target_pubs', appraisalState.nextYearTargets.publications);
+  setVal('input_target_grants', appraisalState.nextYearTargets.grants);
+  setVal('input_target_sup', appraisalState.nextYearTargets.supervision);
+  setVal('input_target_service', appraisalState.nextYearTargets.service_cpd);
+  setVal('input_target_skills', appraisalState.nextYearTargets.skills_leadership);
+
   setVal('input_red_flag', '0');
   setVal('input_red_flag_ref', '');
   setVal('input_red_flag_date', '');
 
-  ['emp_name', 'emp_id', 'emp_desig', 'emp_dept', 'emp_cadre', 'emp_cycle', 'emp_appraiser', 'emp_reviewer'].forEach(f => {
+  ['emp_name', 'emp_desig', 'emp_dept', 'emp_cadre', 'emp_cycle', 'emp_appraiser', 'emp_reviewer'].forEach(f => {
     const val = document.getElementById(`input_${f}`)?.value;
     updateElementText(`dossier_${f}`, val || '—');
+  });
+
+  ['comm_member_1', 'comm_member_2', 'comm_member_3'].forEach((f, idx) => {
+    const val = document.getElementById(`input_${f}`)?.value || '—';
+    updateElementText(`dossier_${f}`, val);
+    updateElementText(`sig_comm_${idx + 1}_name`, val);
   });
 
   window.selectProfile('Balanced Profile');
@@ -1051,18 +1271,14 @@ window.exportCSV = function() {
     'Khyber Medical University (KMU) Peshawar — Annual Performance Appraisal Summary',
     'Document Reference,KMU/REG/POL/2026/01-REV (v3.0)',
     'Employee Name,' + empName,
-    'Employee ID,' + (document.getElementById('input_emp_id')?.value || ''),
     'Designation,' + (document.getElementById('input_emp_desig')?.value || ''),
     'Department,' + (document.getElementById('input_emp_dept')?.value || ''),
     'Appraisal Profile,' + prof.name,
     'Appraisal Cycle,' + (document.getElementById('input_emp_cycle')?.value || ''),
     '',
-    'Section,Weight (%),Raw Points,Max Base,Weighted Score',
-    'Section A: Teaching,' + prof.teachingWeight + ',' + (document.getElementById('disp_raw_a')?.textContent || '') + ',100,' + (document.getElementById('disp_weighted_a')?.textContent || ''),
-    'Section B: Research & Innovation,' + prof.researchWeight + ',' + (document.getElementById('disp_raw_b')?.textContent || '') + ',200,' + (document.getElementById('disp_weighted_b')?.textContent || ''),
-    'Section C: Institutional Service,' + prof.serviceWeight + ',' + (document.getElementById('disp_raw_c')?.textContent || '') + ',100,' + (document.getElementById('disp_weighted_c')?.textContent || ''),
-    'Section D: Peer & Professional Conduct,' + prof.peerWeight + ',' + (document.getElementById('disp_raw_d')?.textContent || '') + ',88,' + (document.getElementById('disp_weighted_d')?.textContent || ''),
-    'Section E: Clinical Service,' + prof.clinicalWeight + ',' + (document.getElementById('disp_raw_e')?.textContent || '') + ',100,' + (document.getElementById('disp_weighted_e')?.textContent || ''),
+    'Performance Classification,Score,Scale',
+    'Objective Performance Score (A+B+C+E),' + (document.getElementById('disp_objective_score')?.textContent || '') + ',' + (document.getElementById('disp_objective_pct')?.textContent || ''),
+    'Subjective Performance Score (Dean - D),' + (document.getElementById('disp_subjective_score')?.textContent || '') + ',' + (document.getElementById('disp_subjective_pct')?.textContent || ''),
     'Disciplinary Red Flag Penalty,,,,' + (document.getElementById('disp_red_flag_penalty')?.textContent || '0'),
     'Consolidated Final Score,,,,' + (document.getElementById('liveScore')?.textContent || ''),
     'Performance Rating Band,,,,' + (document.getElementById('liveRatingBadge')?.textContent || ''),
@@ -1109,6 +1325,9 @@ function showToast(msg) {
   container.appendChild(toast);
   setTimeout(() => {
     toast.style.opacity = '0';
-    setTimeout(() => { if (toast.remove) toast.remove(); else if (toast.parentNode) toast.parentNode.removeChild(toast); }, 250);
+    setTimeout(() => {
+      if (toast.remove) toast.remove();
+      else if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 250);
   }, 3500);
 }
