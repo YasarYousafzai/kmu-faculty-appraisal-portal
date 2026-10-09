@@ -604,8 +604,8 @@ window.deleteGrantRecord = function(grantId) {
 
 // Initialize Application
 document.addEventListener('DOMContentLoaded', () => {
-  initProfileCards();
   initPeerControls();
+  autoSelectProfileAndWeights();
   initEventListeners();
   
   const restored = window.restoreDraft();
@@ -746,22 +746,191 @@ window.setCpdScore = function(targetId, score) {
 };
 
 // Global Calculation Engine
+
+// KMU POLICY SECTION 9.1 TWO-FACTOR APPRAISAL WEIGHTING MODEL
+const RANK_ADJUSTMENTS = {
+  'Professor': { teaching: -10, research: 10, service: 5, peer: -5, clinical: 0 },
+  'Associate Professor': { teaching: -5, research: 5, service: 2.5, peer: -2.5, clinical: 0 },
+  'Assistant Professor': { teaching: 0, research: 0, service: 0, peer: 0, clinical: 0 },
+  'Lecturer': { teaching: 5, research: -5, service: -2.5, peer: 2.5, clinical: 0 },
+  'Demonstrator / Senior Registrar / MO': { teaching: 10, research: -10, service: -5, peer: 5, clinical: 0 },
+  'Research Scientist / Postdoc': { teaching: -5, research: 5, service: 0, peer: 0, clinical: 0 }
+};
+
+function determineBaseProfile(dept, desig, cadre) {
+  dept = dept || '';
+  desig = desig || '';
+  cadre = cadre || '';
+
+  // 1. Regional IHS Campuses -> Teaching-Focused Profile (Regional IHS)
+  if (dept.includes('IHS') || dept.includes('Institute of Health Sciences')) {
+    return {
+      profileKey: 'Teaching-Focused (Regional IHS)',
+      basis: 'Regional IHS Constituent Campus (Statutory Rule 6.1 / 9.1)'
+    };
+  }
+
+  // 2. Clinical Hospital Units or Clinical Designation -> Clinical-Focused Profile (Hospital Faculty)
+  if (dept.includes('Clinical') || dept.includes('Hospital') || desig.includes('Medical Officer') || desig.includes('Senior Registrar') || desig.includes('Consultant')) {
+    return {
+      profileKey: 'Clinical-Focused (Hospital Faculty)',
+      basis: 'Clinical Hospital Faculty & Ward Practice (Section 6.1 / 9.1)'
+    };
+  }
+
+  // 3. Dedicated Research Staff / Postdocs -> Research Cadres / Postdocs
+  if (desig.includes('Research Scientist') || desig.includes('Postdoc')) {
+    return {
+      profileKey: 'Research Cadres / Postdocs',
+      basis: 'Dedicated Research Cadre / Postdoctoral Appointment'
+    };
+  }
+
+  // 4. Tenure Track System (TTS) or Public Health Reference Lab -> Research-Focused Profile
+  if (cadre === 'Tenure Track System (TTS)' || dept.includes('Public Health Reference Laboratory')) {
+    return {
+      profileKey: 'Research-Focused Profile',
+      basis: 'Tenure Track System (TTS) / Advanced Research Mandate'
+    };
+  }
+
+  // 5. Standard Constituent Institutes (IBMS, IPDM, KMU-IPS, etc.) -> Balanced Profile
+  return {
+    profileKey: 'Balanced Profile',
+    basis: 'Constituent Academic Institute Regular Faculty'
+  };
+}
+
+function autoSelectProfileAndWeights() {
+  if (appraisalState.manualProfileOverride) {
+    return; // User has explicitly toggled a manual override
+  }
+
+  const dept = document.getElementById('input_emp_dept')?.value || '';
+  const desig = document.getElementById('input_emp_desig')?.value || '';
+  const cadre = document.getElementById('input_emp_cadre')?.value || '';
+
+  const { profileKey, basis } = determineBaseProfile(dept, desig, cadre);
+  appraisalState.selectedProfile = profileKey;
+
+  const baseProf = PROFILES[profileKey] || PROFILES['Balanced Profile'];
+  const rankAdj = RANK_ADJUSTMENTS[desig] || { teaching: 0, research: 0, service: 0, peer: 0, clinical: 0 };
+
+  // Apply Two-Factor rank adjustments while preserving 100% total
+  let wT = baseProf.teachingWeight + (baseProf.clinicalWeight > 0 ? 0 : rankAdj.teaching);
+  let wR = baseProf.researchWeight + (baseProf.clinicalWeight > 0 ? 0 : rankAdj.research);
+  let wS = baseProf.serviceWeight + (baseProf.clinicalWeight > 0 ? 0 : rankAdj.service);
+  let wP = baseProf.peerWeight + (baseProf.clinicalWeight > 0 ? 0 : rankAdj.peer);
+  let wC = baseProf.clinicalWeight + rankAdj.clinical;
+
+  // Sanity bounds
+  wT = Math.max(5, wT);
+  wR = Math.max(5, wR);
+  wS = Math.max(5, wS);
+  wP = Math.max(5, wP);
+  wC = Math.max(0, wC);
+
+  // Normalize to exact 100%
+  const sumW = wT + wR + wS + wP + wC;
+  if (sumW !== 100) {
+    const diff = 100 - sumW;
+    wR += diff; // absorb rounding delta in research
+  }
+
+  appraisalState.activeWeights = {
+    teaching: wT,
+    research: wR,
+    service: wS,
+    peer: wP,
+    clinical: wC,
+    minTeachingWU: baseProf.minTeachingWU,
+    name: profileKey,
+    basis: basis
+  };
+
+  // Update Auto-Card Display on Step 1
+  updateElementText('disp_auto_profile_name', profileKey);
+  updateElementText('disp_auto_profile_basis', basis);
+  updateElementText('disp_auto_weight_teaching', `${wT}%`);
+  updateElementText('disp_auto_weight_research', `${wR}%`);
+  updateElementText('disp_auto_weight_service', `${wS}%`);
+  updateElementText('disp_auto_weight_peer', `${wP}%`);
+  updateElementText('disp_auto_weight_clinical', `${wC}%`);
+  updateElementText('disp_auto_min_wu', `${baseProf.minTeachingWU} WU`);
+
+  const clinChip = document.getElementById('disp_auto_chip_clinical');
+  if (clinChip) {
+    clinChip.style.display = wC > 0 ? 'flex' : 'none';
+  }
+
+  toggleClinicalSection();
+  calculateAll();
+}
+
+window.toggleManualProfileOverride = function() {
+  const panel = document.getElementById('manualProfileOverridePanel');
+  if (!panel) return;
+  if (panel.style.display === 'none' || !panel.style.display) {
+    panel.style.display = 'block';
+    appraisalState.manualProfileOverride = true;
+    showToast('Manual Profile Override activated');
+  } else {
+    panel.style.display = 'none';
+    appraisalState.manualProfileOverride = false;
+    autoSelectProfileAndWeights();
+    showToast('Reverted to statutory auto-profile assignment');
+  }
+};
+
+window.applyManualProfileOverride = function(profileKey) {
+  appraisalState.manualProfileOverride = true;
+  appraisalState.selectedProfile = profileKey;
+  const baseProf = PROFILES[profileKey] || PROFILES['Balanced Profile'];
+  appraisalState.activeWeights = {
+    teaching: baseProf.teachingWeight,
+    research: baseProf.researchWeight,
+    service: baseProf.serviceWeight,
+    peer: baseProf.peerWeight,
+    clinical: baseProf.clinicalWeight,
+    minTeachingWU: baseProf.minTeachingWU,
+    name: profileKey,
+    basis: 'Manual Administrative Override (Syndicate Order)'
+  };
+  updateElementText('disp_auto_profile_name', profileKey);
+  updateElementText('disp_auto_profile_basis', 'Manual Administrative Override');
+  updateElementText('disp_auto_weight_teaching', `${baseProf.teachingWeight}%`);
+  updateElementText('disp_auto_weight_research', `${baseProf.researchWeight}%`);
+  updateElementText('disp_auto_weight_service', `${baseProf.serviceWeight}%`);
+  updateElementText('disp_auto_weight_peer', `${baseProf.peerWeight}%`);
+  updateElementText('disp_auto_weight_clinical', `${baseProf.clinicalWeight}%`);
+  updateElementText('disp_auto_min_wu', `${baseProf.minTeachingWU} WU`);
+  const clinChip = document.getElementById('disp_auto_chip_clinical');
+  if (clinChip) clinChip.style.display = baseProf.clinicalWeight > 0 ? 'flex' : 'none';
+  toggleClinicalSection();
+  calculateAll();
+};
+
 function calculateAll() {
-  const prof = PROFILES[appraisalState.selectedProfile] || PROFILES['Balanced Profile'];
-  
-  const wTeaching = prof.teachingWeight / 100;
-  const wResearch = prof.researchWeight / 100;
-  const wService = prof.serviceWeight / 100;
-  const wPeer = prof.peerWeight / 100;
-  const wClinical = prof.clinicalWeight / 100;
+  if (!appraisalState.activeWeights) {
+    autoSelectProfileAndWeights();
+  }
+  const prof = appraisalState.activeWeights || {
+    teaching: 30, research: 30, service: 20, peer: 20, clinical: 0, minTeachingWU: 30, name: appraisalState.selectedProfile
+  };
+
+  const wTeaching = prof.teaching / 100;
+  const wResearch = prof.research / 100;
+  const wService = prof.service / 100;
+  const wPeer = prof.peer / 100;
+  const wClinical = prof.clinical / 100;
   const minTeachingWU = prof.minTeachingWU;
 
-  updateElementText('navPillTeaching', `${prof.teachingWeight}%`);
-  updateElementText('navPillResearch', `${prof.researchWeight}%`);
-  updateElementText('navPillService', `${prof.serviceWeight}%`);
-  updateElementText('navPillPeer', `${prof.peerWeight}%`);
-  if (prof.clinicalWeight > 0) {
-    updateElementText('navPillClinical', `${prof.clinicalWeight}%`);
+  updateElementText('navPillTeaching', `${prof.teaching}%`);
+  updateElementText('navPillResearch', `${prof.research}%`);
+  updateElementText('navPillService', `${prof.service}%`);
+  updateElementText('navPillPeer', `${prof.peer}%`);
+  if (prof.clinical > 0) {
+    updateElementText('navPillClinical', `${prof.clinical}%`);
   }
 
   // --- 1. SECTION A: TEACHING ---
@@ -778,13 +947,12 @@ function calculateAll() {
   }
   effectiveTeaching = Math.min(100, Math.max(0, effectiveTeaching));
   
-  const rawA = effectiveTeaching;
-  const weightedA = (rawA / 100) * wTeaching * 100;
+  const attainmentA = effectiveTeaching; // 0 - 100%
+  const weightedA = (attainmentA / 100) * wTeaching * 100;
 
-  updateElementText('disp_effective_teaching', effectiveTeaching.toFixed(1));
-  updateElementText('disp_raw_a', rawA.toFixed(1));
-  updateElementText('disp_weight_a', `${prof.teachingWeight}%`);
-  updateElementText('disp_weighted_a', weightedA.toFixed(2));
+  updateElementText('disp_effective_teaching', `${attainmentA.toFixed(1)}%`);
+  updateElementText('disp_weight_a', `${prof.teaching}%`);
+  updateElementText('disp_weighted_a', `${weightedA.toFixed(2)} pts`);
 
   // --- 2. SECTION B: RESEARCH ---
   const pubHighLead = getInputValue('input_pub_high_lead') * 10;
@@ -795,9 +963,7 @@ function calculateAll() {
   const pubLowCo = getInputValue('input_pub_low_co') * 2;
   const subB1Raw = pubHighLead + pubHighCo + pubModLead + pubModCo + pubLowLead + pubLowCo;
   const subB1Capped = Math.min(50, subB1Raw);
-
   updateElementText('disp_sub_b1', subB1Capped.toFixed(1));
-  updateElementText('disp_sub_b1_raw', subB1Raw);
 
   const bookInt = getInputValue('input_book_int') * 8;
   const bookNat = getInputValue('input_book_nat') * 5;
@@ -805,9 +971,7 @@ function calculateAll() {
   const chapNat = getInputValue('input_chapter_nat') * 2;
   const subB2Raw = bookInt + bookNat + chapInt + chapNat;
   const subB2Capped = Math.min(20, subB2Raw);
-
   updateElementText('disp_sub_b2', subB2Capped.toFixed(1));
-  updateElementText('disp_sub_b2_raw', subB2Raw);
 
   // Grants calculated directly from grantsList ledger
   let wonSum = 0;
@@ -818,174 +982,144 @@ function calculateAll() {
     if (g.status === 'Applied') appliedSum += pts;
   });
   const subB3Capped = Math.min(50, wonSum + Math.min(20, appliedSum));
-
   updateElementText('disp_sub_b3_won', wonSum.toFixed(1));
   updateElementText('disp_sub_b3_applied', appliedSum.toFixed(1));
   updateElementText('disp_sub_b3', subB3Capped.toFixed(1));
-  updateElementText('disp_sub_b3_raw', (wonSum + appliedSum).toFixed(1));
 
   const supPhD = getInputValue('input_sup_phd') * 8;
   const supMPhil = getInputValue('input_sup_mphil') * 4;
-  const supClinSr = getInputValue('input_sup_clin_sr') * 8;
-  const supClinJr = getInputValue('input_sup_clin_jr') * 4;
+  const supClinSr = getInputValue('input_sup_clin_sr') * 3;
+  const supClinJr = getInputValue('input_sup_clin_jr') * 1.5;
   const subB4Raw = supPhD + supMPhil + supClinSr + supClinJr;
   const subB4Capped = Math.min(40, subB4Raw);
-
   updateElementText('disp_sub_b4', subB4Capped.toFixed(1));
-  updateElementText('disp_sub_b4_raw', subB4Raw);
 
-  const innPatInt = getInputValue('input_innov_patent_int') * 10;
-  const innPatNat = getInputValue('input_innov_patent_nat') * 6;
-  const innProj = getInputValue('input_innov_project') * 8;
-  const innOverhead = getInputValue('input_innov_overhead') * 10;
-  const subB5Raw = innPatInt + innPatNat + innProj + innOverhead;
+  const patInt = getInputValue('input_innov_patent_int') * 15;
+  const patNat = getInputValue('input_innov_patent_nat') * 8;
+  const projCollab = getInputValue('input_innov_project') * 5;
+  const subB5Raw = patInt + patNat + projCollab;
   const subB5Capped = Math.min(40, subB5Raw);
-
   updateElementText('disp_sub_b5', subB5Capped.toFixed(1));
-  updateElementText('disp_sub_b5_raw', subB5Raw);
 
   const rawB = Math.min(200, subB1Capped + subB2Capped + subB3Capped + subB4Capped + subB5Capped);
-  const weightedB = (rawB / 200) * wResearch * 100;
+  const attainmentB = (rawB / 200) * 100; // Normalized 0 - 100%
+  const weightedB = (attainmentB / 100) * wResearch * 100;
 
-  updateElementText('disp_raw_b', rawB.toFixed(1));
-  updateElementText('disp_weight_b', `${prof.researchWeight}%`);
-  updateElementText('disp_weighted_b', weightedB.toFixed(2));
+  updateElementText('disp_raw_b', `${attainmentB.toFixed(1)}%`);
+  updateElementText('disp_weight_b', `${prof.research}%`);
+  updateElementText('disp_weighted_b', `${weightedB.toFixed(2)} pts`);
 
   // --- 3. SECTION C: SERVICE ---
   const commMember = Math.min(25, getInputValue('input_comm_member') * 5);
-  const commChair = Math.min(20, getInputValue('input_comm_chair') * 10);
-  const policyDoc = Math.min(30, getInputValue('input_policy_doc') * 10);
-  const facilityCharge = Math.min(30, getInputValue('input_facility_charge') * 15);
-  const addAppoint = document.getElementById('input_additional_appoint')?.value === 'Y' ? 15 : 0;
-
+  const commChair = Math.min(30, getInputValue('input_comm_chair') * 10);
+  const policyDoc = Math.min(30, getInputValue('input_policy_doc') * 15);
+  const facilityCharge = Math.min(20, getInputValue('input_facility_charge') * 10);
+  const addAppoint = document.getElementById('input_additional_appoint')?.value === 'Y' ? 10 : 0;
+  
   const rawC = Math.min(100, commMember + commChair + policyDoc + facilityCharge + addAppoint);
-  const weightedC = (rawC / 100) * wService * 100;
+  const attainmentC = (rawC / 100) * 100; // 0 - 100%
+  const weightedC = (attainmentC / 100) * wService * 100;
 
-  updateElementText('disp_comm_member', commMember);
-  updateElementText('disp_comm_chair', commChair);
-  updateElementText('disp_policy_doc', policyDoc);
-  updateElementText('disp_facility_charge', facilityCharge);
-  updateElementText('disp_add_appoint', addAppoint);
+  updateElementText('disp_raw_c', `${attainmentC.toFixed(1)}%`);
+  updateElementText('disp_raw_c_card', `${attainmentC.toFixed(1)}%`);
+  updateElementText('disp_weight_c', `${prof.service}%`);
+  updateElementText('disp_weighted_c', `${weightedC.toFixed(2)} pts`);
 
-  updateElementText('disp_raw_c', rawC.toFixed(1));
-  updateElementText('disp_raw_c_card', rawC.toFixed(1));
-  updateElementText('disp_weight_c', `${prof.serviceWeight}%`);
-  updateElementText('disp_weighted_c', weightedC.toFixed(2));
-
-  // --- 4. SECTION D: PEER EVALUATION & CPD (SUBJECTIVE - DEAN'S EVALUATION) ---
-  let peerCoreSum = 0;
-  PEER_PARAMETERS.forEach(p => {
-    peerCoreSum += appraisalState.sectionD.peerScores[p.id] || 1;
+  // --- 4. SECTION D: PEER EVALUATION & CONDUCT (DEAN'S ASSESSMENT) ---
+  let peer13Sum = 0;
+  Object.keys(appraisalState.sectionD.peerScores).forEach(k => {
+    peer13Sum += (appraisalState.sectionD.peerScores[k] || 0);
   });
-  peerCoreSum = Math.min(78, peerCoreSum);
+  updateElementText('disp_peer_13_sum', peer13Sum);
 
   let cpdSum = 0;
-  CPD_TARGETS.forEach(t => {
-    cpdSum += appraisalState.sectionD.cpdScores[t.id] || 0;
+  Object.keys(appraisalState.sectionD.cpdScores).forEach(k => {
+    cpdSum += (appraisalState.sectionD.cpdScores[k] || 0);
   });
-  cpdSum = Math.min(10, cpdSum);
-
-  const rawD = Math.min(88, peerCoreSum + cpdSum);
-  const weightedD = (rawD / 88) * wPeer * 100;
-
-  updateElementText('disp_peer_core_sum', peerCoreSum);
   updateElementText('disp_cpd_sum', cpdSum);
-  updateElementText('disp_raw_d', rawD.toFixed(1));
-  updateElementText('disp_weight_d', `${prof.peerWeight}%`);
-  updateElementText('disp_weighted_d', weightedD.toFixed(2));
 
-  // --- 5. SECTION E: CLINICAL ---
+  const rawD = Math.min(88, peer13Sum + cpdSum);
+  const attainmentD = (rawD / 88) * 100; // 0 - 100%
+  const weightedD = (attainmentD / 100) * wPeer * 100;
+
+  updateElementText('disp_raw_d', `${attainmentD.toFixed(1)}%`);
+  updateElementText('disp_weight_d', `${prof.peer}%`);
+  updateElementText('disp_weighted_d', `${weightedD.toFixed(2)} pts`);
+
+  // --- 5. SECTION E: CLINICAL SERVICE ---
   let rawE = 0;
+  let attainmentE = 0;
   let weightedE = 0;
-  if (prof.clinicalWeight > 0) {
-    const clinAdmin = Math.min(25, Math.max(0, getInputValue('input_clin_admin')));
-    const clinVolume = Math.min(35, Math.max(0, getInputValue('input_clin_volume')));
-    const clinOncall = Math.min(20, Math.max(0, getInputValue('input_clin_oncall')));
-    const clinTeaching = Math.min(20, Math.max(0, getInputValue('input_clin_teaching')));
-    rawE = Math.min(100, clinAdmin + clinVolume + clinOncall + clinTeaching);
-    weightedE = (rawE / 100) * wClinical * 100;
-  }
-  updateElementText('disp_raw_e', rawE.toFixed(1));
-  updateElementText('disp_raw_e_card', rawE.toFixed(1));
-  updateElementText('disp_weight_e', `${prof.clinicalWeight}%`);
-  updateElementText('disp_weighted_e', weightedE.toFixed(2));
+  if (prof.clinical > 0) {
+    const clinAdmin = Math.min(25, getInputValue('input_clin_admin') * 5);
+    const clinVol = Math.min(30, getInputValue('input_clin_volume') * 10);
+    const clinOnCall = Math.min(25, getInputValue('input_clin_oncall') * 5);
+    const clinTeach = Math.min(20, getInputValue('input_clin_teaching') * 10);
+    rawE = Math.min(100, clinAdmin + clinVol + clinOnCall + clinTeach);
+    attainmentE = (rawE / 100) * 100;
+    weightedE = (attainmentE / 100) * wClinical * 100;
 
-  // --- 6. RED FLAG / DISCIPLINARY PENALTY ---
-  const redFlagSelect = parseInt(document.getElementById('input_red_flag')?.value) || 0;
-  const refNo = document.getElementById('input_red_flag_ref')?.value?.trim() || '';
-  const refDate = document.getElementById('input_red_flag_date')?.value?.trim() || '';
-  
-  let validPenalty = 0;
-  const warningBox = document.getElementById('redFlagStatutoryWarning');
-  
-  if (redFlagSelect > 0) {
-    if (refNo.length > 2 && refDate.length > 4) {
-      validPenalty = redFlagSelect;
-      if (warningBox) warningBox.style.display = 'none';
-    } else {
-      validPenalty = 0;
-      if (warningBox) {
-        warningBox.style.display = 'block';
-        warningBox.innerHTML = `<strong>Statutory Safeguard Active:</strong> Red Flag deduction of -${redFlagSelect} pts cannot be enacted without an authenticated Inquiry Notification Reference Number and Date under KMU Efficiency & Discipline Statutes (Section 9.4).`;
-      }
-    }
-  } else {
-    if (warningBox) warningBox.style.display = 'none';
+    updateElementText('disp_raw_e', `${attainmentE.toFixed(1)}%`);
+    updateElementText('disp_weight_e', `${prof.clinical}%`);
+    updateElementText('disp_weighted_e', `${weightedE.toFixed(2)} pts`);
   }
-  updateElementText('disp_red_flag_penalty', `-${validPenalty} pts`);
 
-  // --- 7. SEPARATE OBJECTIVE VS SUBJECTIVE SCORES ---
-  const objectiveScore = weightedA + weightedB + weightedC + weightedE;
-  const objectiveMaxWeight = (prof.teachingWeight + prof.researchWeight + prof.serviceWeight + prof.clinicalWeight);
+  // --- DISCIPLINARY PENALTY ---
+  const redFlagSelect = document.getElementById('input_red_flag');
+  const penalty = parseFloat(redFlagSelect?.value) || 0;
+  const refNo = document.getElementById('input_red_flag_ref')?.value?.trim();
+  const validPenalty = (penalty > 0 && refNo) ? penalty : 0;
+  updateElementText('disp_red_flag_penalty', validPenalty > 0 ? `-${validPenalty} pts` : '0 pts');
+
+  // --- CONSOLIDATED TOTALS & DOMAIN SEPARATION ---
+  const objectiveScore = weightedA + weightedB + weightedC + (prof.clinical > 0 ? weightedE : 0);
+  const objectiveMaxWeight = (wTeaching + wResearch + wService + (prof.clinical > 0 ? wClinical : 0)) * 100;
   const objectivePercent = objectiveMaxWeight > 0 ? (objectiveScore / objectiveMaxWeight) * 100 : 0;
 
-  const subjectiveScore = weightedD; // Concerned Dean's Qualitative Assessment
-  const subjectiveMaxWeight = prof.peerWeight;
+  const subjectiveScore = weightedD;
+  const subjectiveMaxWeight = wPeer * 100;
   const subjectivePercent = subjectiveMaxWeight > 0 ? (subjectiveScore / subjectiveMaxWeight) * 100 : 0;
 
-  const finalScore = Math.max(0, (objectiveScore + subjectiveScore) - validPenalty);
+  const finalScore = Math.max(0, objectiveScore + subjectiveScore - validPenalty);
 
-  // Performance Rating Classification
+  // Ratings
   let ratingBand = 'Unsatisfactory';
   let ratingClass = 'rating-unsatisfactory';
-  let pipStatus = 'MANDATORY PIP (3–6 months)';
-  let pipDesc = 'Statutory Performance Improvement Plan triggered under Section 9.5. Commences within 30 days.';
+  let pipStatus = 'Mandatory PIP Required (Section 9.5)';
+  let pipDesc = 'Consolidated score is below 50.0%. Official Performance Improvement Plan triggered.';
 
-  if (finalScore >= 85.0) {
+  if (finalScore >= 85) {
     ratingBand = 'Outstanding';
     ratingClass = 'rating-outstanding';
-    pipStatus = 'Not Required';
-    pipDesc = 'Exceeds Expectations with Distinction. Eligible for institutional awards & expedited increment.';
-  } else if (finalScore >= 75.0) {
+    pipStatus = 'Not Required (Exemplary)';
+    pipDesc = 'Eligible for academic honors, accelerated promotion, and research awards.';
+  } else if (finalScore >= 75) {
     ratingBand = 'Very Good';
     ratingClass = 'rating-very-good';
     pipStatus = 'Not Required';
-    pipDesc = 'Exceeds Expectations. Highly commendable professional delivery.';
-  } else if (finalScore >= 60.0) {
+    pipDesc = 'Meets all statutory performance criteria with commendation.';
+  } else if (finalScore >= 60) {
     ratingBand = 'Good';
     ratingClass = 'rating-good';
     pipStatus = 'Not Required';
-    pipDesc = 'Meets Expectations. Meets institutional benchmarks.';
-  } else if (finalScore >= 50.0) {
-    ratingBand = 'Average';
+    pipDesc = 'Fully satisfies substantive statutory baseline.';
+  } else if (finalScore >= 50) {
+    ratingBand = 'Average (Needs Improvement)';
     ratingClass = 'rating-average';
-    pipStatus = 'Discretionary PIP';
-    pipDesc = 'Needs Improvement. Reviewing Officer may mandate targeted 3-month mentoring.';
+    pipStatus = 'Developmental PIP Advised';
+    pipDesc = 'Departmental counseling and developmental benchmarks recommended.';
   }
 
-  // Objective Grading scale
   let objGrade = 'Meets Expectations';
-  if (objectivePercent >= 85) objGrade = 'Outstanding';
+  if (objectivePercent >= 85) objGrade = 'Outstanding Output';
   else if (objectivePercent >= 75) objGrade = 'Very Good';
-  else if (objectivePercent < 50) objGrade = 'Unsatisfactory';
+  else if (objectivePercent < 50) objGrade = 'Shortfall Flagged';
 
-  // Subjective (Dean's) Grading scale
-  let subjGrade = 'Satisfactory Conduct';
-  if (subjectivePercent >= 85) subjGrade = 'Distinguished Decorum & Leadership';
-  else if (subjectivePercent >= 75) subjGrade = 'Commendable Conduct';
-  else if (subjectivePercent < 60) subjGrade = 'Remediation Recommended';
+  let subjGrade = 'Commendable Conduct';
+  if (subjectivePercent >= 85) subjGrade = 'Exemplary Citizenship';
+  else if (subjectivePercent < 50) subjGrade = 'Conduct Shortfall';
 
-  // Update Status Bar & KPIs
+  // Live status bar updates
   updateElementText('liveScore', finalScore.toFixed(1));
   const badge = document.getElementById('liveRatingBadge');
   if (badge) {
@@ -1002,43 +1136,43 @@ function calculateAll() {
   updateElementText('kpi_penalty_applied', validPenalty > 0 ? `-${validPenalty} pts` : 'None');
 
   // Update Split Objective vs Subjective DOM Displays
-  updateElementText('disp_objective_score', `${objectiveScore.toFixed(2)} / ${objectiveMaxWeight}%`);
+  updateElementText('disp_objective_score', `${objectiveScore.toFixed(2)} / ${objectiveMaxWeight.toFixed(0)}%`);
   updateElementText('disp_objective_pct', `${objectivePercent.toFixed(1)}% (${objGrade})`);
-  updateElementText('disp_subjective_score', `${subjectiveScore.toFixed(2)} / ${subjectiveMaxWeight}%`);
+  updateElementText('disp_subjective_score', `${subjectiveScore.toFixed(2)} / ${subjectiveMaxWeight.toFixed(0)}%`);
   updateElementText('disp_subjective_pct', `${subjectivePercent.toFixed(1)}% (${subjGrade})`);
 
-  // Update Official Dossier Document Table
+  // Update Official Dossier Document Table (No raw score denominators)
   updateElementText('dossier_prof_name', prof.name);
-  updateElementText('dossier_weight_a', `${prof.teachingWeight}%`);
-  updateElementText('dossier_raw_a', `${rawA.toFixed(1)} / 100`);
+  updateElementText('dossier_weight_a', `${prof.teaching}%`);
+  updateElementText('dossier_pct_a', `${attainmentA.toFixed(1)}%`);
   updateElementText('dossier_weighted_a', weightedA.toFixed(2));
 
-  updateElementText('dossier_weight_b', `${prof.researchWeight}%`);
-  updateElementText('dossier_raw_b', `${rawB.toFixed(1)} / 200`);
+  updateElementText('dossier_weight_b', `${prof.research}%`);
+  updateElementText('dossier_pct_b', `${attainmentB.toFixed(1)}%`);
   updateElementText('dossier_weighted_b', weightedB.toFixed(2));
 
-  updateElementText('dossier_weight_c', `${prof.serviceWeight}%`);
-  updateElementText('dossier_raw_c', `${rawC.toFixed(1)} / 100`);
+  updateElementText('dossier_weight_c', `${prof.service}%`);
+  updateElementText('dossier_pct_c', `${attainmentC.toFixed(1)}%`);
   updateElementText('dossier_weighted_c', weightedC.toFixed(2));
 
-  updateElementText('dossier_weight_d', `${prof.peerWeight}%`);
-  updateElementText('dossier_raw_d', `${rawD.toFixed(1)} / 88`);
+  updateElementText('dossier_weight_d', `${prof.peer}%`);
+  updateElementText('dossier_pct_d', `${attainmentD.toFixed(1)}%`);
   updateElementText('dossier_weighted_d', weightedD.toFixed(2));
 
   const clinDossierRow = document.getElementById('dossier_row_clinical');
   if (clinDossierRow) {
-    if (prof.clinicalWeight > 0) {
+    if (prof.clinical > 0) {
       clinDossierRow.style.display = 'table-row';
-      updateElementText('dossier_weight_e', `${prof.clinicalWeight}%`);
-      updateElementText('dossier_raw_e', `${rawE.toFixed(1)} / 100`);
+      updateElementText('dossier_weight_e', `${prof.clinical}%`);
+      updateElementText('dossier_pct_e', `${attainmentE.toFixed(1)}%`);
       updateElementText('dossier_weighted_e', weightedE.toFixed(2));
     } else {
       clinDossierRow.style.display = 'none';
     }
   }
 
-  updateElementText('dossier_objective_total', `${objectiveScore.toFixed(2)} / ${objectiveMaxWeight}% (${objectivePercent.toFixed(1)}%)`);
-  updateElementText('dossier_subjective_total', `${subjectiveScore.toFixed(2)} / ${subjectiveMaxWeight}% (${subjectivePercent.toFixed(1)}%)`);
+  updateElementText('dossier_objective_total', `${objectiveScore.toFixed(2)} / ${objectiveMaxWeight.toFixed(0)}% (${objectivePercent.toFixed(1)}%)`);
+  updateElementText('dossier_subjective_total', `${subjectiveScore.toFixed(2)} / ${subjectiveMaxWeight.toFixed(0)}% (${subjectivePercent.toFixed(1)}%)`);
   updateElementText('dossier_penalty', validPenalty > 0 ? `-${validPenalty} pts (${refNo})` : '0 pts');
   updateElementText('dossier_final_score', `${finalScore.toFixed(1)} / 100`);
   updateElementText('dossier_final_rating', ratingBand);
@@ -1060,11 +1194,11 @@ function calculateAll() {
   updateElementText('dossier_target_skills', tSkills);
 
   renderScoreBars({
-    teaching: (rawA / 100) * 100,
-    research: (rawB / 200) * 100,
-    service: (rawC / 100) * 100,
-    peer: (rawD / 88) * 100,
-    clinical: prof.clinicalWeight > 0 ? (rawE / 100) * 100 : 0
+    teaching: attainmentA,
+    research: attainmentB,
+    service: attainmentC,
+    peer: attainmentD,
+    clinical: prof.clinical > 0 ? attainmentE : 0
   });
 }
 
@@ -1175,6 +1309,9 @@ function initEventListeners() {
         }
         if (f === 'emp_reviewer') {
           updateElementText('sig_final', `${val} (Countersigning Officer)`);
+        }
+        if (f === 'emp_dept' || f === 'emp_desig' || f === 'emp_cadre') {
+          autoSelectProfileAndWeights();
         }
       };
       input.addEventListener('input', syncMeta);

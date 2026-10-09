@@ -1133,3 +1133,40 @@ select.form-control optgroup {
   .step-footer-actions { flex-direction: column; align-items: stretch; }
   .step-footer-actions-right { justify-content: space-between; }
 }
+
+
+/* Profile Auto-Card & Weight Chips */
+.profile-auto-card {
+  background: #fdf8eb;
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  margin-top: 1.25rem;
+  box-shadow: var(--shadow-sm);
+}
+.profile-weight-chips {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.weight-chip {
+  background: #ffffff;
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  min-width: 85px;
+}
+.weight-chip-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #78350f;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.weight-chip-val {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--kmu-maroon);
+}
