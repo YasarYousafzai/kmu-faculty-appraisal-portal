@@ -5,7 +5,7 @@ cd "$DIR"
 
 echo "=========================================================="
 echo "  Khyber Medical University (KMU) Peshawar"
-echo "  Faculty Annual Performance Appraisal Portal (v3.0)"
+echo "  Faculty Annual Performance Appraisal Portal — Controlled Pilot"
 echo "=========================================================="
 
 # Try Python 3 server first, or open index.html directly

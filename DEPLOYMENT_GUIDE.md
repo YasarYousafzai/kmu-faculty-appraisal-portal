@@ -1,124 +1,65 @@
-# KMU Faculty Annual Performance Appraisal Web Portal (v3.0)
-## Free Cloud Deployment & Hosting Guide
-**Khyber Medical University (KMU), Peshawar**  
-**Document Reference:** `KMU/REG/POL/2026/01-REV`  
-**Application Scope:** Universal statutory appraisal calculator for KMU faculty cadres across all constituent institutes and regional campuses.
+# KMU Faculty Appraisal Portal — Controlled Pilot
 
----
+Policy reference: `KMU/REG/POL/2026/01-REV`.
 
-## Overview
+## Status and permitted use
 
-The **KMU Faculty Annual Performance Appraisal Portal** is built as an ultra-responsive, zero-dependency, professional web application with official KMU branding. It faithfully replicates the mathematical formulas, category caps, workload unit (WU) rules, and due-process safeguards codified in **Section 9 of the KMU Unified Statutory Policy (KMU/REG/POL/2026/01-REV v3.0)** and the companion official Excel calculator.
+This repository is a controlled prototype. The underlying policy is pending re-vetting and re-submission to the Syndicate and has no operative force until formally approved and notified.
 
-The portal can be deployed on **any 100% freely available cloud hosting resource** without ongoing costs, server administration, or credit cards.
+The current site is static. It has no KMU authentication, server-side personnel record, access control, audit log, approval workflow, or encrypted database. Do not use a public deployment to collect genuine personnel, appraisal, medical, disciplinary, or other confidential data.
 
----
+Before institutional use, KMU should complete legal and policy approval, validate all open scoring items, appoint a configuration owner, complete privacy and security reviews, and deploy an authenticated server-backed system with role-based access and audit trails.
 
-## Free Hosting Options
+## Local review
 
-### Option 1: GitHub Pages (Recommended — 100% Free Forever)
-GitHub Pages provides free hosting with automatic SSL (HTTPS), custom domain support (e.g. `appraisal.kmu.edu.pk`), and 99.99% uptime.
+For a private preview on the same computer:
 
-1. **Create a GitHub Repository:**
-   - Log into [GitHub](https://github.com) and click **New Repository**.
-   - Name it: `kmu-faculty-appraisal-portal`.
-   - Set visibility to **Public** (or Private if using GitHub Enterprise).
-2. **Push the Portal Files:**
-   Open Terminal in this directory:
-   ```bash
-   cd "/Users/yasaryousafzai/Gemini access/kmu_appraisal_portal"
-   git init
-   git add .
-   git commit -m "Initial release of KMU Faculty Annual Appraisal Web Portal v3.0"
-   git branch -M main
-   git remote add origin https://github.com/<YOUR_GITHUB_USERNAME>/kmu-faculty-appraisal-portal.git
-   git push -u origin main
-   ```
-3. **Enable GitHub Pages:**
-   - Go to your repository **Settings** → **Pages** (under Code and automation).
-   - Under **Build and deployment**:
-     - **Source:** Deploy from a branch.
-     - **Branch:** `main`, folder: `/(root)`.
-   - Click **Save**.
-4. **Live URL:**
-   - Within 60 seconds, your portal is live at:  
-     👉 **`https://<YOUR_GITHUB_USERNAME>.github.io/kmu-faculty-appraisal-portal/`**
+```bash
+python3 server.py
+```
 
----
+The server listens on `127.0.0.1:8088` by default, serves only the portal assets and downloadable draft-policy document, and adds restrictive browser-security headers.
 
-### Option 2: Netlify Drop (Instant 10-Second Drag-and-Drop — 100% Free)
-Netlify requires zero command line or git setup.
+To choose another local port:
 
-1. Go to **[app.netlify.com/drop](https://app.netlify.com/drop)**.
-2. Drag and drop the whole **`kmu_appraisal_portal`** folder directly into your browser window.
-3. Netlify will immediately publish your website and assign a live HTTPS URL (e.g., `https://kmu-faculty-appraisal.netlify.app`).
-4. You can customize the subdomain or attach a university domain for free under **Site settings** → **Domain management**.
+```bash
+python3 server.py --port 8090
+```
 
----
+Binding to a LAN address is deliberately not the default because this prototype has no authentication. If a formally approved review requires network access, use a protected institutional environment and obtain the relevant IT/security approval first.
 
-### Option 3: Vercel (100% Free Forever)
-1. Go to **[vercel.com](https://vercel.com)** and log in with GitHub.
-2. Click **Add New Project** → Import `kmu-faculty-appraisal-portal`.
-3. Keep default settings (Static site, Root Directory `./`) and click **Deploy**.
-4. Vercel provides instant global CDN deployment at `https://kmu-faculty-appraisal.vercel.app`.
+## Static preview hosting
 
----
+GitHub Pages or another static host may be used for demonstration only, provided the draft and privacy warnings remain prominent and no live personnel data is entered.
 
-### Option 4: PythonAnywhere (100% Free Python Cloud Hosting)
-Since you already have a PythonAnywhere account (e.g., `IPDMClassHub`):
+The included `deploy_github.sh` pushes the current commit to the repository's already-configured `origin`. It does not change remotes and does not force-push.
 
-1. Zip the folder:
-   ```bash
-   cd "/Users/yasaryousafzai/Gemini access"
-   zip -r kmu_appraisal_portal.zip kmu_appraisal_portal/
-   ```
-2. In PythonAnywhere, upload `kmu_appraisal_portal.zip` via the **Files** tab.
-3. In a Bash Console:
-   ```bash
-   unzip kmu_appraisal_portal.zip -d appraisal_app
-   ```
-4. On the **Web** tab:
-   - Create a new web app using **Manual Configuration (Python 3.10)**.
-   - Set **Source Code** and **Working Directory** to: `/home/<username>/appraisal_app/kmu_appraisal_portal`
-   - Edit the **WSGI configuration file** and set:
-     ```python
-     import sys
-     import os
-     project_home = '/home/<username>/appraisal_app/kmu_appraisal_portal'
-     if project_home not in sys.path:
-         sys.path.insert(0, project_home)
-     from wsgi import application
-     ```
-   - Click **Reload**.
+## Verification before publishing
 
----
+Install the browser-test dependency once, then run:
 
-### Option 5: Local Desktop & Departmental LAN (Zero Cloud Needed)
-If you want to run the portal strictly within KMU premises or on your laptop without any internet:
+```bash
+npm install
+npx playwright install chromium
+npm test
+```
 
-1. **Instant Run:**
-   - Double-click `index.html` to open directly in Google Chrome, Safari, or Microsoft Edge.
-2. **Local Departmental Server:**
-   - Run in Terminal:
-     ```bash
-     cd "/Users/yasaryousafzai/Gemini access/kmu_appraisal_portal"
-     ./run.sh
-     ```
-   - Opens automatically at `http://localhost:8088`. Colleagues connected to your departmental Wi-Fi or LAN can access it via `http://<YOUR_IP_ADDRESS>:8088`.
+The check starts and stops its own loopback-only preview server. It covers the five profiles, designation/institute mapping, pilot research normalization, clinical/patient-care evidence controls, principal formulas and caps, 80% dimension benchmarks, incomplete-record safeguards, red-flag controls, explicit-only browser storage, injection handling, printable dossier values, and desktop/mobile rendering. By default it uses the Chromium installed by Playwright. Set `KMU_CHROME_PATH` only when an institutionally managed Chrome/Chromium executable is required.
 
----
+## Current configuration summary
 
-## Key Features & Policy Compliance
+| Item | Draft implementation |
+| --- | --- |
+| Portal appraisal cycle | 1 January–31 December (calendar year); align in the final approved policy/notification |
+| Profiles | Balanced; Research-focused; Regional IHS teaching-focused; Clinical; Research cadre/postdoc |
+| Rank adjustments | None |
+| Research normalization | Draft raw points retain a theoretical 200 cap; proposed annual full-credit benchmarks are 15 Regional IHS, 20 Clinical, 30 Balanced, 45 Research-focused, and 60 Research Cadre/Postdoc. These require validation and approval. |
+| Service / peer / clinical rubrics | Marked as proposed/open pending ratification; clinical entries require aggregate unit evidence and exclude patient identifiers |
+| Dimension benchmark display | Green at ≥80% of that dimension's ceiling; red below 80%; visual aid only, not a statutory rating |
+| Rating bands | Outstanding ≥85; Very Good ≥75; Good ≥60; Average 50–59.9; Unsatisfactory <50 |
+| PIP | Mandatory below 50; discretionary at 50–59.9 |
+| Red-flag deduction | −25 or −50 only after all recorded due-process controls pass |
+| Storage | Local browser storage only after explicit “Save & Return Later” action |
+| Terminology baseline | KMU directory, HR/scrutiny and admissions nomenclature reviewed 10 October 2026; appointment/posting notification prevails where official sources differ |
 
-| Feature | Statutory Rule in Portal | Policy Reference |
-| :--- | :--- | :--- |
-| **5 Weighting Profiles** | Balanced, Research, Teaching-Focused (IHS), Clinical, Postdocs | Section 9.1 |
-| **Workload Delivery Proration** | Prorates QEC score if actual teaching WU < required WU | Section 9.2 Formula 1 |
-| **Enforced Sub-Capping** | Publications (50), Books (20), Grants (50), Supervision (40), Patents (40) | Section 9.2 Formula 2 |
-| **Corrected Peer Denominator** | 13 Core items (max 78) + 5 CPD items (max 10) = 88 base pts | Section 9.2 Formula 4 |
-| **Clinical Service Domain** | Admin (25), Patient Volume (35), On-Call (20), Bedside Teaching (20) | Section 9.2 Formula 5 |
-| **Red Flag Safeguard** | Deductions (-25 or -50) blocked unless valid notified inquiry ref is logged | Section 9.4 |
-| **PIP Procedure Trigger** | Automatic detection of mandatory (Unsatisfactory) vs discretionary (Average) PIP | Section 9.5 |
-| **Appellate Rights Window** | Notifies 7-calendar-day window for lodging formal appeal to Appellate Committee | Section 9.6 |
-| **Printable Official Dossier** | A4 printable PER Form A with institutional seal, metadata table, and signatures | Section 10 |
-| **Data Portability** | One-click JSON import/export, CSV spreadsheet download, LocalStorage auto-save | Operational |
+Current law, statutes, valid notifications, appointment orders, and approved assignments always take precedence over this prototype.

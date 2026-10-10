@@ -3,55 +3,64 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KMU Faculty Annual Performance Appraisal Portal (v3.0)</title>
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>KMU Faculty Appraisal Portal — Controlled Pilot</title>
   <link rel="stylesheet" href="styles.css">
-  <link rel="icon" type="image/png" href="assets/kmu_logo.png" onerror="this.onerror=null; this.src='kmu_logo.png';">
+  <link rel="icon" type="image/png" href="kmu_logo.png">
 </head>
 <body>
+  <div id="printBlockedNotice" class="print-blocked-notice" role="alert">
+    <h1>Incomplete Draft — Dossier Not Printable</h1>
+    <p>Complete all required identity, workload, evidence and Appraising Officer fields before printing the draft appraisal dossier.</p>
+  </div>
 
   <!-- Top Official Header -->
   <header class="kmu-header">
     <div class="header-container">
       <div class="brand-wrapper">
-        <img src="assets/kmu_logo.png" onerror="this.onerror=null; this.src='kmu_logo.png';" alt="KMU Crest" class="kmu-logo">
+        <img src="kmu_logo.png" alt="KMU Crest" class="kmu-logo">
         <div class="brand-text">
-          <h1>
-            Khyber Medical University, Peshawar
-            <span class="statutory-badge">v3.0 Statutory</span>
-          </h1>
-          <p>Annual Performance Appraisal & Workload Allocation System (KMU/REG/POL/2026/01-REV)</p>
+          <h1>Khyber Medical University, Peshawar</h1>
+          <p>Faculty Appraisal Portal • Calendar-year cycle</p>
         </div>
       </div>
       <div class="header-actions">
-        <span id="lastSavedIndicator" style="font-size:0.75rem; color:#f1d5a5; margin-right:4px; font-weight:600;">Saved: Draft Ready</span>
+        <span id="lastSavedIndicator" aria-live="polite" style="font-size:0.75rem; color:#f1d5a5; margin-right:4px; font-weight:600;">Not stored on this browser</span>
         <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()">
           <span>💾</span> Save & Return Later
         </button>
-        <button type="button" class="btn btn-ghost-white" onclick="loadSampleData()">
-          <span>👤</span> Sample Faculty
-        </button>
         <button type="button" class="btn btn-gold" onclick="openModal('policyModal')">
-          <span>📜</span> Policy Ref
+          <span>?</span> How Scoring Works
         </button>
-        <button type="button" class="btn btn-secondary" onclick="exportJSON()">
-          <span>📥</span> Backup
-        </button>
+        <a class="btn btn-secondary" href="KMU_Unified_Policy_Draft.docx" download>
+          <span>📄</span> Download Draft Policy
+        </a>
         <button type="button" class="btn btn-primary" onclick="printDossier()">
-          <span>🖨️</span> Print PER
+          <span>🖨️</span> Print Draft Dossier
         </button>
       </div>
     </div>
   </header>
 
+  <section class="policy-status-banner no-print" role="status" aria-label="Policy and privacy status">
+    <div>
+      <strong>Controlled pilot only.</strong> This appraisal configuration is pending re-vetting, approval and notification. It has no operative statutory force yet. Proposed scoring rules are identified throughout the portal.
+    </div>
+    <div>
+      <strong>Privacy:</strong> this static site has no secure KMU login or server database. Do not enter live disciplinary or confidential personnel data. Browser storage is used only when you explicitly choose “Save & Return Later.”
+    </div>
+  </section>
+
   <!-- In-Progress Draft Recovery Banner -->
-  <div id="draftRecoveryBanner" class="draft-banner no-print" style="display:none;">
+  <div id="draftRecoveryBanner" class="draft-banner no-print" role="status" style="display:none;">
     <div class="draft-banner-content">
       <span class="draft-banner-icon">📋</span>
       <span id="draftBannerInfo"><strong>In-Progress Draft Detected:</strong> You have an existing appraisal session.</span>
     </div>
     <div class="draft-banner-actions">
-      <button type="button" class="btn btn-primary" onclick="restoreDraft()">Resume Where I Left Off ➔</button>
-      <button type="button" class="btn btn-secondary" onclick="clearDraftAndStartFresh()">Start Fresh</button>
+      <button type="button" id="draftResumeButton" class="btn btn-primary" onclick="restoreDraft()">Resume Where I Left Off ➔</button>
+      <button type="button" id="draftStartFreshButton" class="btn btn-secondary" onclick="clearDraftAndStartFresh()">Start Fresh</button>
     </div>
   </div>
 
@@ -76,7 +85,7 @@
       </div>
       <span class="wizard-arrow">➔</span>
       <div class="wizard-step" data-wizard="tab-peer" onclick="switchTab('tab-peer')">
-        <span class="wizard-step-num">5</span> <span>Dean's Peer Review</span>
+        <span class="wizard-step-num">5</span> <span>Officer Assessment</span>
       </div>
       <span class="wizard-arrow">➔</span>
       <div class="wizard-step" data-wizard="tab-targets" onclick="switchTab('tab-targets')">
@@ -88,7 +97,7 @@
       </div>
       <span class="wizard-arrow">➔</span>
       <div class="wizard-step" data-wizard="tab-summary" onclick="switchTab('tab-summary')">
-        <span class="wizard-step-num">8</span> <span>PER Dossier</span>
+        <span class="wizard-step-num">8</span> <span>Draft Dossier</span>
       </div>
     </div>
   </nav>
@@ -97,31 +106,31 @@
   <section class="quick-status-bar no-print">
     <div class="status-bar-container">
       <div class="status-item">
-        <span class="status-label">Active Weight Profile</span>
-        <span class="status-val" id="liveProfileName">Balanced Profile</span>
+        <span class="status-label" id="statusProfileTitle">Active Appraisal Mix</span>
+        <span class="status-val" id="liveProfileName">Profile pending</span>
       </div>
       <div class="status-item">
-        <span class="status-label">Consolidated Score</span>
+        <span class="status-label" id="statusScoreTitle">Consolidated Score</span>
         <span class="status-val">
-          <span id="liveScore" style="color:var(--kmu-maroon); font-size:1.4rem;">0.0</span>
+          <span id="liveScore" style="color:var(--kmu-maroon); font-size:1.4rem;">—</span>
           <span style="font-size:0.85rem; color:#64748b;">/ 100</span>
         </span>
       </div>
       <div class="status-item">
-        <span class="status-label">Objective vs Subjective Split</span>
+        <span class="status-label" id="statusSplitTitle">Objective vs Subjective Split</span>
         <span class="status-val" style="font-size:0.85rem; display:flex; flex-direction:column; gap:2px;">
-          <span>Obj: <strong id="disp_objective_score" style="color:var(--blue-600);">0.0 / 80%</strong></span>
-          <span>Subj (Dean): <strong id="disp_subjective_score" style="color:var(--kmu-maroon);">0.0 / 20%</strong></span>
+          <span>Objective: <strong id="top_objective_score" class="benchmark-text-pending">Not assessed</strong></span>
+          <span>Officer assessment: <strong id="top_subjective_score" class="benchmark-text-pending">Not assessed</strong></span>
         </span>
       </div>
       <div class="status-item">
-        <span class="status-label">Rating Classification</span>
+        <span class="status-label" id="statusRatingTitle">Rating Classification</span>
         <span class="status-val">
-          <span id="liveRatingBadge" class="rating-badge rating-unsatisfactory">Unsatisfactory</span>
+          <span id="liveRatingBadge" class="rating-badge rating-incomplete">Incomplete draft</span>
         </span>
       </div>
       <div class="status-item">
-        <span class="status-label">Statutory Cycle (Calendar Year)</span>
+        <span class="status-label" id="statusCycleTitle">Appraisal Cycle</span>
         <span class="status-val" style="font-size:0.85rem; color:var(--slate-700);">
           01 Jan – 31 Dec
         </span>
@@ -156,29 +165,29 @@
             <span class="nav-pill" id="navPillService">20%</span>
           </li>
           <li class="nav-item" data-tab="tab-peer">
-            <span>Section D: Dean's Peer Review</span>
+            <span>Section D: Officer Assessment</span>
             <span class="nav-pill" id="navPillPeer">20%</span>
           </li>
           <li class="nav-item" data-tab="tab-clinical" id="navItemClinical" style="display:none;">
-            <span>Section E: Clinical</span>
+            <span>Section E: Patient Care</span>
             <span class="nav-pill" id="navPillClinical">45%</span>
           </li>
           <li class="nav-item" data-tab="tab-targets">
             <span>Perf & Personal Dev Targets</span>
-            <span class="nav-pill" style="background:#fef3c7; color:#b45309;">2027</span>
+            <span class="nav-pill" style="background:#fef3c7; color:#b45309;">Next</span>
           </li>
           <li class="nav-item" data-tab="tab-redflag">
             <span>Disciplinary Control</span>
             <span class="nav-pill" style="background:#fee2e2; color:#b91c1c;">Flag</span>
           </li>
           <li class="nav-item" data-tab="tab-summary">
-            <span>PER Dossier & Sign-Off</span>
+            <span>Draft Dossier & Sign-Off</span>
             <span class="nav-pill" style="background:var(--kmu-gold); color:#fff;">Final</span>
           </li>
         </ul>
         <div style="padding:1rem; border-top:1px solid var(--slate-200); background:var(--slate-50);">
           <div style="font-size:0.75rem; color:#64748b; line-height:1.4;">
-            <strong>Statutory Cycle:</strong> Calendar Year (01 January to 31 December). Section D subjective evaluation evaluated directly by Concerned Dean.
+            <strong>Portal cycle configuration:</strong> 01 January to 31 December; this correction must be carried into the final approved policy/notification. Section D is completed by the designated Appraising Officer.
           </div>
         </div>
       </aside>
@@ -190,8 +199,8 @@
         <div class="tab-content active" id="tab-meta">
           <div class="section-title-wrap">
             <div>
-              <h2 class="section-title">Step 1: Faculty Member & Institutional Details</h2>
-              <p class="section-desc">Statutory administrative details matching university establishment registers.</p>
+              <h2 class="section-title" id="metaSectionTitle">Step 1: Faculty Member & Institutional Details</h2>
+              <p class="section-desc">Use the employee's substantive post, approved annual work assignment and current appointment or reporting order.</p>
             </div>
             <span class="section-badge">Part I: Master Profile</span>
           </div>
@@ -199,115 +208,139 @@
           <div class="form-grid">
             <div class="form-group" style="grid-column: span 2;">
               <label for="input_emp_name">Full Name of Faculty Member *</label>
-              <input type="text" id="input_emp_name" class="form-control" placeholder="e.g. Dr. Yasar Mehmood Yousafzai" value="Dr. Yasar Mehmood Yousafzai">
+              <input type="text" id="input_emp_name" class="form-control" placeholder="Example: Dr [Full Name]" autocomplete="off">
             </div>
 
             <div class="form-group">
               <label for="input_emp_desig">Substantive Designation *</label>
               <select id="input_emp_desig" class="form-control">
-                <option value="Professor">Professor (BPS-21 / TTS)</option>
-                <option value="Associate Professor" selected>Associate Professor (BPS-20 / TTS)</option>
-                <option value="Assistant Professor">Assistant Professor (BPS-19 / TTS)</option>
-                <option value="Lecturer">Lecturer (BPS-18)</option>
-                <option value="Demonstrator / Senior Registrar / MO">Demonstrator / Senior Registrar / Medical Officer (BPS-17/18)</option>
-                <option value="Research Scientist / Postdoc">Research Scientist / Postdoctoral Fellow (BPS-17-19 / Project)</option>
+                <option value="" selected>Select designation</option>
+                <optgroup label="Academic and Clinical Posts">
+                  <option value="Meritorious Professor">Meritorious Professor</option>
+                  <option value="Professor">Professor</option>
+                  <option value="Associate Professor">Associate Professor</option>
+                  <option value="Assistant Professor">Assistant Professor</option>
+                  <option value="Lecturer">Lecturer</option>
+                  <option value="Demonstrator">Demonstrator</option>
+                  <option value="Senior Registrar">Senior Registrar</option>
+                  <option value="Medical Officer">Medical Officer</option>
+                  <option value="Consultant">Consultant</option>
+                </optgroup>
+                <optgroup label="Research / Project Appointments — verify exact appointment order">
+                  <option value="Research Scientist">Research Scientist</option>
+                  <option value="Research Associate">Research Associate</option>
+                  <option value="Postdoctoral Fellow">Postdoctoral Fellow</option>
+                </optgroup>
               </select>
+            </div>
+
+            <div class="form-group">
+              <label for="input_leadership_role">Additional Leadership Appointment</label>
+              <select id="input_leadership_role" class="form-control">
+                <option value="None" selected>None</option>
+                <option value="Dean of Faculty">Dean of Faculty</option>
+                <option value="Director / Principal / Head of Institute">Director / Principal / Head of Institute</option>
+                <option value="Chairperson / Head of Department">Chairperson / Head of Department</option>
+              </select>
+              <span class="field-hint">Leadership is an additional appointment. It changes the reporting line, not the substantive appraisal profile.</span>
             </div>
 
             <div class="form-group">
               <label for="input_emp_dept">Institute / Department / Hospital Unit *</label>
               <select id="input_emp_dept" class="form-control">
-                <optgroup label="Basic Medical & Pharmaceutical Sciences">
-                  <option value="Institute of Basic Medical Sciences (IBMS)">Institute of Basic Medical Sciences (IBMS)</option>
-                  <option value="KMU Institute of Pharmaceutical Sciences (KMU-IPS)">KMU Institute of Pharmaceutical Sciences (KMU-IPS)</option>
+                <option value="" selected>Select current KMU constituent unit</option>
+                <optgroup label="Main Campus and Constituent Institutes">
+                  <option value="KMU Institute of Basic Medical Sciences (KMU-IBMS), Peshawar">KMU Institute of Basic Medical Sciences (KMU-IBMS), Peshawar</option>
+                  <option value="KMU Institute of Pharmaceutical Sciences (KMU-IPS), Peshawar">KMU Institute of Pharmaceutical Sciences (KMU-IPS), Peshawar</option>
+                  <option value="KMU Institute of Pathology and Diagnostic Medicine (KMU-IPDM), Peshawar">KMU Institute of Pathology and Diagnostic Medicine (KMU-IPDM), Peshawar</option>
+                  <option value="KMU Institute of Physical Medicine & Rehabilitation (KMU-IPM&R), Peshawar">KMU Institute of Physical Medicine &amp; Rehabilitation (KMU-IPM&amp;R), Peshawar</option>
+                  <option value="KMU Institute of Nursing Sciences (KMU-INS), Peshawar">KMU Institute of Nursing Sciences (KMU-INS), Peshawar</option>
+                  <option value="KMU Institute of Health Professions Education and Research (KMU-IHPER), Peshawar">KMU Institute of Health Professions Education and Research (KMU-IHPER), Peshawar</option>
+                  <option value="KMU Institute of Public Health & Social Sciences (KMU-IPH&SS), Peshawar">KMU Institute of Public Health &amp; Social Sciences (KMU-IPH&amp;SS), Peshawar</option>
+                  <option value="KMU Institute of Paramedical Sciences (KMU-IPMS), Peshawar">KMU Institute of Paramedical Sciences (KMU-IPMS), Peshawar</option>
+                  <option value="KMU Institute of Public Mental Health & Behavioral Sciences, Peshawar">KMU Institute of Public Mental Health &amp; Behavioral Sciences, Peshawar</option>
                 </optgroup>
-                <optgroup label="Pathology & Diagnostic Medicine">
-                  <option value="Institute of Pathology & Diagnostic Medicine (IPDM)" selected>Institute of Pathology & Diagnostic Medicine (IPDM)</option>
-                  <option value="Public Health Reference Laboratory (PHRL)">Public Health Reference Laboratory (PHRL)</option>
-                </optgroup>
-                <optgroup label="Clinical & Dental Sciences">
+                <optgroup label="Medical, Dental, Clinical and Diagnostic Units">
                   <option value="KMU Institute of Medical Sciences (KIMS), Kohat">KMU Institute of Medical Sciences (KIMS), Kohat</option>
                   <option value="KMU Institute of Dental Sciences (KIDS), Kohat">KMU Institute of Dental Sciences (KIDS), Kohat</option>
-                  <option value="Clinical Hospital Teaching Units & Wards">Clinical Hospital Teaching Units & Wards</option>
-                </optgroup>
-                <optgroup label="Allied Health & Nursing">
-                  <option value="Institute of Physical Medicine & Rehabilitation (IPMR)">Institute of Physical Medicine & Rehabilitation (IPMR)</option>
-                  <option value="Central Allied Health Sciences Departments">Central Allied Health Sciences Departments</option>
-                  <option value="Institute of Nursing Sciences (KMU-INS)">Institute of Nursing Sciences (KMU-INS)</option>
-                </optgroup>
-                <optgroup label="Public Health & Social Sciences">
-                  <option value="Institute of Public Health & Social Sciences (IPHSS)">Institute of Public Health & Social Sciences (IPHSS)</option>
-                  <option value="Institute of Mental Health & Behavioral Sciences (IMH&BS)">Institute of Mental Health & Behavioral Sciences (IMH&BS)</option>
-                  <option value="Institute of Health Professions Education & Research (IHPE)">Institute of Health Professions Education & Research (IHPE)</option>
-                  <option value="Institute of Family Medicine (IFM)">Institute of Family Medicine (IFM)</option>
+                  <option value="KMU Hospital & Research Centre (KMU-H&RC), Peshawar">KMU Hospital &amp; Research Centre (KMU-H&amp;RC), Peshawar</option>
+                  <option value="Khyber Pakhtunkhwa Public Health Reference Laboratory (KP-PHRL), KMU">Khyber Pakhtunkhwa Public Health Reference Laboratory (KP-PHRL), KMU</option>
+                  <option value="Department of Family Medicine, KMU-IPH&SS">Department of Family Medicine, KMU-IPH&amp;SS</option>
                 </optgroup>
                 <optgroup label="Regional Campuses Network (IHS)">
-                  <option value="KMU Institute of Health Sciences, Peshawar">KMU Institute of Health Sciences, Peshawar</option>
                   <option value="KMU Institute of Health Sciences, Swat">KMU Institute of Health Sciences, Swat</option>
-                  <option value="KMU Institute of Health Sciences, Hazara (Abbottabad)">KMU Institute of Health Sciences, Hazara (Abbottabad)</option>
+                  <option value="KMU Institute of Health Sciences, Swabi">KMU Institute of Health Sciences, Swabi</option>
+                  <option value="KMU Institute of Health Sciences, Hazara">KMU Institute of Health Sciences, Hazara</option>
                   <option value="KMU Institute of Health Sciences, Bannu">KMU Institute of Health Sciences, Bannu</option>
                   <option value="KMU Institute of Health Sciences, D.I. Khan">KMU Institute of Health Sciences, D.I. Khan</option>
                   <option value="KMU Institute of Health Sciences, Kohat">KMU Institute of Health Sciences, Kohat</option>
                   <option value="KMU Institute of Health Sciences, Mardan">KMU Institute of Health Sciences, Mardan</option>
-                  <option value="KMU Institute of Health Sciences, Swabi">KMU Institute of Health Sciences, Swabi</option>
-                  <option value="KMU Institute of Health Sciences, Karak">KMU Institute of Health Sciences, Karak</option>
-                  <option value="KMU Institute of Health Sciences, Kurram (Parachinar)">KMU Institute of Health Sciences, Kurram (Parachinar)</option>
+                  <option value="KMU Institute of Health Sciences, Thana">KMU Institute of Health Sciences, Thana</option>
+                  <option value="KMU Institute of Health Sciences, Parachinar, Kurram">KMU Institute of Health Sciences, Parachinar, Kurram</option>
                   <option value="KMU Institute of Health Sciences, Dir Upper">KMU Institute of Health Sciences, Dir Upper</option>
-                  <option value="KMU Institute of Health Sciences, Dir Lower (Timergara)">KMU Institute of Health Sciences, Dir Lower (Timergara)</option>
+                  <option value="KMU Institute of Health Sciences, Lower Dir">KMU Institute of Health Sciences, Lower Dir</option>
                   <option value="KMU Institute of Health Sciences, Buner">KMU Institute of Health Sciences, Buner</option>
-                  <option value="KMU Institute of Health Sciences, Lakki Marwat">KMU Institute of Health Sciences, Lakki Marwat</option>
                   <option value="KMU Institute of Health Sciences, Islamabad">KMU Institute of Health Sciences, Islamabad</option>
                 </optgroup>
+                <optgroup label="Lakki Marwat — Verify Current Notification">
+                  <option value="KMU Institute of Paramedical Sciences, Lakki Marwat">KMU Institute of Paramedical Sciences, Lakki Marwat</option>
+                </optgroup>
               </select>
+              <span class="field-hint">Names are aligned to current KMU directory, HR and admissions terminology checked on 10 October 2026. Where official sources differ (notably Lakki Marwat), the current appointment/posting notification prevails.</span>
             </div>
 
             <div class="form-group">
-              <label for="input_emp_cadre">Pay Scale & Service Cadre *</label>
+              <label for="input_emp_cadre">Pay Scale &amp; Service Cadre *</label>
               <select id="input_emp_cadre" class="form-control">
-                <option value="BPS-21 (Regular)">BPS-21 (Regular)</option>
-                <option value="BPS-20 (Regular)" selected>BPS-20 (Regular)</option>
-                <option value="BPS-19 (Regular)">BPS-19 (Regular)</option>
-                <option value="BPS-18 (Regular)">BPS-18 (Regular)</option>
-                <option value="BPS-17 (Regular)">BPS-17 (Regular)</option>
-                <option value="Tenure Track System (TTS)">Tenure Track System (TTS)</option>
-                <option value="Contract (Fixed Pay/Lump Sum)">Contract (Fixed Pay/Lump Sum)</option>
+                <option value="" selected>Select BPS, TTS, or Fixed Pay</option>
+                <option value="BPS">BPS</option>
+                <option value="TTS">TTS</option>
+                <option value="Fixed Pay">Fixed Pay</option>
               </select>
             </div>
 
             <div class="form-group">
-              <label for="input_emp_cycle">Appraisal Reporting Cycle (Calendar Year) *</label>
+              <label for="input_emp_cycle">Appraisal Cycle *</label>
               <select id="input_emp_cycle" class="form-control">
-                <option value="2026 (01 January – 31 December 2026)" selected>2026 (01 January – 31 December 2026)</option>
-                <option value="2025 (01 January – 31 December 2025)">2025 (01 January – 31 December 2025)</option>
-                <option value="2024 (01 January – 31 December 2024)">2024 (01 January – 31 December 2024)</option>
-                <option value="2027 (Upcoming Cycle)">2027 (Upcoming Cycle)</option>
+                <option value="Calendar Year 2026 (01 January – 31 December 2026)" selected>Calendar Year 2026 (01 January – 31 December 2026)</option>
+                <option value="Calendar Year 2027 (01 January – 31 December 2027)">Calendar Year 2027 (01 January – 31 December 2027)</option>
+                <option value="Calendar Year 2025 (01 January – 31 December 2025)">Calendar Year 2025 (01 January – 31 December 2025)</option>
               </select>
-              <span class="field-hint">Statutory rule: Annual cycle runs from 1st January to 31st December every year.</span>
+              <span class="field-hint">The portal applies a calendar-year cycle from 01 January to 31 December. The final approved policy/notification must state the same period before institutional use.</span>
             </div>
 
             <div class="form-group">
-              <label for="input_emp_appraiser">Appraising Officer (Concerned Dean) *</label>
-              <select id="input_emp_appraiser" class="form-control">
-                <option value="Dean, Faculty of Pathology & Diagnostic Medicine" selected>Dean, Faculty of Pathology & Diagnostic Medicine</option>
-                <option value="Dean, Faculty of Basic Medical Sciences">Dean, Faculty of Basic Medical Sciences</option>
-                <option value="Dean, Faculty of Clinical Sciences">Dean, Faculty of Clinical Sciences</option>
-                <option value="Dean, Faculty of Dental Sciences">Dean, Faculty of Dental Sciences</option>
-                <option value="Dean, Faculty of Allied Health Sciences">Dean, Faculty of Allied Health Sciences</option>
-                <option value="Dean, Faculty of Public Health & Social Sciences">Dean, Faculty of Public Health & Social Sciences</option>
-                <option value="Dean, Faculty of Nursing & Midwifery">Dean, Faculty of Nursing & Midwifery</option>
-                <option value="Director, Institute of Health Sciences (Concerned)">Director / Principal (Concerned Institute)</option>
-                <option value="Head of Department (HoD)">Head of Department (HoD)</option>
+              <label for="input_work_assignment">Approved Annual Work Assignment *</label>
+              <select id="input_work_assignment" class="form-control">
+                <option value="AUTO" selected>Use policy mapping from designation and unit</option>
+                <option value="Balanced Profile">Balanced academic assignment</option>
+                <option value="Research-Focused Profile">Research-focused assignment</option>
+                <option value="Teaching-Focused Profile (Regional IHS)">Teaching-focused regional IHS assignment</option>
+                <option value="Clinical-Focused Profile (Hospital Faculty)">Clinical academic or hospital assignment</option>
+                <option value="Research Cadres / Postdocs">Dedicated research cadre or postdoctoral assignment</option>
               </select>
+              <span class="field-hint">Research-focused and special profiles require a documented workload, JD, contract or annual assignment. TTS status alone does not change weights.</span>
+            </div>
+
+            <div class="form-group">
+              <label for="input_emp_appraiser">Appraising Officer *</label>
+              <input type="text" id="input_emp_appraiser" class="form-control" readonly value="Select a designation or leadership appointment">
             </div>
 
             <div class="form-group">
               <label for="input_emp_reviewer">Reviewing / Countersigning Officer *</label>
-              <select id="input_emp_reviewer" class="form-control">
-                <option value="Vice Chancellor, KMU" selected>Vice Chancellor, KMU</option>
-                <option value="Dean of Faculty">Dean of Faculty</option>
-                <option value="Director / Principal of Institute">Director / Principal of Institute</option>
-                <option value="Syndicate Moderation Committee">Syndicate Moderation Committee</option>
-              </select>
+              <input type="text" id="input_emp_reviewer" class="form-control" readonly value="Select a designation or leadership appointment">
+            </div>
+
+            <div class="form-group">
+              <label for="input_emp_final">Final Authority *</label>
+              <input type="text" id="input_emp_final" class="form-control" readonly value="Select a designation or leadership appointment">
+            </div>
+
+            <div class="form-group">
+              <label for="input_reporting_ref">Appointment / Reporting Order Reference</label>
+              <input type="text" id="input_reporting_ref" class="form-control" placeholder="Example: Ref. no. ___ dated DD-MM-YYYY">
+              <span class="field-hint">The draft matrix is not operative until approved. The current appointment or reporting notification prevails.</span>
             </div>
           </div>
 
@@ -322,15 +355,15 @@
             <div class="form-grid" style="margin-bottom:0;">
               <div class="form-group">
                 <label for="input_comm_member_1">Appraisal Committee Member 1</label>
-                <input type="text" id="input_comm_member_1" class="form-control" placeholder="Name, Designation & Institute" value="Prof. Dr. Muhammad Saleem, Professor IBMS">
+                <input type="text" id="input_comm_member_1" class="form-control" placeholder="Example: [Name] — [Designation], [KMU Institute]">
               </div>
               <div class="form-group">
                 <label for="input_comm_member_2">Appraisal Committee Member 2</label>
-                <input type="text" id="input_comm_member_2" class="form-control" placeholder="Name, Designation & Institute" value="Dr. Bushra Rehman, Assistant Professor IPDM">
+                <input type="text" id="input_comm_member_2" class="form-control" placeholder="Example: [Name] — [Designation], [KMU Institute]">
               </div>
               <div class="form-group">
                 <label for="input_comm_member_3">Appraisal Committee Member 3</label>
-                <input type="text" id="input_comm_member_3" class="form-control" placeholder="Name, Designation & Institute" value="Dr. Kinza Ayaz, Assistant Professor IPDM">
+                <input type="text" id="input_comm_member_3" class="form-control" placeholder="Example: [Name] — [Designation], [KMU Institute]">
               </div>
             </div>
           </div>
@@ -339,75 +372,84 @@
           <div class="profile-auto-card">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.75rem;">
               <div>
-                <span style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#78350f;">Statutory Workload & Appraisal Profile (Auto-Assigned)</span>
-                <h3 style="font-size:1.15rem; font-weight:800; color:var(--kmu-maroon); margin-top:2px;" id="disp_auto_profile_name">Balanced Profile</h3>
+                <span id="profileAssignmentTitle" style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#78350f;">Automatically Assigned Appraisal Mix</span>
+                <h3 style="font-size:1.15rem; font-weight:800; color:var(--kmu-maroon); margin-top:2px;" id="disp_auto_profile_name">Complete designation and institute</h3>
               </div>
               <div style="text-align:right;">
-                <span class="section-badge" style="background:#fff; border-color:#fcd34d; color:#78350f;" id="disp_auto_profile_basis">Derived from Substantive Post & Institute</span>
+                <span class="section-badge" style="background:#fff; border-color:#fcd34d; color:#78350f;" id="disp_auto_profile_basis">Awaiting profile details</span>
               </div>
             </div>
             
             <p style="font-size:0.8rem; color:#475569; margin-bottom:0.85rem;" id="disp_auto_profile_desc">
-              Statutory profile automatically determined under KMU Policy Section 9.1 based on Department/Campus, Cadre, and Rank.
+              Complete the substantive designation and KMU institute/unit fields to see the applicable appraisal mix. BPS, TTS or Fixed Pay does not change the mix.
             </p>
 
             <div class="profile-weight-chips">
               <div class="weight-chip">
                 <span class="weight-chip-label">Teaching</span>
-                <strong class="weight-chip-val" id="disp_auto_weight_teaching">30%</strong>
+                <strong class="weight-chip-val" id="disp_auto_weight_teaching">—</strong>
               </div>
               <div class="weight-chip">
                 <span class="weight-chip-label">Research</span>
-                <strong class="weight-chip-val" id="disp_auto_weight_research">30%</strong>
+                <strong class="weight-chip-val" id="disp_auto_weight_research">—</strong>
               </div>
               <div class="weight-chip">
                 <span class="weight-chip-label">Service</span>
-                <strong class="weight-chip-val" id="disp_auto_weight_service">20%</strong>
+                <strong class="weight-chip-val" id="disp_auto_weight_service">—</strong>
               </div>
               <div class="weight-chip">
-                <span class="weight-chip-label">Dean's Peer</span>
-                <strong class="weight-chip-val" id="disp_auto_weight_peer">20%</strong>
+                <span class="weight-chip-label">Officer Assessment</span>
+                <strong class="weight-chip-val" id="disp_auto_weight_peer">—</strong>
               </div>
               <div class="weight-chip" id="disp_auto_chip_clinical" style="display:none;">
                 <span class="weight-chip-label">Clinical</span>
                 <strong class="weight-chip-val" id="disp_auto_weight_clinical">45%</strong>
               </div>
-              <div class="weight-chip" style="background:#f1f5f9; border-color:#cbd5e1;">
-                <span class="weight-chip-label">Min Workload</span>
-                <strong class="weight-chip-val" id="disp_auto_min_wu">30 WU</strong>
-              </div>
+            </div>
+
+            <div class="profile-assignment-explainer">
+              <strong>Why this mix?</strong>
+              <ul>
+                <li>Standard academic appointments use the Balanced mix.</li>
+                <li>Regional Institutes of Health Sciences use the Teaching-focused mix.</li>
+                <li>Senior Registrar, Medical Officer, Consultant and KMU-H&amp;RC assignments use the Clinical / Patient Care mix.</li>
+                <li>Dedicated Research Scientist, Research Associate and Postdoctoral Fellow appointments use the Research Cadre mix.</li>
+                <li>Pay scale/service cadre and a faculty member's name never change the mix.</li>
+              </ul>
             </div>
 
             <div style="margin-top:0.75rem; font-size:0.75rem; color:#64748b; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
-              <span>⚖️ Need to adjust for special assignment?</span>
+              <span>A different mix requires an approved workload, JD, contract or annual assignment reference.</span>
               <button type="button" class="btn btn-secondary" style="padding:2px 8px; font-size:0.75rem;" onclick="toggleManualProfileOverride()">
-                <span>⚙️</span> Override Profile
+                <span>⚙️</span> Record Different Assignment
               </button>
             </div>
 
             <!-- Optional Hidden Manual Override Panel -->
             <div id="manualProfileOverridePanel" style="display:none; margin-top:0.75rem; padding-top:0.75rem; border-top:1px dashed #fcd34d;">
-              <label for="overrideProfileSelect" style="font-size:0.8rem; font-weight:700; color:var(--kmu-maroon);">Manual Profile Override (Requires Syndicate / Sanction Order):</label>
+              <label for="overrideProfileSelect" style="font-size:0.8rem; font-weight:700; color:var(--kmu-maroon);">Documented Profile Assignment:</label>
               <select id="overrideProfileSelect" class="form-control" style="margin-top:4px;" onchange="applyManualProfileOverride(this.value)">
                 <option value="Balanced Profile">Balanced Profile (Teaching 30%, Research 30%, Service 20%, Peer 20%)</option>
                 <option value="Research-Focused Profile">Research-Focused Profile (Teaching 20%, Research 50%, Service 15%, Peer 15%)</option>
-                <option value="Teaching-Focused (Regional IHS)">Teaching-Focused / Regional IHS (Teaching 50%, Research 15%, Service 20%, Peer 15%)</option>
-                <option value="Clinical-Focused (Hospital Faculty)">Clinical-Focused / Hospital Faculty (Clinical 45%, Research 20%, Teaching 15%, Service 10%, Peer 10%)</option>
+                <option value="Teaching-Focused Profile (Regional IHS)">Teaching-Focused / Regional IHS (Teaching 50%, Research 15%, Service 20%, Peer 15%)</option>
+                <option value="Clinical-Focused Profile (Hospital Faculty)">Clinical-Focused / Hospital Faculty (Clinical 45%, Research 20%, Teaching 15%, Service 10%, Peer 10%)</option>
                 <option value="Research Cadres / Postdocs">Research Cadres / Postdocs (Research 65%, Peer 15%, Teaching 10%, Service 10%)</option>
               </select>
+              <label for="input_profile_assignment_ref" style="font-size:0.8rem; font-weight:700; color:var(--kmu-maroon); display:block; margin-top:0.65rem;">Supporting Reference *</label>
+              <input id="input_profile_assignment_ref" class="form-control" type="text" placeholder="Example: approved workload/JD/contract reference and date">
             </div>
           </div>
 
           <div class="step-footer-actions">
             <div style="font-size:0.825rem; color:#64748b;">
-              Step 1 of 7: Faculty Identity & Substantive Post
+              Step 1 of 8: Faculty Identity & Substantive Post
             </div>
             <div class="step-footer-actions-right">
               <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()">
                 <span>💾</span> Save & Return Later
               </button>
               <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-teaching', 'Step 2: Section A — Teaching')">
-                Save & Continue ➔
+                Continue ➔
               </button>
             </div>
           </div>
@@ -417,8 +459,8 @@
         <div class="tab-content" id="tab-profile" style="display:none !important;" aria-hidden="true">
           <div class="section-title-wrap">
             <div>
-              <h2 class="section-title">Step 2: Appraisal Weighting Profile Selection</h2>
-              <p class="section-desc">Select the statutory profile corresponding to your sanctioned post and workload distribution.</p>
+              <h2 class="section-title">Reference: Draft Appraisal Weighting Profiles</h2>
+              <p class="section-desc">Select the draft profile corresponding to the approved annual work assignment.</p>
             </div>
             <span class="section-badge">Section 9.1 Matrix</span>
           </div>
@@ -430,8 +472,8 @@
             <select id="profileDropdownSelect" class="form-control" onchange="window.selectProfile(this.value)">
               <option value="Balanced Profile" selected>Balanced Profile (Teaching 30%, Research 30%, Service 20%, Peer 20%)</option>
               <option value="Research-Focused Profile">Research-Focused Profile (Teaching 20%, Research 50%, Service 15%, Peer 15%)</option>
-              <option value="Teaching-Focused (Regional IHS)">Teaching-Focused / Regional IHS (Teaching 50%, Research 15%, Service 20%, Peer 15%)</option>
-              <option value="Clinical-Focused (Hospital Faculty)">Clinical-Focused / Hospital Faculty (Clinical 45%, Research 20%, Teaching 15%, Service 10%, Peer 10%)</option>
+              <option value="Teaching-Focused Profile (Regional IHS)">Teaching-Focused / Regional IHS (Teaching 50%, Research 15%, Service 20%, Peer 15%)</option>
+              <option value="Clinical-Focused Profile (Hospital Faculty)">Clinical-Focused / Hospital Faculty (Clinical 45%, Research 20%, Teaching 15%, Service 10%, Peer 10%)</option>
               <option value="Research Cadres / Postdocs">Research Cadres / Postdocs (Research 65%, Peer 15%, Teaching 10%, Service 10%)</option>
             </select>
             <span class="field-hint" style="color:#78350f; margin-top: 4px; display: block;">
@@ -449,11 +491,11 @@
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>Statutory Profile</th>
+                  <th>Draft Appraisal Profile</th>
                   <th>Teaching (S_A)</th>
                   <th>Research (S_B)</th>
                   <th>Service (S_C)</th>
-                  <th>Dean's Peer (S_D)</th>
+                  <th>Officer Assessment (S_D)</th>
                   <th>Clinical (S_E)</th>
                   <th>Min Teaching WU</th>
                   <th>Total</th>
@@ -521,7 +563,7 @@
                 <span>💾</span> Save & Return Later
               </button>
               <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-teaching', 'Step 3: Teaching Scoring')">
-                Save & Continue ➔
+                Continue ➔
               </button>
             </div>
           </div>
@@ -531,7 +573,7 @@
         <div class="tab-content" id="tab-teaching">
           <div class="section-title-wrap">
             <div>
-              <h2 class="section-title">Step 3: Section A — Teaching & Curriculum Delivery (Objective)</h2>
+              <h2 class="section-title" id="teachingSectionTitle">Step 2: Section A — Teaching & Curriculum Delivery (Objective)</h2>
               <p class="section-desc">Evaluates pedagogical delivery, student feedback, and workload unit fulfillment.</p>
             </div>
             <div style="text-align:right;">
@@ -547,7 +589,7 @@
           <div class="form-grid">
             <div class="form-group">
               <label for="input_qec_score">Student Feedback / QEC Score (0–100) *</label>
-              <input type="number" id="input_qec_score" class="form-control" min="0" max="100" value="82">
+              <input type="number" id="input_qec_score" class="form-control" min="0" max="100" step="0.1" placeholder="Example: 86.5">
               <span class="field-hint">Certified annual Quality Enhancement Cell evaluation score.</span>
             </div>
             <div class="form-group">
@@ -557,7 +599,7 @@
             </div>
             <div class="form-group" style="grid-column: span 2;">
               <label for="input_actual_wu">Actual Teaching WU Delivered This Year *</label>
-              <input type="number" id="input_actual_wu" class="form-control" min="0" max="150" value="32">
+              <input type="number" id="input_actual_wu" class="form-control" min="0" max="150" step="0.1" placeholder="Example: 34">
               <span class="field-hint" style="color:#b91c1c; font-weight:600; margin-top:4px;">
                 ⚠️ Clarification: These teaching hours strictly exclude teaching conducted as visiting faculty, outside the constituent institute, or for which separate remuneration/honorarium has been received.
               </span>
@@ -568,20 +610,20 @@
                 <option value="N" selected>No (Standard Proration Applies)</option>
                 <option value="Y">Yes (Sanctioned Research / Medical / Study Leave)</option>
               </select>
-              <span class="field-hint">Requires HoD endorsement and Concerned Dean approval.</span>
+              <span class="field-hint">Requires documentary approval by the authority identified in the current applicable notification.</span>
             </div>
           </div>
 
           <div class="kpi-card" style="margin-bottom:1.5rem; background:#fff8f8; border-color:#fecaca;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
-                <span class="kpi-title">Effective Teaching Score (Objective)</span>
-                <div class="kpi-value" style="color:var(--kmu-maroon);" id="disp_effective_teaching">82.0</div>
+                <span class="kpi-title" id="teachingScoreTitle">Effective Teaching Score (Objective)</span>
+                <div class="kpi-value" style="color:var(--kmu-maroon);" id="disp_effective_teaching">0.0%</div>
                 <span class="kpi-desc">Teaching Attainment Percentage (based on QEC evaluation & workload delivery)</span>
               </div>
               <div style="text-align:right;">
-                <span class="kpi-title">Weighted Contribution</span>
-                <div class="kpi-value" style="color:var(--slate-800);" id="disp_weighted_a">24.60</div>
+                <span class="kpi-title" id="teachingContributionTitle">Weighted Contribution</span>
+                <div class="kpi-value" style="color:var(--slate-800);" id="disp_weighted_a">0.00 pts</div>
                 <span class="kpi-desc">Points added to Objective Score</span>
               </div>
             </div>
@@ -593,8 +635,8 @@
               <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()">
                 <span>💾</span> Save & Return Later
               </button>
-              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-research', 'Step 4: Research & Grants')">
-                Save & Continue ➔
+              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-research', 'Step 3: Research & Grants')">
+                Continue ➔
               </button>
             </div>
           </div>
@@ -604,13 +646,17 @@
         <div class="tab-content" id="tab-research">
           <div class="section-title-wrap">
             <div>
-              <h2 class="section-title">Step 4: Section B — Research, Grants, Supervision & Commercialization</h2>
+              <h2 class="section-title" id="researchSectionTitle">Step 3: Section B — Research, Grants, Supervision & Commercialization</h2>
               <p class="section-desc">Measures indexed research papers, competitive grants, postgraduate completions, and patents.</p>
             </div>
             <div style="text-align:right;">
               <span class="section-badge">Weight: <strong id="disp_weight_b">30%</strong></span>
               
             </div>
+          </div>
+
+          <div class="info-callout">
+            <strong>Pilot research calibration:</strong> the draft point values and category caps below are retained, but annual attainment is compared with a profile-specific full-credit benchmark instead of requiring all five categories to approach their theoretical maxima. Current pilot benchmarks are 15 raw points (Regional IHS), 20 (Clinical), 30 (Balanced), 45 (Research-focused) and 60 (Research Cadre). These values require ORIC/ASRB validation before policy approval and cannot support a personnel decision in their present form.
           </div>
 
           <!-- B1: Publications -->
@@ -634,42 +680,42 @@
                   <td>IF ≥ 5.0 (W-Category / Top Tier)</td>
                   <td>Lead / Principal Author</td>
                   <td>10</td>
-                  <td><input type="number" id="input_pub_high_lead" class="input-num" min="0" value="1"></td>
+                  <td><input type="number" id="input_pub_high_lead" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
                 </tr>
                 <tr>
                   <td>High Impact Factor</td>
                   <td>IF ≥ 5.0</td>
                   <td>Co-Author</td>
                   <td>5</td>
-                  <td><input type="number" id="input_pub_high_co" class="input-num" min="0" value="2"></td>
+                  <td><input type="number" id="input_pub_high_co" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
                 </tr>
                 <tr>
                   <td>Moderate Impact Factor</td>
                   <td>IF 1.0 – 4.99 (X-Category)</td>
                   <td>Lead / Principal Author</td>
                   <td>6</td>
-                  <td><input type="number" id="input_pub_mod_lead" class="input-num" min="0" value="2"></td>
+                  <td><input type="number" id="input_pub_mod_lead" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
                 </tr>
                 <tr>
                   <td>Moderate Impact Factor</td>
                   <td>IF 1.0 – 4.99</td>
                   <td>Co-Author</td>
                   <td>3</td>
-                  <td><input type="number" id="input_pub_mod_co" class="input-num" min="0" value="1"></td>
+                  <td><input type="number" id="input_pub_mod_co" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
                 </tr>
                 <tr>
                   <td>Indexed Low Impact Factor</td>
                   <td>HEC Recognized / Y-Category</td>
                   <td>Lead / Principal Author</td>
                   <td>4</td>
-                  <td><input type="number" id="input_pub_low_lead" class="input-num" min="0" value="1"></td>
+                  <td><input type="number" id="input_pub_low_lead" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
                 </tr>
                 <tr>
                   <td>Indexed Low Impact Factor</td>
                   <td>HEC Recognized</td>
                   <td>Co-Author</td>
                   <td>2</td>
-                  <td><input type="number" id="input_pub_low_co" class="input-num" min="0" value="0"></td>
+                  <td><input type="number" id="input_pub_low_co" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
                 </tr>
                 <tr class="subtotal-row">
                   <td colspan="4">B1 Subtotal (Raw: <span id="disp_sub_b1_raw">0</span> pts)</td>
@@ -698,25 +744,25 @@
                   <td>International Book (Authored / Edited)</td>
                   <td>Reputable academic press with ISBN</td>
                   <td>8</td>
-                  <td><input type="number" id="input_book_int" class="input-num" min="0" value="0"></td>
+                  <td><input type="number" id="input_book_int" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
                 </tr>
                 <tr>
                   <td>National Book (Authored / Edited)</td>
                   <td>HEC recognized national publisher</td>
                   <td>5</td>
-                  <td><input type="number" id="input_book_nat" class="input-num" min="0" value="1"></td>
+                  <td><input type="number" id="input_book_nat" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
                 </tr>
                 <tr>
                   <td>International Book Chapter</td>
                   <td>Indexed monograph / Springer / Elsevier / etc.</td>
                   <td>4</td>
-                  <td><input type="number" id="input_chapter_int" class="input-num" min="0" value="1"></td>
+                  <td><input type="number" id="input_chapter_int" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
                 </tr>
                 <tr>
                   <td>National Book Chapter</td>
                   <td>National volume with ISBN</td>
                   <td>2</td>
-                  <td><input type="number" id="input_chapter_nat" class="input-num" min="0" value="0"></td>
+                  <td><input type="number" id="input_chapter_nat" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
                 </tr>
                 <tr class="subtotal-row">
                   <td colspan="3">B2 Subtotal (Raw: <span id="disp_sub_b2_raw">0</span> pts)</td>
@@ -730,24 +776,33 @@
           <h3 style="font-size:0.95rem; font-weight:700; color:var(--kmu-maroon); margin:1.25rem 0 0.75rem 0;">
             B3: Research Grants Won & Applied <span class="cap-badge">Capped at 50 pts (Applied max 20)</span>
           </h3>
+          <p class="provisional-note"><strong>Draft open item A.9:</strong> national Co-PI points and the 2-point application rate are proposed values pending ORIC/Research Committee ratification. Small-grant Co-PI scoring is not defined and is therefore not scored.</p>
           
           <div class="grant-input-card">
             <div style="font-weight:700; color:var(--kmu-maroon); font-size:0.875rem; margin-bottom:0.75rem;">
-              + Add Competitive Grant to Ledger (Amount Directly Determines Scoring Category)
+              + Add Competitive Grant to Ledger
             </div>
             <div class="grant-grid-form">
               <div class="form-group" style="grid-column:span 2;">
                 <label for="input_new_grant_title">Project / Research Grant Title *</label>
-                <input type="text" id="input_new_grant_title" class="form-control" placeholder="e.g. Genomic Surveillance of Drug-Resistant Pathogens">
+                <input type="text" id="input_new_grant_title" class="form-control" placeholder="Example: title exactly as shown on award/application">
               </div>
               <div class="form-group">
                 <label for="input_new_grant_agency">Funding Agency *</label>
-                <input type="text" id="input_new_grant_agency" class="form-control" placeholder="e.g. HEC, PSF, NIH, Wellcome, GCF">
+                <input type="text" id="input_new_grant_agency" class="form-control" placeholder="Example: funding agency exactly as recorded">
               </div>
               <div class="form-group">
                 <label for="input_new_grant_amount">Total Grant Amount (in PKR) *</label>
-                <input type="number" id="input_new_grant_amount" class="form-control" placeholder="e.g. 8500000 (or 8.5 for Millions)">
-                <span class="field-hint">>10M: Major (15/4.5 pts) | 1-10M: Nat (8/4 pts) | <1M: Small (4/2 pts)</span>
+                <input type="number" id="input_new_grant_amount" class="form-control" min="1" step="1" placeholder="Example: 8500000 (PKR; digits only)">
+                <span class="field-hint">Enter the amount for verification; the approved funding band is selected separately.</span>
+              </div>
+              <div class="form-group">
+                <label for="input_new_grant_band">Funding Band *</label>
+                <select id="input_new_grant_band" class="form-control">
+                  <option value="International >10M" selected>International / major &gt; PKR 10M</option>
+                  <option value="National 1–10M">National PKR 1–10M</option>
+                  <option value="Small <1M">Small competitive grant &lt; PKR 1M</option>
+                </select>
               </div>
               <div class="form-group">
                 <label for="input_new_grant_role">Your Investigator Role *</label>
@@ -777,6 +832,7 @@
                   <tr>
                     <th>Project / Grant Title</th>
                     <th>Funding Agency</th>
+                    <th>Funding Band</th>
                     <th>Grant Amount (PKR)</th>
                     <th>Role</th>
                     <th>Status</th>
@@ -815,25 +871,25 @@
                   <td>PhD Scholar Completed & Awarded</td>
                   <td>ASRB Notification & Thesis Defense</td>
                   <td>8</td>
-                  <td><input type="number" id="input_sup_phd" class="input-num" min="0" value="1"></td>
+                  <td><input type="number" id="input_sup_phd" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
                 </tr>
                 <tr>
                   <td>MPhil / MS / Masters Scholar Completed</td>
                   <td>Approved Degree Notification</td>
                   <td>4</td>
-                  <td><input type="number" id="input_sup_mphil" class="input-num" min="0" value="3"></td>
+                  <td><input type="number" id="input_sup_mphil" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
                 </tr>
                 <tr>
                   <td>Senior Clinical Trainee (FCPS-II / MD / MS)</td>
                   <td>CPSP / KMU Examination Pass Notification</td>
                   <td>8</td>
-                  <td><input type="number" id="input_sup_clin_sr" class="input-num" min="0" value="0"></td>
+                  <td><input type="number" id="input_sup_clin_sr" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
                 </tr>
                 <tr>
                   <td>Junior Clinical / Fellowship Trainee</td>
                   <td>Documented rotation completion</td>
                   <td>4</td>
-                  <td><input type="number" id="input_sup_clin_jr" class="input-num" min="0" value="0"></td>
+                  <td><input type="number" id="input_sup_clin_jr" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
                 </tr>
                 <tr class="subtotal-row">
                   <td colspan="3">B4 Subtotal (Raw: <span id="disp_sub_b4_raw">0</span> pts)</td>
@@ -862,25 +918,25 @@
                   <td>International Patent Granted</td>
                   <td>USPTO, EPO, or WIPO patent award</td>
                   <td>10</td>
-                  <td><input type="number" id="input_innov_patent_int" class="input-num" min="0" value="0"></td>
+                  <td><input type="number" id="input_innov_patent_int" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
                 </tr>
                 <tr>
                   <td>National Patent Granted</td>
                   <td>IPO Pakistan certificate</td>
                   <td>6</td>
-                  <td><input type="number" id="input_innov_patent_nat" class="input-num" min="0" value="1"></td>
+                  <td><input type="number" id="input_innov_patent_nat" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
                 </tr>
                 <tr>
                   <td>Commercial Project / Product / Diagnostic Assay</td>
                   <td>ORIC spin-off or commercial licensing</td>
                   <td>8</td>
-                  <td><input type="number" id="input_innov_project" class="input-num" min="0" value="1"></td>
+                  <td><input type="number" id="input_innov_project" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
                 </tr>
                 <tr>
                   <td>KMU-Overhead-Generating Engagement</td>
                   <td>Clinical trials or diagnostic testing revenues</td>
                   <td>10</td>
-                  <td><input type="number" id="input_innov_overhead" class="input-num" min="0" value="1"></td>
+                  <td><input type="number" id="input_innov_overhead" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
                 </tr>
                 <tr class="subtotal-row">
                   <td colspan="3">B5 Subtotal (Raw: <span id="disp_sub_b5_raw">0</span> pts)</td>
@@ -894,12 +950,12 @@
           <div class="kpi-card" style="margin-top:1.25rem; background:#fffdf5; border-color:#fde68a;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
-                <span class="kpi-title">Section B Attainment Score (%)</span>
+                <span class="kpi-title" id="researchScoreTitle">Research Attainment Score (%)</span>
                 <div class="kpi-value" style="color:var(--kmu-gold);" id="disp_raw_b">0.0</div>
-                <span class="kpi-desc">Capped at maximum 200 base points (Formula: MIN(200, B1+B2+B3+B4+B5))</span>
+                <span class="kpi-desc"><strong id="disp_research_raw_summary">0.0 raw points</strong> compared with the <strong id="disp_research_benchmark">profile full-credit benchmark</strong>. The underlying draft raw total remains capped at 200 for audit traceability.</span>
               </div>
               <div style="text-align:right;">
-                <span class="kpi-title">Weighted Contribution</span>
+                <span class="kpi-title" id="researchContributionTitle">Weighted Contribution</span>
                 <div class="kpi-value" style="color:var(--slate-800);" id="disp_weighted_b">0.00</div>
                 <span class="kpi-desc">Points added to Objective Score</span>
               </div>
@@ -907,13 +963,13 @@
           </div>
 
           <div class="step-footer-actions">
-            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-teaching')">← Back to Step 3</button>
+            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-teaching')">← Back to Step 2</button>
             <div class="step-footer-actions-right">
               <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()">
                 <span>💾</span> Save & Return Later
               </button>
-              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-service', 'Step 5: Institutional Service')">
-                Save & Continue ➔
+              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-service', 'Step 4: Institutional Service')">
+                Continue ➔
               </button>
             </div>
           </div>
@@ -923,7 +979,7 @@
         <div class="tab-content" id="tab-service">
           <div class="section-title-wrap">
             <div>
-              <h2 class="section-title">Step 5: Section C — Institutional Service & Leadership (Objective)</h2>
+              <h2 class="section-title" id="serviceSectionTitle">Step 4: Section C — Institutional Service & Leadership (Objective)</h2>
               <p class="section-desc">Evaluates governance contributions, committee work, policy formulation, and administrative charges.</p>
             </div>
             <div style="text-align:right;">
@@ -932,12 +988,18 @@
             </div>
           </div>
 
+          <p class="provisional-note"><strong>Draft open item A.10:</strong> this itemized service rubric is a proposed operational breakdown pending Registrar/QEC ratification. Evidence must be verified and the same activity must not be counted twice.</p>
+
+          <div class="info-callout">
+            <strong>Clinical staff:</strong> patient treatment, diagnostic delivery, on-call continuity and bedside teaching are measured in Section E under the Clinical / Patient Care mix. Do not claim the same activity again in this institutional-service section.
+          </div>
+
           <div class="data-table-wrap">
             <table class="data-table">
               <thead>
                 <tr>
                   <th>Institutional Service Activity</th>
-                  <th>Statutory Evidence</th>
+                  <th>Required Evidence</th>
                   <th>Formula / Max</th>
                   <th style="width:100px;">Input</th>
                   <th>Attained</th>
@@ -948,29 +1010,29 @@
                   <td>Active Statutory / Institutional Committee Membership</td>
                   <td>Official notification from Registrar / Dean / Director</td>
                   <td>5 pts each (Max 25)</td>
-                  <td><input type="number" id="input_comm_member" class="input-num" min="0" value="3"></td>
-                  <td><strong id="disp_comm_member">15</strong> pts</td>
+                  <td><input type="number" id="input_comm_member" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
+                  <td><strong id="disp_comm_member">0</strong> pts</td>
                 </tr>
                 <tr>
                   <td>Committee Chairmanship / Convenorship</td>
                   <td>Official appointment order as Convener / Chair</td>
                   <td>10 pts each (Max 20)</td>
-                  <td><input type="number" id="input_comm_chair" class="input-num" min="0" value="1"></td>
-                  <td><strong id="disp_comm_chair">10</strong> pts</td>
+                  <td><input type="number" id="input_comm_chair" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
+                  <td><strong id="disp_comm_chair">0</strong> pts</td>
                 </tr>
                 <tr>
                   <td>Curriculum Development or Institutional Policy Document Authored</td>
                   <td>Approved by Academic Council / Syndicate</td>
                   <td>10 pts each (Max 30)</td>
-                  <td><input type="number" id="input_policy_doc" class="input-num" min="0" value="2"></td>
-                  <td><strong id="disp_policy_doc">20</strong> pts</td>
+                  <td><input type="number" id="input_policy_doc" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
+                  <td><strong id="disp_policy_doc">0</strong> pts</td>
                 </tr>
                 <tr>
                   <td>Laboratory, Clinical Unit, or Specialized Facility Management Charge</td>
                   <td>Official notification as In-Charge / Section Head</td>
                   <td>15 pts each (Max 30)</td>
-                  <td><input type="number" id="input_facility_charge" class="input-num" min="0" value="1"></td>
-                  <td><strong id="disp_facility_charge">15</strong> pts</td>
+                  <td><input type="number" id="input_facility_charge" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
+                  <td><strong id="disp_facility_charge">0</strong> pts</td>
                 </tr>
                 <tr>
                   <td>Additional Appointment Held This Year (Dean / Director / HoD)</td>
@@ -986,7 +1048,7 @@
                 </tr>
                 <tr class="subtotal-row">
                   <td colspan="4">Section C Service Attainment Score (%)</td>
-                  <td><span class="highlight-subtotal" id="disp_raw_c">60.0</span> / 100</td>
+                  <td><span class="highlight-subtotal" id="disp_raw_c">0.0</span> / 100</td>
                 </tr>
               </tbody>
             </table>
@@ -995,26 +1057,26 @@
           <div class="kpi-card" style="margin-top:1.25rem; background:#eff6ff; border-color:#bfdbfe;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
-                <span class="kpi-title">Section C Attainment Score (%)</span>
-                <div class="kpi-value" style="color:var(--blue-600);" id="disp_raw_c_card">60.0</div>
+                <span class="kpi-title" id="serviceScoreTitle">Section C Attainment Score (%)</span>
+                <div class="kpi-value" style="color:var(--blue-600);" id="disp_raw_c_card">0.0</div>
                 <span class="kpi-desc">Calculated score out of 100 base points</span>
               </div>
               <div style="text-align:right;">
-                <span class="kpi-title">Weighted Contribution</span>
-                <div class="kpi-value" style="color:var(--slate-800);" id="disp_weighted_c">12.00</div>
+                <span class="kpi-title" id="serviceContributionTitle">Weighted Contribution</span>
+                <div class="kpi-value" style="color:var(--slate-800);" id="disp_weighted_c">0.00 pts</div>
                 <span class="kpi-desc">Points added to Objective Score</span>
               </div>
             </div>
           </div>
 
           <div class="step-footer-actions">
-            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-research')">← Back to Step 4</button>
+            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-research')">← Back to Step 3</button>
             <div class="step-footer-actions-right">
               <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()">
                 <span>💾</span> Save & Return Later
               </button>
-              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-peer', 'Step 6: Dean's Peer Review')">
-                Save & Continue ➔
+              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-peer', 'Step 5: Officer Assessment')">
+                Continue ➔
               </button>
             </div>
           </div>
@@ -1024,8 +1086,8 @@
         <div class="tab-content" id="tab-peer">
           <div class="section-title-wrap">
             <div>
-              <h2 class="section-title">Step 6: Section D — Peer Evaluation & Professional Conduct (Subjective Evaluation by Concerned Dean)</h2>
-              <p class="section-desc">Evaluates professional decorum, institutional citizenship, and continuing professional development as assessed by the Concerned Dean.</p>
+              <h2 class="section-title" id="officerSectionTitle">Step 5: Section D — Peer Evaluation, Professional Conduct & CPD</h2>
+              <p class="section-desc">Completed by the designated Appraising Officer under the applicable reporting line.</p>
             </div>
             <div style="text-align:right;">
               <span class="section-badge">Weight: <strong id="disp_weight_d">20%</strong></span>
@@ -1033,8 +1095,10 @@
             </div>
           </div>
 
+          <p class="provisional-note"><strong>Draft open item A.11:</strong> the 13 peer criteria and five CPD targets are proposed pending QEC/HR ratification.</p>
+
           <div class="info-callout" style="background:#fff8f8; border-left-color:var(--kmu-maroon); color:#781212;">
-            <strong>Subjective Evaluation by Concerned Dean:</strong> Unlike Sections A, B, C, and E which represent objective verified outputs, Section D represents qualitative professional conduct, collegiality, and leadership decorum evaluated directly by the Concerned Dean. The objective and subjective ratings carry independent evaluations before consolidation.
+            <strong>Subjective evaluation:</strong> Section D records professional conduct, collegiality and development. It is assessed by the designated Appraising Officer and remains subject to review and moderation.
           </div>
 
           <h3 style="font-size:0.95rem; font-weight:700; color:var(--kmu-maroon); margin-bottom:0.75rem;">
@@ -1056,12 +1120,12 @@
           <div class="kpi-card" style="margin-top:1.25rem; background:#ecfdf5; border-color:#a7f3d0;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
-                <span class="kpi-title">Section D Qualitative Attainment Score (%)</span>
+                <span class="kpi-title" id="officerScoreTitle">Section D Qualitative Attainment Score (%)</span>
                 <div class="kpi-value" style="color:var(--emerald-600);" id="disp_raw_d">0.0</div>
                 <span class="kpi-desc">Calculated score out of 88 base points</span>
               </div>
               <div style="text-align:right;">
-                <span class="kpi-title">Weighted Subjective Contribution</span>
+                <span class="kpi-title" id="officerContributionTitle">Weighted Subjective Contribution</span>
                 <div class="kpi-value" style="color:var(--slate-800);" id="disp_weighted_d">0.00</div>
                 <span class="kpi-desc">Subjective marks added to final rating</span>
               </div>
@@ -1069,13 +1133,13 @@
           </div>
 
           <div class="step-footer-actions">
-            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-service')">← Back to Step 5</button>
+            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-service')">← Back to Step 4</button>
             <div class="step-footer-actions-right">
               <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()">
                 <span>💾</span> Save & Return Later
               </button>
-              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue(appraisalState.selectedProfile === 'Clinical-Focused Profile (Hospital Faculty)' ? 'tab-clinical' : 'tab-targets', 'Step 7: Next Year Targets')">
-                Save & Continue ➔
+              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue(appraisalState.selectedProfile === 'Clinical-Focused Profile (Hospital Faculty)' ? 'tab-clinical' : 'tab-targets', 'Step 6: Next Reporting Period Targets')">
+                Continue ➔
               </button>
             </div>
           </div>
@@ -1085,8 +1149,8 @@
         <div class="tab-content" id="tab-clinical">
           <div class="section-title-wrap">
             <div>
-              <h2 class="section-title">Step 6B: Section E — Clinical & Diagnostic Service (Objective)</h2>
-              <p class="section-desc">Active strictly for hospital faculty on the Clinical-Focused Profile (45% Weight).</p>
+              <h2 class="section-title" id="clinicalSectionTitle">Step 5B: Section E — Clinical &amp; Patient Care Service (Objective)</h2>
+              <p class="section-desc">Active for a documented Clinical / Patient Care assignment (45% Weight).</p>
             </div>
             <div style="text-align:right;">
               <span class="section-badge">Weight: <strong id="disp_weight_e">45%</strong></span>
@@ -1094,40 +1158,64 @@
             </div>
           </div>
 
+          <p class="provisional-note"><strong>Draft open item A.12:</strong> this clinical rubric is proposed pending Dean/QEC ratification. Enter verified attainment percentages from an approved unit norm or audit—not unsupported discretionary points.</p>
+
+          <div class="form-grid clinical-evidence-grid">
+            <div class="form-group">
+              <label for="input_clin_service_mode">Clinical / Diagnostic Service Mode *</label>
+              <select id="input_clin_service_mode" class="form-control">
+                <option value="" selected>Select the notified service mode</option>
+                <option value="Patient care">Patient care</option>
+                <option value="Dental care">Dental care</option>
+                <option value="Diagnostic / pathology service">Diagnostic / pathology service</option>
+                <option value="Rehabilitation / allied health service">Rehabilitation / allied health service</option>
+                <option value="Other notified clinical service">Other notified clinical service</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="input_clin_evidence_ref">Approved Unit Norm / Evidence Reference *</label>
+              <input type="text" id="input_clin_evidence_ref" class="form-control" placeholder="Example: unit target, verified roster or audit reference and date">
+            </div>
+          </div>
+
+          <div class="warning-callout">
+            <strong>Aggregate evidence only:</strong> do not enter patient names, MR numbers, specimen identifiers or other patient-level information. Patient treatment is assessed here as a clinical-service measure and must not be claimed again under Institutional Service or Teaching.
+          </div>
+
           <div class="data-table-wrap">
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>Clinical Domain</th>
-                  <th>Evaluation Standard</th>
-                  <th>Scale</th>
-                  <th style="width:120px;">Score Input</th>
+                  <th>Clinical / Patient Care Domain</th>
+                  <th>Required Evidence Basis</th>
+                  <th>Contribution to Clinical Score</th>
+                  <th style="width:150px;">Verified Attainment (%)</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>Clinical Administration & Unit Leadership</td>
-                  <td>Ward/unit management, duty rosters, patient safety</td>
-                  <td>0 – 25 pts</td>
-                  <td><input type="number" id="input_clin_admin" class="input-num" min="0" max="25" value="0"></td>
+                  <td>Clinical Governance, Patient Safety &amp; Quality Improvement</td>
+                  <td>Approved audit/QI indicators, safety compliance and notified governance duties</td>
+                  <td>25%</td>
+                  <td><input type="number" id="input_clin_admin" class="input-num" min="0" max="100" step="0.1" placeholder="Example: 85" aria-label="Verified clinical governance and patient safety attainment percentage"></td>
                 </tr>
                 <tr>
-                  <td>Patient Volume & Workload Throughput</td>
-                  <td>OPD attendances, admissions, surgical procedures</td>
-                  <td>0 – 35 pts</td>
-                  <td><input type="number" id="input_clin_volume" class="input-num" min="0" max="35" value="0"></td>
+                  <td>Patient Treatment / Diagnostic Service Delivery</td>
+                  <td>Specialty- and case-mix-adjusted actual delivery against the approved unit norm</td>
+                  <td>35%</td>
+                  <td><input type="number" id="input_clin_volume" class="input-num" min="0" max="100" step="0.1" placeholder="Example: 90" aria-label="Verified patient treatment or diagnostic service attainment percentage"></td>
                 </tr>
                 <tr>
-                  <td>On-Call & Emergency Duty Compliance</td>
-                  <td>Rostered emergency calls completed without default</td>
-                  <td>0 – 20 pts</td>
-                  <td><input type="number" id="input_clin_oncall" class="input-num" min="0" max="20" value="0"></td>
+                  <td>On-Call, Emergency &amp; Continuity Duty Compliance</td>
+                  <td>Verified completed duties against the approved roster or equivalent continuity standard</td>
+                  <td>20%</td>
+                  <td><input type="number" id="input_clin_oncall" class="input-num" min="0" max="100" step="0.1" placeholder="Example: 100" aria-label="Verified on-call emergency and continuity duty attainment percentage"></td>
                 </tr>
                 <tr>
-                  <td>Bedside Teaching & Clinical Tutorials</td>
-                  <td>Clinical case conferences and ward-round supervision</td>
-                  <td>0 – 20 pts</td>
-                  <td><input type="number" id="input_clin_teaching" class="input-num" min="0" max="20" value="0"></td>
+                  <td>Clinical Teaching &amp; Supervision Delivery</td>
+                  <td>Verified bedside teaching, tutorials or supervision against the clinical assignment</td>
+                  <td>20%</td>
+                  <td><input type="number" id="input_clin_teaching" class="input-num" min="0" max="100" step="0.1" placeholder="Example: 80" aria-label="Verified clinical teaching and supervision attainment percentage"></td>
                 </tr>
                 <tr class="subtotal-row">
                   <td colspan="3">Section E Total (Max 100 Base Points)</td>
@@ -1137,14 +1225,27 @@
             </table>
           </div>
 
+          <div class="kpi-card clinical-score-card">
+            <div>
+              <span class="kpi-title" id="clinicalScoreTitle">Clinical / Patient Care Attainment</span>
+              <div class="kpi-value" id="disp_raw_e_card">0.0%</div>
+              <span class="kpi-desc">From verified aggregate evidence against approved specialty or unit norms.</span>
+            </div>
+            <div>
+              <span class="kpi-title" id="clinicalContributionTitle">Weighted Objective Contribution</span>
+              <div class="kpi-value" id="disp_weighted_e">0.00 pts</div>
+              <span class="kpi-desc">Points added to the objective dimension.</span>
+            </div>
+          </div>
+
           <div class="step-footer-actions">
-            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-peer')">← Back to Step 6</button>
+            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-peer')">← Back to Step 5</button>
             <div class="step-footer-actions-right">
               <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()">
                 <span>💾</span> Save & Return Later
               </button>
-              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-targets', 'Step 7: Performance & Personal Dev Targets')">
-                Save & Continue ➔
+              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-targets', 'Step 6: Performance & Personal Development Targets')">
+                Continue ➔
               </button>
             </div>
           </div>
@@ -1154,8 +1255,8 @@
         <div class="tab-content" id="tab-targets">
           <div class="section-title-wrap">
             <div>
-              <h2 class="section-title">Step 7: Agreed Performance & Personal Development Targets for Next Year (2027)</h2>
-              <p class="section-desc">Structured academic deliverables (Performance Targets) and personal/professional learning milestones (Personal Development Targets) agreed between the Faculty Member and the Concerned Dean (KMU/REG/POL/2026/01-REV).</p>
+              <h2 class="section-title" id="targetsSectionTitle">Step 6: Agreed Performance & Personal Development Targets for the Next Reporting Period</h2>
+              <p class="section-desc">Measurable academic deliverables and development milestones agreed between the faculty member and the designated Appraising Officer under the applicable reporting line.</p>
             </div>
             <span class="section-badge" style="background:#fef3c7; color:#b45309;">Forward Planning & Career Growth</span>
           </div>
@@ -1169,7 +1270,7 @@
               <span class="target-badge-perf">Core Operational Targets</span>
             </div>
             <p style="font-size:0.8rem; color:#64748b; margin-bottom:1.25rem;">
-              Measurable academic and institutional deliverables for calendar year 2027 across teaching workload, high-impact research, external grants, and postgraduate mentorship.
+              Measurable academic and institutional deliverables for the next notified reporting period across teaching workload, research, grants and postgraduate mentorship.
             </p>
 
             <div class="target-input-box">
@@ -1177,7 +1278,7 @@
                 <span>1. Teaching Delivery, Curriculum Modernization & Student Mentorship</span>
                 <span style="font-size:0.75rem; color:#2563eb; font-weight:600;">Workload & Quality</span>
               </label>
-              <textarea id="input_target_teaching" class="form-control" rows="2" placeholder="e.g. Deliver 34 WU across BS/MPhil courses, update LMS modules, revise course outlines, and achieve QEC student satisfaction >=85%."></textarea>
+              <textarea id="input_target_teaching" class="form-control" rows="2" placeholder="Example: Deliver [X] WU and achieve a verified QEC score of at least [Y]%."></textarea>
             </div>
 
             <div class="target-input-box">
@@ -1185,7 +1286,7 @@
                 <span>2. Scientific Publications Target (W/X Category & High Impact Factor)</span>
                 <span style="font-size:0.75rem; color:#2563eb; font-weight:600;">Research Output</span>
               </label>
-              <textarea id="input_target_pubs" class="form-control" rows="2" placeholder="e.g. Publish at least 3 peer-reviewed manuscripts in indexed journals with IF >= 5.0 in W/X category as lead or corresponding author."></textarea>
+              <textarea id="input_target_pubs" class="form-control" rows="2" placeholder="Example: Complete [X] verified publications in [approved category]."></textarea>
             </div>
 
             <div class="target-input-box">
@@ -1193,7 +1294,7 @@
                 <span>3. Competitive Research Grants Target (Agency & Funding Volume in PKR)</span>
                 <span style="font-size:0.75rem; color:#2563eb; font-weight:600;">Extramural Funding</span>
               </label>
-              <textarea id="input_target_grants" class="form-control" rows="2" placeholder="e.g. Submit 2 competitive grant proposals (HEC/PSF/Wellcome/NIH) targeting total research funding volume >PKR 10 Million as PI/Co-PI."></textarea>
+              <textarea id="input_target_grants" class="form-control" rows="2" placeholder="Example: Submit [X] proposals as [role], targeting PKR [amount]."></textarea>
             </div>
 
             <div class="target-input-box">
@@ -1201,7 +1302,7 @@
                 <span>4. Postgraduate Scholar Supervision & Institutional Governance</span>
                 <span style="font-size:0.75rem; color:#2563eb; font-weight:600;">Mentorship & Service</span>
               </label>
-              <textarea id="input_target_sup" class="form-control" rows="2" placeholder="e.g. Guide 2 PhD scholars to thesis defense stage, supervise 4 MPhil candidates through laboratory benchwork, and fulfill statutory committee duties."></textarea>
+              <textarea id="input_target_sup" class="form-control" rows="2" placeholder="Example: Guide [X] scholars to [specified milestone]."></textarea>
             </div>
           </div>
 
@@ -1214,7 +1315,7 @@
               <span class="target-badge-dev">Individual Competency & Growth</span>
             </div>
             <p style="font-size:0.8rem; color:#64748b; margin-bottom:1.25rem;">
-              Individual career progression, continuous medical education, pedagogical excellence, and specialized technical mastery to be achieved during calendar year 2027.
+              Individual career progression, continuous medical education, pedagogical improvement and technical development for the next notified reporting period.
             </p>
 
             <div class="target-input-box">
@@ -1222,7 +1323,7 @@
                 <span>5. Continuing Professional Development (CPD) & CME Credit Hours</span>
                 <span style="font-size:0.75rem; color:#15803d; font-weight:600;">Lifelong Learning</span>
               </label>
-              <textarea id="input_target_service" class="form-control" rows="2" placeholder="e.g. Complete minimum 30 CME/CPD credit hours in diagnostic pathology, research ethics, and advanced biostatistics; attend 2 national/international academic conferences."></textarea>
+              <textarea id="input_target_service" class="form-control" rows="2" placeholder="Example: Complete [X] verified CPD/CME hours and [service milestone]."></textarea>
             </div>
 
             <div class="target-input-box">
@@ -1230,18 +1331,18 @@
                 <span>6. Pedagogical Skills, Technical Competencies & Academic Leadership</span>
                 <span style="font-size:0.75rem; color:#15803d; font-weight:600;">Competency Mastery</span>
               </label>
-              <textarea id="input_target_skills" class="form-control" rows="2" placeholder="e.g. Complete advanced certification in Health Professions Education (CHPE/MHPE module), master NGS bioinformatics pipeline workflows, and complete university academic leadership training."></textarea>
+              <textarea id="input_target_skills" class="form-control" rows="2" placeholder="Example: Complete [course/certification] and apply [new competency]."></textarea>
             </div>
           </div>
 
           <div class="step-footer-actions">
-            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-peer')">← Back to Step 6</button>
+            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-peer')">← Back to Step 5</button>
             <div class="step-footer-actions-right">
               <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()">
                 <span>💾</span> Save & Return Later
               </button>
-              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-redflag', 'Step 8: Due Process')">
-                Save & Continue ➔
+              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-redflag', 'Step 7: Due Process')">
+                Continue ➔
               </button>
             </div>
           </div>
@@ -1251,20 +1352,20 @@
         <div class="tab-content" id="tab-redflag">
           <div class="section-title-wrap">
             <div>
-              <h2 class="section-title">Step 8: Disciplinary Red Flag & Due Process Safeguard</h2>
-              <p class="section-desc">Statutory provisions governing deductions under Section 9.4 of KMU Policy.</p>
+              <h2 class="section-title" id="dueProcessSectionTitle">Step 7: Disciplinary Red Flag &amp; Due Process Safeguard</h2>
+              <p class="section-desc">Draft Section 9.4 safeguards governing any disciplinary deduction.</p>
             </div>
-            <span class="section-badge" style="background:#fee2e2; color:#b91c1c;">Statutory Check</span>
+            <span class="section-badge" style="background:#fee2e2; color:#b91c1c;">Due-Process Check</span>
           </div>
 
           <div class="danger-callout">
-            <strong>Mandatory Legal Safeguard (Section 9.4):</strong> A Red Flag deduction (-25 or -50 points) can <strong>strictly only</strong> be applied if:
+            <strong>Draft due-process safeguard (Section 9.4):</strong> The calculator will apply a Red Flag deduction (-25 or -50 points) only if all draft conditions below are recorded:
             <ol style="margin:0.5rem 0 0.5rem 1.25rem;">
-              <li>A formal inquiry under KMU Efficiency & Discipline Statutes has been concluded.</li>
-              <li>A formal penalty has been officially notified by the Competent Authority during the reporting year.</li>
-              <li>The employee has exhausted or had their statutory appeal decided.</li>
+              <li>A formal inquiry under the applicable rules has concluded.</li>
+              <li>A penalty has been formally notified by the competent authority during the reporting period.</li>
+              <li>The available appeal has been exhausted or decided.</li>
             </ol>
-            <em>Any deduction entered without an official Inquiry Notification Reference Number and Date is legally void.</em>
+            <em>An entry that does not satisfy every control is ignored by this draft calculator. The approved legal instrument, once notified, will prevail.</em>
           </div>
 
           <div class="form-grid">
@@ -1272,19 +1373,33 @@
               <label for="input_red_flag">Red Flag Penalty Level *</label>
               <select id="input_red_flag" class="form-control">
                 <option value="0" selected>0 points (No Notified Disciplinary Penalty)</option>
-                <option value="25">-25 points (Minor Penalty Officially Notified)</option>
-                <option value="50">-50 points (Major Penalty Officially Notified)</option>
+                <option value="25">-25 points (Formally Notified Penalty)</option>
+                <option value="50">-50 points (Formally Notified Penalty)</option>
               </select>
             </div>
             <div class="form-group">
               <label for="input_red_flag_ref">Inquiry Notification Reference No. *</label>
-              <input type="text" id="input_red_flag_ref" class="form-control" placeholder="e.g. KMU/REG/E&D/2026/89">
+              <input type="text" id="input_red_flag_ref" class="form-control" placeholder="Example: notification reference exactly as issued">
               <span class="field-hint">Mandatory under Section 9.4 if penalty ≠ 0.</span>
             </div>
             <div class="form-group">
               <label for="input_red_flag_date">Date of Official Notification *</label>
               <input type="date" id="input_red_flag_date" class="form-control">
-              <span class="field-hint">Must fall within the calendar year reporting cycle.</span>
+              <span class="field-hint">Must fall within the selected reporting period.</span>
+            </div>
+            <div class="form-group">
+              <label for="input_red_flag_inquiry">Formal inquiry concluded? *</label>
+              <select id="input_red_flag_inquiry" class="form-control">
+                <option value="N" selected>No / not applicable</option>
+                <option value="Y">Yes — concluded under the applicable rules</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="input_red_flag_appeal">Appeal exhausted or decided? *</label>
+              <select id="input_red_flag_appeal" class="form-control">
+                <option value="N" selected>No / not applicable</option>
+                <option value="Y">Yes — exhausted or decided</option>
+              </select>
             </div>
           </div>
 
@@ -1292,13 +1407,13 @@
           <div style="display:none;" id="disp_red_flag_penalty">-0 pts</div>
 
           <div class="step-footer-actions">
-            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-targets')">← Back to Step 7</button>
+            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-targets')">← Back to Step 6</button>
             <div class="step-footer-actions-right">
               <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()">
                 <span>💾</span> Save & Return Later
               </button>
-              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-summary', 'Step 9: PER Dossier')">
-                Save & Generate PER Dossier ➔
+              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-summary', 'Step 8: Draft Appraisal Dossier')">
+                Review Draft Dossier ➔
               </button>
             </div>
           </div>
@@ -1308,51 +1423,53 @@
         <div class="tab-content" id="tab-summary">
           <div class="section-title-wrap no-print">
             <div>
-              <h2 class="section-title">Step 9: Consolidated Performance Evaluation Report (PER Form A)</h2>
+              <h2 class="section-title" id="summarySectionTitle">Step 8: Consolidated Draft Performance Evaluation Report (PER Form A)</h2>
               <p class="section-desc">Consolidated appraisal evaluation separating Objective and Subjective performance dimensions.</p>
             </div>
             <div class="header-actions">
               <button type="button" class="btn btn-secondary" onclick="exportCSV()"><span>📊</span> Export CSV</button>
-              <button type="button" class="btn btn-primary" onclick="window.print()"><span>🖨️</span> Print Official Dossier</button>
+              <button type="button" class="btn btn-primary" onclick="printDossier()"><span>🖨️</span> Print Draft Dossier</button>
             </div>
           </div>
 
           <!-- Objective vs Subjective Split Summary Cards -->
           <div class="split-score-grid no-print">
-            <div class="score-split-card score-split-objective">
-              <span class="kpi-title" style="color:var(--blue-600);">Objective Performance Dimension (A + B + C + E)</span>
-              <div class="kpi-value" style="color:var(--blue-600);" id="disp_objective_score">0.0 / 80%</div>
-              <div style="font-size:0.85rem; font-weight:700; color:var(--slate-700);" id="disp_objective_pct">0.0% (Meets Expectations)</div>
+            <div class="score-split-card benchmark-pending" id="objectiveSplitCard">
+              <span class="kpi-title" id="objectiveScoreTitle">Objective Performance Dimension (A + B + C + E)</span>
+              <div class="kpi-value" id="disp_objective_score">Not assessed</div>
+              <div class="dimension-attainment" id="disp_objective_pct">Complete all required fields</div>
+              <div class="benchmark-state" id="objectiveBenchmarkState">Awaiting complete appraisal</div>
               <span class="kpi-desc">Verified contact hours, published papers, competitive grants won, supervision and service.</span>
             </div>
 
-            <div class="score-split-card score-split-subjective">
-              <span class="kpi-title" style="color:var(--kmu-maroon);">Subjective Performance Dimension (Dean's Assessment)</span>
-              <div class="kpi-value" style="color:var(--kmu-maroon);" id="disp_subjective_score">0.0 / 20%</div>
-              <div style="font-size:0.85rem; font-weight:700; color:var(--slate-700);" id="disp_subjective_pct">0.0% (Commendable Conduct)</div>
-              <span class="kpi-desc">Evaluated directly by Concerned Dean across 13 core behavioral metrics & 5 CPD targets.</span>
+            <div class="score-split-card benchmark-pending" id="subjectiveSplitCard">
+              <span class="kpi-title" id="subjectiveScoreTitle">Appraising Officer Assessment (Section D)</span>
+              <div class="kpi-value" id="disp_subjective_score">Not assessed</div>
+              <div class="dimension-attainment" id="disp_subjective_pct">Complete all required fields</div>
+              <div class="benchmark-state" id="subjectiveBenchmarkState">Awaiting complete appraisal</div>
+              <span class="kpi-desc">Completed by the designated Appraising Officer across the proposed 13 professional criteria and 5 CPD targets.</span>
             </div>
           </div>
 
           <!-- Summary KPI Grid (Screen view) -->
           <div class="summary-kpi-grid no-print">
             <div class="kpi-card">
-              <span class="kpi-title">Final Consolidated Score</span>
-              <div class="kpi-value" style="color:var(--kmu-maroon);" id="kpi_final_score">0.0%</div>
+              <span class="kpi-title" id="finalScoreTitle">Final Consolidated Score</span>
+              <div class="kpi-value" style="color:var(--kmu-maroon);" id="kpi_final_score">Not assessed</div>
               <span class="kpi-desc">Objective + Subjective - Disciplinary Penalty</span>
             </div>
             <div class="kpi-card">
-              <span class="kpi-title">Rating Classification</span>
-              <div class="kpi-value" style="font-size:1.4rem;" id="kpi_rating_band">Unsatisfactory</div>
-              <span class="kpi-desc">Official Syndicate band</span>
+              <span class="kpi-title" id="ratingScoreTitle">Rating Classification</span>
+              <div class="kpi-value" style="font-size:1.4rem;" id="kpi_rating_band">Incomplete draft</div>
+              <span class="kpi-desc">Draft Section 9.2 rating band</span>
             </div>
             <div class="kpi-card">
-              <span class="kpi-title">PIP Status (Section 9.5)</span>
-              <div class="kpi-value" style="font-size:1.15rem; color:#b91c1c;" id="kpi_pip_status">Not Required</div>
-              <span class="kpi-desc" id="kpi_pip_desc">Statutory action status</span>
+              <span class="kpi-title" id="pipScoreTitle">PIP Status (Section 9.5)</span>
+              <div class="kpi-value" style="font-size:1.15rem; color:#b91c1c;" id="kpi_pip_status">Not assessed</div>
+              <span class="kpi-desc" id="kpi_pip_desc">Draft Section 9.5 action status</span>
             </div>
             <div class="kpi-card">
-              <span class="kpi-title">Penalty Deducted</span>
+              <span class="kpi-title" id="penaltyScoreTitle">Penalty Deducted</span>
               <div class="kpi-value" style="color:#b91c1c;" id="kpi_penalty_applied">None</div>
               <span class="kpi-desc">Verified inquiry sanctions</span>
             </div>
@@ -1366,49 +1483,56 @@
             <div id="domainProgressContainer"></div>
           </div>
 
-          <!-- OFFICIAL PRINTABLE DOSSIER -->
+          <!-- PRINTABLE DRAFT DOSSIER -->
           <article class="official-dossier" id="officialDossierPrintable">
             <div class="dossier-header">
-              <img src="assets/kmu_logo.png" onerror="this.onerror=null; this.src='kmu_logo.png';" alt="KMU Crest" class="dossier-logo">
+              <img src="kmu_logo.png" alt="KMU Crest" class="dossier-logo">
               <div class="dossier-title">Khyber Medical University, Peshawar</div>
               <div class="dossier-sub">Performance Evaluation Report (PER) & Annual Faculty Appraisal Dossier</div>
               <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">
-                Statutory Instrument KMU/REG/POL/2026/01-REV (v3.0) — Form A (Faculty Cadres)
+                Controlled Pilot • Policy reference KMU/REG/POL/2026/01-REV — Not an Official PER
               </div>
+              <div id="dossier_completeness" class="dossier-completeness dossier-incomplete">Incomplete draft — required profile fields or Section D scores are missing</div>
             </div>
 
             <!-- Faculty Metadata -->
             <table class="dossier-meta-table">
               <tr>
                 <th>Faculty Member Name</th>
-                <td id="dossier_emp_name">Dr. Yasar Mehmood Yousafzai</td>
+                <td id="dossier_emp_name">—</td>
                 <th>Substantive Designation</th>
-                <td id="dossier_emp_desig">Associate Professor</td>
+                <td id="dossier_emp_desig">—</td>
               </tr>
               <tr>
                 <th>Department / Institute</th>
-                <td id="dossier_emp_dept">Institute of Pathology & Diagnostic Medicine (IPDM)</td>
-                <th>Pay Scale / Cadre</th>
-                <td id="dossier_emp_cadre">BPS-20 (Regular)</td>
+                <td id="dossier_emp_dept">—</td>
+                <th>Pay Scale &amp; Service Cadre</th>
+                <td id="dossier_emp_cadre">—</td>
               </tr>
               <tr>
                 <th>Appraisal Reporting Cycle</th>
-                <td id="dossier_emp_cycle">2026 (01 January – 31 December 2026)</td>
-                <th>Approved Profile</th>
-                <td id="dossier_prof_name">Balanced Profile</td>
+                <td id="dossier_emp_cycle">Calendar Year 2026 (01 January – 31 December 2026)</td>
+                <th>Assigned Draft Profile</th>
+                <td id="dossier_prof_name">Pending profile details</td>
               </tr>
               <tr>
-                <th>Appraising Officer (Concerned Dean)</th>
-                <td id="dossier_emp_appraiser">Dean, Faculty of Pathology & Diagnostic Medicine</td>
+                <th>Appraising Officer</th>
+                <td id="dossier_emp_appraiser">—</td>
                 <th>Reviewing Officer</th>
-                <td id="dossier_emp_reviewer">Vice Chancellor, KMU</td>
+                <td id="dossier_emp_reviewer">—</td>
+              </tr>
+              <tr>
+                <th>Final Authority</th>
+                <td id="dossier_emp_final">—</td>
+                <th>Reporting Order Reference</th>
+                <td id="dossier_reporting_ref">—</td>
               </tr>
               <tr>
                 <th>Appraisal Committee Members</th>
                 <td colspan="3" style="font-size:0.8rem; color:#475569;">
-                  1. <span id="dossier_comm_member_1">Prof. Dr. Muhammad Saleem</span> | 
-                  2. <span id="dossier_comm_member_2">Dr. Bushra Rehman</span> | 
-                  3. <span id="dossier_comm_member_3">Dr. Kinza Ayaz</span>
+                  1. <span id="dossier_comm_member_1">—</span> |
+                  2. <span id="dossier_comm_member_2">—</span> |
+                  3. <span id="dossier_comm_member_3">—</span>
                 </td>
               </tr>
             </table>
@@ -1417,7 +1541,7 @@
             <table class="dossier-scores-table">
               <thead>
                 <tr>
-                  <th>Performance Domain & Statutory Clause</th>
+                  <th>Performance Domain & Draft Policy Reference</th>
                   <th>Profile Weight</th>
                   <th>Raw Attained Points</th>
                   <th>Maximum Base Points</th>
@@ -1431,26 +1555,26 @@
                 <tr>
                   <td>Section A: Teaching & Curriculum Delivery (Formula 1)</td>
                   <td id="dossier_weight_a">30%</td>
-                  <td id="dossier_raw_a">82.0 / 100</td>
+                  <td id="dossier_raw_a">0.0 / 100</td>
                   <td>100</td>
-                  <td id="dossier_weighted_a">24.60</td>
+                  <td id="dossier_weighted_a">0.00</td>
                 </tr>
                 <tr>
-                  <td>Section B: Research, Grants & Innovation (Formula 2)</td>
+                  <td>Section B: Research, Grants &amp; Innovation (Draft points; proposed annual benchmark)</td>
                   <td id="dossier_weight_b">30%</td>
-                  <td id="dossier_raw_b">0.0 / 200</td>
-                  <td>200</td>
+                  <td id="dossier_raw_b">0.0 raw / benchmark 30 (0.0%)</td>
+                  <td>200 theoretical raw cap</td>
                   <td id="dossier_weighted_b">0.00</td>
                 </tr>
                 <tr>
                   <td>Section C: Institutional Service & Leadership (Formula 3)</td>
                   <td id="dossier_weight_c">20%</td>
-                  <td id="dossier_raw_c">60.0 / 100</td>
+                  <td id="dossier_raw_c">0.0 / 100</td>
                   <td>100</td>
-                  <td id="dossier_weighted_c">12.00</td>
+                  <td id="dossier_weighted_c">0.00</td>
                 </tr>
                 <tr id="dossier_row_clinical" style="display:none;">
-                  <td>Section E: Clinical & Diagnostic Service (Formula 5)</td>
+                  <td>Section E: Clinical / Patient Care Service (Formula 5)</td>
                   <td id="dossier_weight_e">45%</td>
                   <td id="dossier_raw_e">0.0 / 100</td>
                   <td>100</td>
@@ -1458,22 +1582,22 @@
                 </tr>
                 <tr style="background:#f8fafc; font-weight:700;">
                   <td colspan="4" style="text-align:right;">Subtotal Objective Score:</td>
-                  <td id="dossier_objective_total" style="color:var(--blue-600);">36.60 / 80%</td>
+                  <td id="dossier_objective_total" style="color:var(--blue-600);">Not assessed</td>
                 </tr>
                 
                 <tr style="background:#fdf2f2; font-weight:700;">
-                  <td colspan="5">PART II: SUBJECTIVE PERFORMANCE EVALUATION (CONCERNED DEAN)</td>
+                  <td colspan="5">PART II: APPRAISING OFFICER ASSESSMENT</td>
                 </tr>
                 <tr>
-                  <td>Section D: Peer & Professional Conduct (Dean's Evaluation - Formula 4)</td>
+                  <td>Section D: Peer, Professional Conduct & CPD (Draft Formula 4)</td>
                   <td id="dossier_weight_d">20%</td>
                   <td id="dossier_raw_d">0.0 / 88</td>
                   <td>88</td>
                   <td id="dossier_weighted_d">0.00</td>
                 </tr>
                 <tr style="background:#f8fafc; font-weight:700;">
-                  <td colspan="4" style="text-align:right;">Subtotal Subjective Score (Dean):</td>
-                  <td id="dossier_subjective_total" style="color:var(--kmu-maroon);">0.00 / 20%</td>
+                  <td colspan="4" style="text-align:right;">Subtotal Appraising Officer Score:</td>
+                  <td id="dossier_subjective_total" style="color:var(--kmu-maroon);">Not assessed</td>
                 </tr>
 
                 <tr style="background:#f8fafc; font-weight:700;">
@@ -1482,15 +1606,15 @@
                 </tr>
                 <tr style="background:#fdf8eb; font-weight:800; font-size:1.05rem;">
                   <td colspan="4" style="text-align:right; color:var(--kmu-maroon);">Consolidated Final PER Score:</td>
-                  <td id="dossier_final_score" style="color:var(--kmu-maroon);">0.0 / 100</td>
+                  <td id="dossier_final_score" style="color:var(--kmu-maroon);">Not assessed</td>
                 </tr>
                 <tr style="background:#ffffff; font-weight:700;">
                   <td colspan="4" style="text-align:right;">Final Performance Rating:</td>
-                  <td id="dossier_final_rating" style="text-transform:uppercase;">Unsatisfactory</td>
+                  <td id="dossier_final_rating" style="text-transform:uppercase;">Incomplete draft</td>
                 </tr>
                 <tr style="background:#ffffff;">
                   <td colspan="4" style="text-align:right; font-size:0.8rem; color:#64748b;">Performance Improvement Plan Status:</td>
-                  <td id="dossier_pip_note" style="font-size:0.8rem; font-weight:600;">Not Required</td>
+                  <td id="dossier_pip_note" style="font-size:0.8rem; font-weight:600;">Not assessed</td>
                 </tr>
               </tbody>
             </table>
@@ -1499,7 +1623,7 @@
             <div style="margin-top:1.5rem; font-size:0.85rem;">
               <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:0.5rem; border-bottom:2px solid var(--kmu-gold); padding-bottom:4px;">
                 <h4 style="font-weight:700; color:var(--kmu-maroon); margin:0; text-transform:uppercase; letter-spacing:0.5px; font-size:0.9rem;">
-                  PART III: AGREED PERFORMANCE & PERSONAL DEVELOPMENT TARGETS (CALENDAR YEAR 2027)
+                  PART III: AGREED TARGETS FOR THE NEXT REPORTING PERIOD
                 </h4>
                 <span style="font-size:0.75rem; color:#64748b; font-weight:600;">Forward Planning & Career Growth</span>
               </div>
@@ -1515,32 +1639,32 @@
                   <tr>
                     <td><strong>Teaching Delivery & Mentorship</strong></td>
                     <td style="text-align:center;"><span class="target-badge-perf">Performance</span></td>
-                    <td id="dossier_target_teaching">Deliver 34 WU across BS/MPhil courses, update LMS course folders, student feedback &gt;=85%.</td>
+                    <td id="dossier_target_teaching">—</td>
                   </tr>
                   <tr>
                     <td><strong>Publications & Scientific Output</strong></td>
                     <td style="text-align:center;"><span class="target-badge-perf">Performance</span></td>
-                    <td id="dossier_target_pubs">Publish at least 3 peer-reviewed manuscripts with Impact Factor &gt;= 5.0 in W/X category journals.</td>
+                    <td id="dossier_target_pubs">—</td>
                   </tr>
                   <tr>
                     <td><strong>Research Grants & Extramural Funding</strong></td>
                     <td style="text-align:center;"><span class="target-badge-perf">Performance</span></td>
-                    <td id="dossier_target_grants">Submit 2 competitive grant proposals (HEC/PSF/Wellcome) targeting total funding volume &gt;PKR 10 Million.</td>
+                    <td id="dossier_target_grants">—</td>
                   </tr>
                   <tr>
                     <td><strong>Postgraduate Mentorship & Governance</strong></td>
                     <td style="text-align:center;"><span class="target-badge-perf">Performance</span></td>
-                    <td id="dossier_target_sup">Supervise 2 PhD scholars and 4 MPhil candidates through laboratory benchwork and thesis defense.</td>
+                    <td id="dossier_target_sup">—</td>
                   </tr>
                   <tr>
                     <td><strong>Continuing Professional Dev. (CPD/CME)</strong></td>
                     <td style="text-align:center;"><span class="target-badge-dev">Personal Dev</span></td>
-                    <td id="dossier_target_service">Complete minimum 30 CME/CPD credit hours and maintain ISO/CAP laboratory quality accreditation standards.</td>
+                    <td id="dossier_target_service">—</td>
                   </tr>
                   <tr>
                     <td><strong>Technical Skills & Leadership Growth</strong></td>
                     <td style="text-align:center;"><span class="target-badge-dev">Personal Dev</span></td>
-                    <td id="dossier_target_skills">Complete advanced certification in Health Professions Education (CHPE/MHPE module) and bioinformatics training.</td>
+                    <td id="dossier_target_skills">—</td>
                   </tr>
                 </tbody>
               </table>
@@ -1553,12 +1677,12 @@
                 <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">Date: ______________</div>
               </div>
               <div>
-                <div class="signature-line" id="sig_appraiser">Concerned Dean (Appraiser)</div>
+                <div class="signature-line" id="sig_appraiser">Appraising Officer</div>
                 <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">Date: ______________</div>
               </div>
               <div>
-                <div class="signature-line" id="sig_final">Reviewing Officer / VC</div>
-                <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">Official Common Seal</div>
+                <div class="signature-line" id="sig_final">Final Authority</div>
+                <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">Signature / stamp, where required</div>
               </div>
             </div>
 
@@ -1569,22 +1693,22 @@
               </div>
               <div class="signature-grid" style="grid-template-columns: repeat(3, 1fr);">
                 <div>
-                  <div class="signature-line" id="sig_comm_1">Member 1: <span id="sig_comm_1_name">Prof. Dr. Muhammad Saleem</span></div>
+                  <div class="signature-line" id="sig_comm_1">Member 1: <span id="sig_comm_1_name">—</span></div>
                   <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">Signature & Date: ______________</div>
                 </div>
                 <div>
-                  <div class="signature-line" id="sig_comm_2">Member 2: <span id="sig_comm_2_name">Dr. Bushra Rehman</span></div>
+                  <div class="signature-line" id="sig_comm_2">Member 2: <span id="sig_comm_2_name">—</span></div>
                   <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">Signature & Date: ______________</div>
                 </div>
                 <div>
-                  <div class="signature-line" id="sig_comm_3">Member 3: <span id="sig_comm_3_name">Dr. Kinza Ayaz</span></div>
+                  <div class="signature-line" id="sig_comm_3">Member 3: <span id="sig_comm_3_name">—</span></div>
                   <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">Signature & Date: ______________</div>
                 </div>
               </div>
             </div>
 
             <div style="margin-top:2.5rem; border-top:1px dashed var(--slate-300); padding-top:0.75rem; font-size:0.72rem; color:#64748b; text-align:center;">
-              Statutory Notice: This official appraisal record is generated under KMU Unified Statutory Policy KMU/REG/POL/2026/01-REV. The employee reserves the constitutional right to appeal any disputed rating or procedural irregularity to the Appellate Committee within seven (07) calendar days of formal notification.
+              Draft-use notice: this calculation is not an official PER and has no operative force until the policy and implementation instruments are approved and notified. Any review or appeal right arises only under the approved procedure and the employee's applicable service rules.
             </div>
           </article>
         </div>
@@ -1594,69 +1718,78 @@
   </main>
 
   <!-- Save & Return Later Confirmation Modal -->
-  <div class="modal-overlay" id="saveReturnModal">
+  <div class="modal-overlay" id="saveReturnModal" role="dialog" aria-modal="true" aria-labelledby="saveReturnModalTitle">
     <div class="modal-card" style="max-width:560px;">
       <div class="modal-header" style="background:var(--emerald-600);">
-        <h3 style="display:flex; align-items:center; gap:0.5rem;">
+        <h3 id="saveReturnModalTitle" style="display:flex; align-items:center; gap:0.5rem;">
           <span>✓</span> Appraisal Progress Saved
         </h3>
-        <button type="button" class="modal-close" onclick="closeModal('saveReturnModal')">&times;</button>
+        <button type="button" class="modal-close" aria-label="Close saved-draft dialog" onclick="closeModal('saveReturnModal')">&times;</button>
       </div>
       <div class="modal-body" style="text-align:center; padding:2rem 1.5rem;">
         <div style="width:60px; height:60px; background:#dcfce7; color:#15803d; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; margin:0 auto 1.25rem auto;">
           ✓
         </div>
-        <h4 style="font-size:1.2rem; font-weight:700; color:var(--slate-800); margin-bottom:0.5rem;">Draft Securely Stored</h4>
+        <h4 style="font-size:1.2rem; font-weight:700; color:var(--slate-800); margin-bottom:0.5rem;">Draft Stored in This Browser</h4>
         <p style="color:var(--slate-600); font-size:0.9rem; line-height:1.5; margin-bottom:1.5rem;">
-          Your progress for <strong id="saveModalSummary">Faculty Member</strong> was saved at <strong id="saveModalTime">Just now</strong> in section <span id="saveModalStep" class="section-badge">Current Section</span>.
+          Your progress for <strong id="saveModalSummary">Faculty Member</strong> was saved at <strong id="saveModalTime">Just now</strong> in section <span id="saveModalStep" class="section-badge">Current Section</span>. Browser storage is local to this device and is not encrypted or transmitted to KMU.
         </p>
 
         <div style="background:var(--slate-50); border:1px solid var(--slate-200); border-radius:var(--radius-md); padding:1rem; text-align:left; font-size:0.85rem; color:var(--slate-700); margin-bottom:1.5rem;">
           <div style="font-weight:700; color:var(--kmu-maroon); margin-bottom:0.35rem;">🔄 Returning to this computer:</div>
-          <div>Simply reopen this portal URL in this browser at any time; your in-progress draft will automatically restore right where you left off.</div>
-          
-          <div style="font-weight:700; color:var(--kmu-maroon); margin-top:0.75rem; margin-bottom:0.35rem;">💻 Switching to another computer:</div>
-          <div>Download a backup JSON file below. You can load it onto any other laptop or hospital desktop.</div>
+          <div>Reopen this portal in the same browser and select “Resume Where I Left Off.” The calculator does not restore a draft without your action.</div>
         </div>
 
         <div style="display:flex; justify-content:center; gap:0.75rem; flex-wrap:wrap;">
-          <button type="button" class="btn btn-secondary" onclick="downloadDraftBackup()">
-            <span>📥</span> Download Backup File (.json)
-          </button>
           <button type="button" class="btn btn-primary" onclick="closeModal('saveReturnModal')">
             Resume Editing
           </button>
         </div>
       </div>
       <div class="modal-footer" style="justify-content:center; background:#f8fafc;">
-        <span style="font-size:0.75rem; color:#64748b;">KMU Unified Statutory Performance Evaluation System (KMU/REG/POL/2026/01-REV)</span>
+        <span style="font-size:0.75rem; color:#64748b;">Controlled pilot calculator aligned to draft KMU/REG/POL/2026/01-REV</span>
       </div>
     </div>
   </div>
 
-  <!-- Statutory Policy Modal -->
-  <div class="modal-overlay" id="policyModal">
+  <!-- Draft Policy Modal -->
+  <div class="modal-overlay" id="policyModal" role="dialog" aria-modal="true" aria-labelledby="policyModalTitle">
     <div class="modal-card">
       <div class="modal-header">
-        <h3>KMU Unified Statutory Policy — Quick Reference</h3>
-        <button type="button" class="modal-close" onclick="closeModal('policyModal')">&times;</button>
+        <h3 id="policyModalTitle">KMU Unified Draft Policy — Quick Reference</h3>
+        <button type="button" class="modal-close" aria-label="Close policy-reference dialog" onclick="closeModal('policyModal')">&times;</button>
       </div>
       <div class="modal-body">
         <h4 style="color:var(--kmu-maroon); font-weight:700; margin-bottom:0.5rem;">Document Identification</h4>
         <p><strong>Title:</strong> KMU Unified Statutory Policy on Institutional Organogram, Job Descriptions, Workload Allocation and Performance Management<br>
-        <strong>Identifier:</strong> KMU/REG/POL/2026/01-REV (v3.0 Audited Edition)<br>
-        <strong>Cycle:</strong> 01 January to 31 December annually.<br>
-        <strong>Enacting Authority:</strong> The Syndicate of Khyber Medical University under the KMU Act 2006 and KP Universities Act 2012.</p>
+        <strong>Policy reference:</strong> KMU/REG/POL/2026/01-REV<br>
+        <strong>Status:</strong> Pending re-vetting and re-submission to the Syndicate; not yet operative.<br>
+        <strong>Portal cycle configuration:</strong> 01 January to 31 December (calendar year); align this correction in the final approved policy/notification.<br>
+        <strong>Intended approval route:</strong> The competent statutory bodies identified in the draft, subject to the applicable law and formal notification.</p>
         
         <hr style="margin:1rem 0; border:none; border-top:1px solid #e2e8f0;">
         
         <h4 style="color:var(--kmu-maroon); font-weight:700; margin-bottom:0.5rem;">Objective vs Subjective Structure</h4>
         <ul style="margin:0.5rem 0 1rem 1.25rem;">
           <li><strong>Objective Domains (A, B, C, E):</strong> Quantifiable, verified teaching load (excluding outside/visiting teaching), research grants ledger (funding agency & volume in PKR), publications, supervision, and institutional charges.</li>
-          <li><strong>Subjective Domain (Section D):</strong> Direct qualitative evaluation by Concerned Dean across 13 core behavioral parameters and 5 CPD goals.</li>
+          <li><strong>Appraising Officer Domain (Section D):</strong> Proposed qualitative evaluation by the designated Appraising Officer across 13 professional criteria and 5 CPD goals.</li>
+          <li><strong>Research pilot calibration:</strong> Draft output points/caps are retained, but the portal uses proposed profile-specific annual full-credit benchmarks of 15/20/30/45/60 raw points. The original theoretical cap is 200. The benchmarks require KMU data validation and ORIC/ASRB/statutory approval.</li>
+          <li><strong>80% display benchmark:</strong> Green means a dimension reached at least 80% of its available weighted-point ceiling; red means it is below 80%. This visual aid does not replace the overall rating bands.</li>
+          <li><strong>Open items:</strong> Research normalization, grant sub-rules, service rubric, peer/CPD rubric and clinical/patient-care rubric remain proposed/configurable pending ratification.</li>
+          <li><strong>Precedence:</strong> Current law, statutes, appointment orders and valid notifications prevail over this calculator and over any unnotified future-state organogram.</li>
+        </ul>
+
+        <h4 style="color:var(--kmu-maroon); font-weight:700; margin-bottom:0.5rem;">Automatic Profile Assignment</h4>
+        <ul style="margin:0.5rem 0 1rem 1.25rem;">
+          <li>Dedicated research cadres/postdocs use the Research Cadres / Postdocs profile.</li>
+          <li>Senior Registrars, Medical Officers, Consultants and KMU-H&amp;RC assignments use the Clinical profile.</li>
+          <li>Regional KMU Institutes of Health Sciences use the Teaching-Focused profile.</li>
+          <li>Other faculty default to Balanced unless a documented annual assignment supports another profile.</li>
+          <li>Academic rank and TTS status alone do not change the weights. Leadership appointments change the draft reporting line, not the substantive profile.</li>
         </ul>
       </div>
       <div class="modal-footer">
+        <a class="btn btn-primary" href="KMU_Unified_Policy_Draft.docx" download>Download Draft Policy</a>
         <button type="button" class="btn btn-secondary" onclick="closeModal('policyModal')">Close</button>
       </div>
     </div>
@@ -1666,1536 +1799,23 @@
   <footer class="kmu-footer no-print">
     <div class="footer-container">
       <div>
-        <strong>Khyber Medical University, Peshawar</strong> &copy; 2026. All Rights Reserved.
+        <strong>Khyber Medical University, Peshawar</strong> &copy; 2026. Controlled pilot calculator.
         <div style="font-size:0.75rem; color:#94a3b8; margin-top:2px;">
-          Office of the Registrar &bull; Quality Enhancement Cell (QEC) &bull; Directorate of Academics
+          Prototype for internal review &bull; No data is submitted to KMU by this static site
         </div>
       </div>
       <div style="text-align:right; font-size:0.75rem;">
-        <div>Document Ref: <strong>KMU/REG/POL/2026/01-REV (v3.0)</strong></div>
-        <div style="color:#94a3b8;">Free Tier Deployment Ready (GitHub Pages / PythonAnywhere)</div>
+        <div>Policy Ref: <strong>KMU/REG/POL/2026/01-REV</strong></div>
+        <div style="color:#94a3b8;">Draft configuration — not an official personnel system</div>
       </div>
     </div>
   </footer>
 
-  <script>
-/**
- * KMU Faculty Annual Performance Appraisal System (v3.0)
- * Official statutory engine implementing KMU/REG/POL/2026/01-REV
- * Features:
- * - Real-time calculation according to Section 9 formulas and ceilings
- * - Calendar year cycle: 01 January to 31 December
- * - Appraising Officer designated as Concerned Dean
- * - Non-essential fields for 3 Appraisal Committee Members
- * - Separate Objective and Subjective (Dean's) scoring and grading scales
- * - Structured next year's targets section matching guidance and Excel calculator
- * - Explicit clarification note on teaching workload
- * - Research Grants Ledger with Funding Agency & Grant Amount directly calculating marks
- * - Save & Continue on every section
- * - Save & Return Later with local persistence and cross-device backup export
- */
-
-// Statutory Profile Configuration Matrix
-const PROFILES = {
-  'Balanced Profile': {
-    name: 'Balanced Profile',
-    teachingWeight: 30,
-    researchWeight: 30,
-    serviceWeight: 20,
-    peerWeight: 20,
-    clinicalWeight: 0,
-    minTeachingWU: 30,
-    description: 'Standard teaching, postgraduate research and departmental service profile.'
-  },
-  'Research-Focused Profile': {
-    name: 'Research-Focused Profile',
-    teachingWeight: 20,
-    researchWeight: 50,
-    serviceWeight: 15,
-    peerWeight: 15,
-    clinicalWeight: 0,
-    minTeachingWU: 20,
-    description: 'High research-intensity faculty and grant investigators.'
-  },
-  'Teaching-Focused Profile (Regional IHS)': {
-    name: 'Teaching-Focused Profile (Regional IHS)',
-    teachingWeight: 50,
-    researchWeight: 15,
-    serviceWeight: 20,
-    peerWeight: 15,
-    clinicalWeight: 0,
-    minTeachingWU: 50,
-    description: 'Regional Institute of Health Sciences faculty with heavy contact hours.'
-  },
-  'Clinical-Focused Profile (Hospital Faculty)': {
-    name: 'Clinical-Focused Profile (Hospital Faculty)',
-    teachingWeight: 15,
-    researchWeight: 20,
-    serviceWeight: 10,
-    peerWeight: 10,
-    clinicalWeight: 45,
-    minTeachingWU: 15,
-    description: 'Faculty managing hospital teaching units, wards, OPDs and emergency care.'
-  },
-  'Research Cadres / Postdocs': {
-    name: 'Research Cadres / Postdocs',
-    teachingWeight: 10,
-    researchWeight: 65,
-    serviceWeight: 10,
-    peerWeight: 15,
-    clinicalWeight: 0,
-    minTeachingWU: 10,
-    description: 'Dedicated postdocs, research scientists, and specialized laboratory investigators.'
-  }
-};
-
-// 13 Core Parameters (Rated 1 - 6, Max 78) - Evaluated by Concerned Dean
-const PEER_PARAMETERS = [
-  { id: 'peer_1', label: '1. Punctuality & Attendance', desc: 'Punctuality at lectures, duties and institutional meetings.' },
-  { id: 'peer_2', label: '2. Collegiality & Teamwork', desc: 'Constructive contribution to faculty and departmental harmony.' },
-  { id: 'peer_3', label: '3. Communication Skills', desc: 'Clear, respectful, and articulate interaction with colleagues and students.' },
-  { id: 'peer_4', label: '4. Ethical Conduct & Integrity', desc: 'Moral rectitude, research honesty, exam confidentiality and fairness.' },
-  { id: 'peer_5', label: '5. Responsiveness to Students/Patients', desc: 'Accessibility and timely grievance addressal for learners/clients.' },
-  { id: 'peer_6', label: '6. Mentorship of Junior Colleagues', desc: 'Proactive support and guidance for junior faculty and scholars.' },
-  { id: 'peer_7', label: '7. Compliance with Policies & SOPs', desc: 'Adherence to KMU statutes, biosafety codes, and administrative guidelines.' },
-  { id: 'peer_8', label: '8. Initiative & Proactivity', desc: 'Self-driven efforts to improve institutional programs and laboratories.' },
-  { id: 'peer_9', label: '9. Conflict Resolution & Composure', desc: 'Maturity and professionalism in handling disagreements.' },
-  { id: 'peer_10', label: '10. Adaptability to Change', desc: 'Flexibility with curriculum changes, LMS systems and organizational updates.' },
-  { id: 'peer_11', label: '11. Professional Decorum & Appearance', desc: 'Role-model behavior reflecting the dignity of the university.' },
-  { id: 'peer_12', label: '12. Institutional Citizenship & Loyalty', desc: 'Dedication to KMU vision, reputation, and public service missions.' },
-  { id: 'peer_13', label: '13. Quality & Timeliness of Records', desc: 'Attendance submission, student logs, and file turnaround.' }
-];
-
-// 5 CPD Targets (Rated 0 - 2, Max 10) - Evaluated by Concerned Dean
-const CPD_TARGETS = [
-  { id: 'cpd_1', label: 'CME/CPD Credit Hours vs Annual Target', desc: 'Approved professional development credit hours earned.' },
-  { id: 'cpd_2', label: 'Workshop / Training / Short Course Attended', desc: 'Formally documented capacity-building program.' },
-  { id: 'cpd_3', label: 'Professional Certification Obtained or Renewed', desc: 'Board, council, or specialized technical credential.' },
-  { id: 'cpd_4', label: 'Cross-Training / New Technical Skill Acquired', desc: 'Mastery of new laboratory assays or pedagogical technology.' },
-  { id: 'cpd_5', label: 'Presenter / Facilitator at a CPD Event', desc: 'Resource person for conferences, webinars, or workshops.' }
-];
-
-// Sample Grants Ledger
-const DEFAULT_GRANTS = [
-  { id: 'g1', title: 'Molecular Genomic Surveillance of Enteric Pathogens in KP', agency: 'Higher Education Commission (HEC)', amount: 7500000, role: 'PI', status: 'Won', points: 8 },
-  { id: 'g2', title: 'Multi-center Genomic Analysis of SFTSV & Tick-Borne Arboviruses', agency: 'NIH / International Consortium', amount: 15000000, role: 'Co-PI', status: 'Won', points: 4.5 },
-  { id: 'g3', title: 'KMU IPDM Internal Laboratory Innovation & Biobanking Assay Setup', agency: 'KMU Internal Start-Up Grant', amount: 850000, role: 'PI', status: 'Won', points: 4 },
-  { id: 'g4', title: 'Prenatal Beta-Thalassemia Rapid Screening Assay Commercialization', agency: 'Pakistan Science Foundation (PSF)', amount: 6500000, role: 'PI', status: 'Applied', points: 2 },
-  { id: 'g5', title: 'Point-of-Care Molecular Diagnostic Kit for Primary Healthcare', agency: 'Global Challenges Fund (GCF)', amount: 12000000, role: 'Co-PI', status: 'Applied', points: 2 }
-];
-
-// State container
-let appraisalState = {
-  employee: {
-    name: 'Dr. Yasar Mehmood Yousafzai',
-    designation: 'Associate Professor',
-    department: 'Institute of Pathology & Diagnostic Medicine (IPDM)',
-    faculty: 'Faculty of Pathology & Diagnostic Medicine (FPDM)',
-    payScale: 'BPS-20 (Regular)',
-    cycle: '2026 (01 January – 31 December 2026)',
-    appraiser: 'Dean, Faculty of Pathology & Diagnostic Medicine',
-    reviewer: 'Vice Chancellor, KMU',
-    committeeMember1: 'Prof. Dr. Muhammad Saleem, Professor IBMS',
-    committeeMember2: 'Dr. Bushra Rehman, Assistant Professor IPDM',
-    committeeMember3: 'Dr. Kinza Ayaz, Assistant Professor IPDM'
-  },
-  selectedProfile: 'Balanced Profile',
-  sectionA: { qecScore: 86, actualWU: 34, exempted: 'N' },
-  sectionB: {
-    pub_high_lead: 2, pub_high_co: 2, pub_mod_lead: 3, pub_mod_co: 2, pub_low_lead: 1, pub_low_co: 0,
-    book_int: 0, book_nat: 1, chapter_int: 2, chapter_nat: 1,
-    sup_phd: 2, sup_mphil: 4, sup_clin_sr: 0, sup_clin_jr: 0,
-    innov_patent_int: 0, innov_patent_nat: 1, innov_project: 1, innov_overhead: 2
-  },
-  grantsList: [...DEFAULT_GRANTS],
-  sectionC: {
-    comm_member: 4, comm_chair: 1, policy_doc: 3, facility_charge: 1, additional_appoint: 'N'
-  },
-  sectionD: {
-    peerScores: {
-      peer_1: 5, peer_2: 5, peer_3: 6, peer_4: 6, peer_5: 5,
-      peer_6: 5, peer_7: 6, peer_8: 5, peer_9: 5, peer_10: 5,
-      peer_11: 6, peer_12: 6, peer_13: 5
-    },
-    cpdScores: { cpd_1: 2, cpd_2: 2, cpd_3: 1, cpd_4: 2, cpd_5: 2 }
-  },
-  sectionE: { clin_admin: 0, clin_volume: 0, clin_oncall: 0, clin_teaching: 0 },
-  nextYearTargets: {
-    teaching: 'Deliver minimum 34 teaching Workload Units across BS and MPhil pathology courses; maintain verified course folders on CMS and target QEC student evaluation score >85%.',
-    publications: 'Publish at least 3 peer-reviewed original research manuscripts in indexed W/X category journals with Impact Factor >= 5.0.',
-    grants: 'Submit at least 2 major competitive research grant proposals to national (HEC/PSF) and international funding agencies (Wellcome/NIH) with minimum target volume >PKR 10 Million.',
-    supervision: 'Supervise 2 enrolled PhD scholars through ASRB milestone defense and guide 4 MPhil candidates towards successful thesis completion.',
-    service_cpd: 'Maintain diagnostic quality standards for IPDM laboratories, complete 30 CME/CPD credit hours, and lead curriculum module revision.'
-  },
-  redFlag: { penalty: 0, refNo: '', refDate: '' }
-};
-
-// Global Tab Switching function
-window.switchTab = function(tabId) {
-  const contents = document.querySelectorAll('.tab-content');
-  const navItems = document.querySelectorAll('.nav-item');
-  const wizardSteps = document.querySelectorAll('.wizard-step');
-
-  contents.forEach(tab => tab.classList.remove('active'));
-  navItems.forEach(item => item.classList.remove('active'));
-  wizardSteps.forEach(step => step.classList.remove('active'));
-
-  const targetTab = document.getElementById(tabId);
-  const targetNav = document.querySelector(`[data-tab="${tabId}"]`);
-  const targetStep = document.querySelector(`[data-wizard="${tabId}"]`);
-
-  if (targetTab) targetTab.classList.add('active');
-  if (targetNav) targetNav.classList.add('active');
-  if (targetStep) targetStep.classList.add('active');
-
-  if (typeof window.scrollTo === 'function') {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-};
-
-// SAVE AND CONTINUE FUNCTION
-window.saveAndContinue = function(nextTabId, sectionLabel) {
-  saveAllData(nextTabId);
-  window.switchTab(nextTabId);
-  showToast(`✓ Saved! Continuing to ${sectionLabel}`);
-};
-
-// SAVE AND RETURN LATER FUNCTION
-window.saveAndReturnLater = function() {
-  const currentActiveTab = document.querySelector('.tab-content.active')?.id || 'tab-meta';
-  saveAllData(currentActiveTab);
-  
-  const empName = document.getElementById('input_emp_name')?.value || 'Faculty Member';
-  const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  
-  const modalTime = document.getElementById('saveModalTime');
-  const modalEmp = document.getElementById('saveModalSummary');
-  const modalStep = document.getElementById('saveModalStep');
-  
-  if (modalTime) modalTime.textContent = timeStr;
-  if (modalEmp) modalEmp.textContent = empName;
-  if (modalStep) {
-    const stepName = document.querySelector(`[data-wizard="${currentActiveTab}"] span:last-child`)?.textContent || 'Current Section';
-    modalStep.textContent = stepName;
-  }
-  
-  window.openModal('saveReturnModal');
-  showToast(`✓ Progress safely saved! You can resume anytime.`);
-};
-
-// CORE DATA SERIALIZATION ENGINE
-function saveAllData(activeTabId) {
-  const currentTab = activeTabId || document.querySelector('.tab-content.active')?.id || 'tab-meta';
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-  const draft = {
-    lastActiveTab: currentTab,
-    savedAt: now.toISOString(),
-    savedTimeFormatted: timeStr,
-    profile: appraisalState.selectedProfile,
-    meta: {
-      name: document.getElementById('input_emp_name')?.value || '',
-      desig: document.getElementById('input_emp_desig')?.value || '',
-      dept: document.getElementById('input_emp_dept')?.value || '',
-      cadre: document.getElementById('input_emp_cadre')?.value || 'BPS-20 (Regular)',
-      cycle: document.getElementById('input_emp_cycle')?.value || '2026 (01 January – 31 December 2026)',
-      appraiser: document.getElementById('input_emp_appraiser')?.value || '',
-      reviewer: document.getElementById('input_emp_reviewer')?.value || '',
-      committeeMember1: document.getElementById('input_comm_member_1')?.value || '',
-      committeeMember2: document.getElementById('input_comm_member_2')?.value || '',
-      committeeMember3: document.getElementById('input_comm_member_3')?.value || ''
-    },
-    sectionA: {
-      qecScore: document.getElementById('input_qec_score')?.value || '0',
-      actualWU: document.getElementById('input_actual_wu')?.value || '0',
-      exempted: document.getElementById('input_wu_exempted')?.value || 'N'
-    },
-    sectionB: {
-      pub_high_lead: document.getElementById('input_pub_high_lead')?.value || '0',
-      pub_high_co: document.getElementById('input_pub_high_co')?.value || '0',
-      pub_mod_lead: document.getElementById('input_pub_mod_lead')?.value || '0',
-      pub_mod_co: document.getElementById('input_pub_mod_co')?.value || '0',
-      pub_low_lead: document.getElementById('input_pub_low_lead')?.value || '0',
-      pub_low_co: document.getElementById('input_pub_low_co')?.value || '0',
-      book_int: document.getElementById('input_book_int')?.value || '0',
-      book_nat: document.getElementById('input_book_nat')?.value || '0',
-      chapter_int: document.getElementById('input_chapter_int')?.value || '0',
-      chapter_nat: document.getElementById('input_chapter_nat')?.value || '0',
-      sup_phd: document.getElementById('input_sup_phd')?.value || '0',
-      sup_mphil: document.getElementById('input_sup_mphil')?.value || '0',
-      sup_clin_sr: document.getElementById('input_sup_clin_sr')?.value || '0',
-      sup_clin_jr: document.getElementById('input_sup_clin_jr')?.value || '0',
-      innov_patent_int: document.getElementById('input_innov_patent_int')?.value || '0',
-      innov_patent_nat: document.getElementById('input_innov_patent_nat')?.value || '0',
-      innov_project: document.getElementById('input_innov_project')?.value || '0',
-      innov_overhead: document.getElementById('input_innov_overhead')?.value || '0'
-    },
-    grantsList: appraisalState.grantsList,
-    sectionC: {
-      comm_member: document.getElementById('input_comm_member')?.value || '0',
-      comm_chair: document.getElementById('input_comm_chair')?.value || '0',
-      policy_doc: document.getElementById('input_policy_doc')?.value || '0',
-      facility_charge: document.getElementById('input_facility_charge')?.value || '0',
-      additional_appoint: document.getElementById('input_additional_appoint')?.value || 'N'
-    },
-    sectionD: {
-      peerScores: appraisalState.sectionD.peerScores,
-      cpdScores: appraisalState.sectionD.cpdScores
-    },
-    sectionE: {
-      clin_admin: document.getElementById('input_clin_admin')?.value || '0',
-      clin_volume: document.getElementById('input_clin_volume')?.value || '0',
-      clin_oncall: document.getElementById('input_clin_oncall')?.value || '0',
-      clin_teaching: document.getElementById('input_clin_teaching')?.value || '0'
-    },
-    nextYearTargets: {
-      teaching: document.getElementById('input_target_teaching')?.value || '',
-      publications: document.getElementById('input_target_pubs')?.value || '',
-      grants: document.getElementById('input_target_grants')?.value || '',
-      supervision: document.getElementById('input_target_sup')?.value || '',
-      service_cpd: document.getElementById('input_target_service')?.value || '',
-      skills_leadership: document.getElementById('input_target_skills')?.value || ''
-    },
-    redFlag: {
-      penalty: document.getElementById('input_red_flag')?.value || '0',
-      refNo: document.getElementById('input_red_flag_ref')?.value || '',
-      refDate: document.getElementById('input_red_flag_date')?.value || ''
-    }
-  };
-
-  try {
-    localStorage.setItem('KMU_APPRAISAL_DRAFT_v3', JSON.stringify(draft));
-    const indicator = document.getElementById('lastSavedIndicator');
-    if (indicator) {
-      indicator.textContent = `Saved: ${timeStr}`;
-    }
-  } catch (e) {
-    console.warn('Failed to save to localStorage:', e);
-  }
-  return draft;
-}
-
-// RESTORE DRAFT FUNCTION
-window.restoreDraft = function() {
-  try {
-    const raw = localStorage.getItem('KMU_APPRAISAL_DRAFT_v3');
-    if (!raw) return false;
-    const draft = JSON.parse(raw);
-
-    if (draft.profile) {
-      appraisalState.selectedProfile = draft.profile;
-      window.selectProfile(draft.profile);
-    }
-
-    if (draft.meta) {
-      const m = draft.meta;
-      setVal('input_emp_name', m.name);
-      setVal('input_emp_desig', m.desig);
-      setVal('input_emp_dept', m.dept);
-      setVal('input_emp_cadre', m.cadre);
-      setVal('input_emp_cycle', m.cycle);
-      setVal('input_emp_appraiser', m.appraiser);
-      setVal('input_emp_reviewer', m.reviewer);
-      setVal('input_comm_member_1', m.committeeMember1);
-      setVal('input_comm_member_2', m.committeeMember2);
-      setVal('input_comm_member_3', m.committeeMember3);
-
-      updateElementText('dossier_emp_name', m.name || '—');
-      updateElementText('dossier_emp_desig', m.desig || '—');
-      updateElementText('dossier_emp_dept', m.dept || '—');
-      updateElementText('dossier_emp_cadre', m.cadre || '—');
-      updateElementText('dossier_emp_cycle', m.cycle || '—');
-      updateElementText('sig_comm_1_name', m.committeeMember1 || 'Prof. Dr. Muhammad Saleem');
-      updateElementText('sig_comm_2_name', m.committeeMember2 || 'Dr. Bushra Rehman');
-      updateElementText('sig_comm_3_name', m.committeeMember3 || 'Dr. Kinza Ayaz');
-    }
-
-    if (draft.sectionA) {
-      setVal('input_qec_score', draft.sectionA.qecScore);
-      setVal('input_actual_wu', draft.sectionA.actualWU);
-      setVal('input_wu_exempted', draft.sectionA.exempted);
-    }
-
-    if (draft.sectionB) {
-      Object.keys(draft.sectionB).forEach(key => {
-        setVal(`input_${key}`, draft.sectionB[key]);
-      });
-    }
-
-    if (draft.grantsList && Array.isArray(draft.grantsList)) {
-      appraisalState.grantsList = draft.grantsList;
-      renderGrantsTable();
-    }
-
-    if (draft.sectionC) {
-      Object.keys(draft.sectionC).forEach(key => {
-        setVal(`input_${key}`, draft.sectionC[key]);
-      });
-    }
-
-    if (draft.sectionD) {
-      if (draft.sectionD.peerScores) appraisalState.sectionD.peerScores = draft.sectionD.peerScores;
-      if (draft.sectionD.cpdScores) appraisalState.sectionD.cpdScores = draft.sectionD.cpdScores;
-      initPeerControls();
-    }
-
-    if (draft.sectionE) {
-      Object.keys(draft.sectionE).forEach(key => {
-        setVal(`input_${key}`, draft.sectionE[key]);
-      });
-    }
-
-    if (draft.nextYearTargets) {
-      setVal('input_target_teaching', draft.nextYearTargets.teaching);
-      setVal('input_target_pubs', draft.nextYearTargets.publications);
-      setVal('input_target_grants', draft.nextYearTargets.grants);
-      setVal('input_target_sup', draft.nextYearTargets.supervision);
-      setVal('input_target_service', draft.nextYearTargets.service_cpd);
-      setVal('input_target_skills', draft.nextYearTargets.skills_leadership || appraisalState.nextYearTargets.skills_leadership);
-    }
-
-    if (draft.redFlag) {
-      setVal('input_red_flag', draft.redFlag.penalty);
-      setVal('input_red_flag_ref', draft.redFlag.refNo);
-      setVal('input_red_flag_date', draft.redFlag.refDate);
-    }
-
-    calculateAll();
-
-    const targetTab = draft.lastActiveTab || 'tab-meta';
-    window.switchTab(targetTab);
-
-    const banner = document.getElementById('draftRecoveryBanner');
-    if (banner) banner.style.display = 'none';
-
-    showToast(`✓ Restored draft from ${draft.savedTimeFormatted || 'previous session'}`);
-    return true;
-  } catch (e) {
-    console.error('Draft restore failed:', e);
-    return false;
-  }
-};
-
-// CHECK EXISTING DRAFT ON PAGE LOAD
-function checkExistingDraft() {
-  try {
-    const raw = localStorage.getItem('KMU_APPRAISAL_DRAFT_v3');
-    if (!raw) return;
-    const draft = JSON.parse(raw);
-    const banner = document.getElementById('draftRecoveryBanner');
-    if (banner && draft.meta) {
-      const empName = draft.meta.name || 'Faculty Member';
-      const timeStr = draft.savedTimeFormatted || 'earlier';
-      const infoSpan = document.getElementById('draftBannerInfo');
-      if (infoSpan) {
-        infoSpan.innerHTML = `<strong>In-Progress Draft Detected:</strong> Saved for <strong>${empName}</strong> at ${timeStr}.`;
-      }
-      banner.style.display = 'flex';
-    }
-  } catch (e) {}
-}
-
-// CLEAR DRAFT / START FRESH
-window.clearDraftAndStartFresh = function() {
-  if (confirm('Start a fresh appraisal? This will reset all fields.')) {
-    localStorage.removeItem('KMU_APPRAISAL_DRAFT_v3');
-    const banner = document.getElementById('draftRecoveryBanner');
-    if (banner) banner.style.display = 'none';
-    window.loadSampleData();
-    window.switchTab('tab-meta');
-    showToast('Started fresh appraisal form.');
-  }
-};
-
-// DOWNLOAD OFFLINE DRAFT BACKUP (.JSON)
-window.downloadDraftBackup = function() {
-  const raw = localStorage.getItem('KMU_APPRAISAL_DRAFT_v3');
-  const draft = raw ? JSON.parse(raw) : saveAllData();
-  const empName = draft.meta?.name || 'Faculty';
-  const blob = new Blob([JSON.stringify(draft, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `KMU_Appraisal_Draft_${empName.replace(/[^a-zA-Z0-9]/g, '_')}_2026.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('✓ Draft backup file downloaded.');
-};
-
-// HELPER: SET VALUE SAFELY
-function setVal(id, val) {
-  const el = document.getElementById(id);
-  if (!el || val === undefined || val === null) return;
-  if (el.tagName === 'SELECT') {
-    let matched = false;
-    for (let i = 0; i < el.options.length; i++) {
-      if (el.options[i].value === val) {
-        el.selectedIndex = i;
-        matched = true;
-        break;
-      }
-    }
-    if (!matched && typeof val === 'string' && val.trim() !== '') {
-      const lower = val.toLowerCase().trim();
-      for (let i = 0; i < el.options.length; i++) {
-        const optVal = el.options[i].value.toLowerCase();
-        const optText = el.options[i].text.toLowerCase();
-        if (optVal === lower || optText === lower || optVal.includes(lower) || lower.includes(optVal) || optText.includes(lower) || lower.includes(optText)) {
-          el.selectedIndex = i;
-          matched = true;
-          break;
-        }
-      }
-    }
-    if (!matched && el.selectedIndex === -1 && el.options.length > 0) {
-      el.selectedIndex = 0;
-    }
-  } else {
-    el.value = val;
-  }
-}
-
-// Navigation helpers
-window.goToProfileStep = function() {
-  window.saveAndContinue('tab-profile', 'Step 2: Profile Selection');
-};
-
-window.goToTeachingStep = function() {
-  window.saveAndContinue('tab-teaching', 'Step 3: Teaching Scoring');
-};
-
-// --- RESEARCH GRANTS LEDGER FUNCTIONS ---
-function computeGrantPoints(amount, role, status) {
-  if (status === 'Applied') {
-    return 2.0; // 2 points per application submitted
-  }
-  // Won / Awarded:
-  const amtNum = parseFloat(amount) || 0;
-  if (amtNum >= 10000000) { // Major International/National > 10M PKR
-    return role === 'PI' ? 15.0 : 4.5;
-  } else if (amtNum >= 1000000) { // National 1M - 10M PKR
-    return role === 'PI' ? 8.0 : 4.0;
-  } else { // Small competitive grant < 1M PKR
-    return role === 'PI' ? 4.0 : 2.0;
-  }
-}
-
-function formatCurrencyPKR(amount) {
-  const num = parseFloat(amount) || 0;
-  if (num >= 10000000) {
-    return `PKR ${(num / 1000000).toFixed(2)} M (>10M Major)`;
-  } else if (num >= 1000000) {
-    return `PKR ${(num / 1000000).toFixed(2)} M (1-10M National)`;
-  } else {
-    return `PKR ${(num / 1000).toFixed(0)} K (<1M Small)`;
-  }
-}
-
-function renderGrantsTable() {
-  const tbody = document.getElementById('grantsTableBody');
-  if (!tbody) return;
-  tbody.innerHTML = '';
-
-  let wonTotal = 0;
-  let appliedTotal = 0;
-
-  appraisalState.grantsList.forEach((grant, idx) => {
-    const pts = computeGrantPoints(grant.amount, grant.role, grant.status);
-    grant.points = pts;
-    if (grant.status === 'Won') wonTotal += pts;
-    if (grant.status === 'Applied') appliedTotal += pts;
-
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><strong>${grant.title}</strong></td>
-      <td><span style="font-weight:600; color:var(--kmu-maroon);">${grant.agency}</span></td>
-      <td>${formatCurrencyPKR(grant.amount)}</td>
-      <td><strong>${grant.role}</strong></td>
-      <td>
-        <span class="grant-table-badge ${grant.status === 'Won' ? 'grant-badge-won' : 'grant-badge-applied'}">
-          ${grant.status === 'Won' ? 'Won / Awarded' : 'Applied'}
-        </span>
-      </td>
-      <td><strong style="color:var(--emerald-600);">${pts} pts</strong></td>
-      <td style="text-align:center;">
-        <button type="button" class="btn btn-secondary" style="padding:2px 8px; font-size:0.75rem;" onclick="deleteGrantRecord('${grant.id}')">✕</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-
-  const appliedCapped = Math.min(20, appliedTotal);
-  const subB3Capped = Math.min(50, wonTotal + appliedCapped);
-
-  updateElementText('disp_sub_b3_won', wonTotal.toFixed(1));
-  updateElementText('disp_sub_b3_applied', appliedTotal.toFixed(1));
-  updateElementText('disp_sub_b3', subB3Capped.toFixed(1));
-  updateElementText('disp_sub_b3_raw', (wonTotal + appliedTotal).toFixed(1));
-  
-  // Recalculate research score
-  calculateAll();
-}
-
-window.addGrantRecord = function() {
-  const title = document.getElementById('input_new_grant_title')?.value?.trim();
-  const agency = document.getElementById('input_new_grant_agency')?.value?.trim();
-  const amountStr = document.getElementById('input_new_grant_amount')?.value?.trim();
-  const role = document.getElementById('input_new_grant_role')?.value || 'PI';
-  const status = document.getElementById('input_new_grant_status')?.value || 'Won';
-
-  if (!title || !agency || !amountStr) {
-    alert('Please enter the Project Title, Funding Agency, and Grant Amount (in PKR).');
-    return;
-  }
-
-  // Parse amount in PKR (handles 12M, 12000000, 7.5, etc.)
-  let amount = parseFloat(amountStr);
-  if (amount < 1000) {
-    // If entered in Millions e.g. 7.5
-    amount = amount * 1000000;
-  }
-
-  const newGrant = {
-    id: 'g_' + Date.now(),
-    title: title,
-    agency: agency,
-    amount: amount,
-    role: role,
-    status: status,
-    points: computeGrantPoints(amount, role, status)
-  };
-
-  appraisalState.grantsList.push(newGrant);
-  renderGrantsTable();
-
-  // Reset input fields
-  document.getElementById('input_new_grant_title').value = '';
-  document.getElementById('input_new_grant_agency').value = '';
-  document.getElementById('input_new_grant_amount').value = '';
-
-  showToast(`✓ Grant Added: ${title} (${formatCurrencyPKR(amount)})`);
-};
-
-window.deleteGrantRecord = function(grantId) {
-  appraisalState.grantsList = appraisalState.grantsList.filter(g => g.id !== grantId);
-  renderGrantsTable();
-  showToast('Grant removed from ledger.');
-};
-
-// Initialize Application
-document.addEventListener('DOMContentLoaded', () => {
-  initPeerControls();
-  autoSelectProfileAndWeights();
-  initEventListeners();
-  
-  const restored = window.restoreDraft();
-  if (!restored) {
-    window.loadSampleData();
-  }
-  checkExistingDraft();
-  renderGrantsTable();
-  calculateAll();
-});
-
-// Render Profile Selection Cards
-function initProfileCards() {
-  const container = document.getElementById('profileCardsContainer');
-  if (!container) return;
-  container.innerHTML = '';
-
-  Object.keys(PROFILES).forEach(key => {
-    const prof = PROFILES[key];
-    const card = document.createElement('div');
-    card.className = `profile-card ${key === appraisalState.selectedProfile ? 'selected' : ''}`;
-    card.onclick = () => window.selectProfile(key);
-
-    card.innerHTML = `
-      <div class="profile-title">${prof.name}</div>
-      <p style="font-size:0.75rem; color:#64748b; margin-bottom:0.5rem;">${prof.description}</p>
-      <ul class="profile-breakdown">
-        <li><span>Teaching:</span> <strong>${prof.teachingWeight}%</strong> (Min WU: ${prof.minTeachingWU})</li>
-        <li><span>Research & Innovation:</span> <strong>${prof.researchWeight}%</strong></li>
-        <li><span>Institutional Service:</span> <strong>${prof.serviceWeight}%</strong></li>
-        <li><span>Dean's Peer & CPD:</span> <strong>${prof.peerWeight}%</strong></li>
-        ${prof.clinicalWeight > 0 ? `<li><span style="color:#b91c1c; font-weight:700;">Clinical Service:</span> <strong style="color:#b91c1c;">${prof.clinicalWeight}%</strong></li>` : ''}
-      </ul>
-    `;
-    container.appendChild(card);
-  });
-}
-
-// Select Profile
-window.selectProfile = function(profileKey) {
-  appraisalState.selectedProfile = profileKey;
-  initProfileCards();
-  setVal('profileDropdownSelect', profileKey);
-  toggleClinicalSection();
-  calculateAll();
-  showToast(`Profile activated: ${profileKey}`);
-};
-
-// Toggle Clinical Section
-function toggleClinicalSection() {
-  const isClinical = appraisalState.selectedProfile === 'Clinical-Focused Profile (Hospital Faculty)';
-  const clinNavItem = document.getElementById('navItemClinical');
-  const clinPill = document.getElementById('navPillClinical');
-  
-  if (clinNavItem) {
-    if (isClinical) {
-      clinNavItem.style.display = 'flex';
-      if (clinPill) {
-        clinPill.textContent = '45%';
-        clinPill.style.background = '#7a1c1c';
-        clinPill.style.color = '#fff';
-      }
-    } else {
-      clinNavItem.style.display = 'none';
-    }
-  }
-}
-
-// Render Peer Review Sliders/Chips
-function initPeerControls() {
-  const peerList = document.getElementById('peerParametersList');
-  if (peerList) {
-    peerList.innerHTML = '';
-    PEER_PARAMETERS.forEach(param => {
-      const currentVal = appraisalState.sectionD.peerScores[param.id] || 4;
-      const row = document.createElement('div');
-      row.className = 'peer-item-card';
-      row.innerHTML = `
-        <div class="peer-item-info">
-          <div class="peer-item-title">${param.label}</div>
-          <div style="font-size:0.75rem; color:#64748b;">${param.desc}</div>
-        </div>
-        <div class="peer-item-scale" id="chips_${param.id}">
-          ${[1, 2, 3, 4, 5, 6].map(score => `
-            <button type="button" class="score-chip-btn ${currentVal === score ? 'selected' : ''}" 
-              onclick="setPeerScore('${param.id}', ${score})">${score}</button>
-          `).join('')}
-        </div>
-      `;
-      peerList.appendChild(row);
-    });
-  }
-
-  const cpdList = document.getElementById('cpdTargetsList');
-  if (cpdList) {
-    cpdList.innerHTML = '';
-    CPD_TARGETS.forEach(target => {
-      const currentVal = appraisalState.sectionD.cpdScores[target.id] || 0;
-      const row = document.createElement('div');
-      row.className = 'peer-item-card';
-      row.innerHTML = `
-        <div class="peer-item-info">
-          <div class="peer-item-title">${target.label}</div>
-          <div style="font-size:0.75rem; color:#64748b;">${target.desc}</div>
-        </div>
-        <div class="peer-item-scale" id="chips_${target.id}">
-          ${[0, 1, 2].map(score => `
-            <button type="button" class="score-chip-btn ${currentVal === score ? 'selected' : ''}" 
-              onclick="setCpdScore('${target.id}', ${score})">${score}</button>
-          `).join('')}
-        </div>
-      `;
-      cpdList.appendChild(row);
-    });
-  }
-}
-
-window.setPeerScore = function(paramId, score) {
-  appraisalState.sectionD.peerScores[paramId] = score;
-  const container = document.getElementById(`chips_${paramId}`);
-  if (container) {
-    container.querySelectorAll('.score-chip-btn').forEach((btn, idx) => {
-      btn.classList.toggle('selected', idx + 1 === score);
-    });
-  }
-  calculateAll();
-};
-
-window.setCpdScore = function(targetId, score) {
-  appraisalState.sectionD.cpdScores[targetId] = score;
-  const container = document.getElementById(`chips_${targetId}`);
-  if (container) {
-    container.querySelectorAll('.score-chip-btn').forEach((btn, idx) => {
-      btn.classList.toggle('selected', idx === score);
-    });
-  }
-  calculateAll();
-};
-
-// Global Calculation Engine
-
-// KMU POLICY SECTION 9.1 TWO-FACTOR APPRAISAL WEIGHTING MODEL
-const RANK_ADJUSTMENTS = {
-  'Professor': { teaching: -10, research: 10, service: 5, peer: -5, clinical: 0 },
-  'Associate Professor': { teaching: -5, research: 5, service: 2.5, peer: -2.5, clinical: 0 },
-  'Assistant Professor': { teaching: 0, research: 0, service: 0, peer: 0, clinical: 0 },
-  'Lecturer': { teaching: 5, research: -5, service: -2.5, peer: 2.5, clinical: 0 },
-  'Demonstrator / Senior Registrar / MO': { teaching: 10, research: -10, service: -5, peer: 5, clinical: 0 },
-  'Research Scientist / Postdoc': { teaching: -5, research: 5, service: 0, peer: 0, clinical: 0 }
-};
-
-function determineBaseProfile(dept, desig, cadre) {
-  dept = dept || '';
-  desig = desig || '';
-  cadre = cadre || '';
-
-  // 1. Regional IHS Campuses -> Teaching-Focused Profile (Regional IHS)
-  if (dept.includes('IHS') || dept.includes('Institute of Health Sciences')) {
-    return {
-      profileKey: 'Teaching-Focused (Regional IHS)',
-      basis: 'Regional IHS Constituent Campus (Statutory Rule 6.1 / 9.1)'
-    };
-  }
-
-  // 2. Clinical Hospital Units or Clinical Designation -> Clinical-Focused Profile (Hospital Faculty)
-  if (dept.includes('Clinical') || dept.includes('Hospital') || desig.includes('Medical Officer') || desig.includes('Senior Registrar') || desig.includes('Consultant')) {
-    return {
-      profileKey: 'Clinical-Focused (Hospital Faculty)',
-      basis: 'Clinical Hospital Faculty & Ward Practice (Section 6.1 / 9.1)'
-    };
-  }
-
-  // 3. Dedicated Research Staff / Postdocs -> Research Cadres / Postdocs
-  if (desig.includes('Research Scientist') || desig.includes('Postdoc')) {
-    return {
-      profileKey: 'Research Cadres / Postdocs',
-      basis: 'Dedicated Research Cadre / Postdoctoral Appointment'
-    };
-  }
-
-  // 4. Tenure Track System (TTS) or Public Health Reference Lab -> Research-Focused Profile
-  if (cadre === 'Tenure Track System (TTS)' || dept.includes('Public Health Reference Laboratory')) {
-    return {
-      profileKey: 'Research-Focused Profile',
-      basis: 'Tenure Track System (TTS) / Advanced Research Mandate'
-    };
-  }
-
-  // 5. Standard Constituent Institutes (IBMS, IPDM, KMU-IPS, etc.) -> Balanced Profile
-  return {
-    profileKey: 'Balanced Profile',
-    basis: 'Constituent Academic Institute Regular Faculty'
-  };
-}
-
-function autoSelectProfileAndWeights() {
-  if (appraisalState.manualProfileOverride) {
-    return; // User has explicitly toggled a manual override
-  }
-
-  const dept = document.getElementById('input_emp_dept')?.value || '';
-  const desig = document.getElementById('input_emp_desig')?.value || '';
-  const cadre = document.getElementById('input_emp_cadre')?.value || '';
-
-  const { profileKey, basis } = determineBaseProfile(dept, desig, cadre);
-  appraisalState.selectedProfile = profileKey;
-
-  const baseProf = PROFILES[profileKey] || PROFILES['Balanced Profile'];
-  const rankAdj = RANK_ADJUSTMENTS[desig] || { teaching: 0, research: 0, service: 0, peer: 0, clinical: 0 };
-
-  // Apply Two-Factor rank adjustments while preserving 100% total
-  let wT = baseProf.teachingWeight + (baseProf.clinicalWeight > 0 ? 0 : rankAdj.teaching);
-  let wR = baseProf.researchWeight + (baseProf.clinicalWeight > 0 ? 0 : rankAdj.research);
-  let wS = baseProf.serviceWeight + (baseProf.clinicalWeight > 0 ? 0 : rankAdj.service);
-  let wP = baseProf.peerWeight + (baseProf.clinicalWeight > 0 ? 0 : rankAdj.peer);
-  let wC = baseProf.clinicalWeight + rankAdj.clinical;
-
-  // Sanity bounds
-  wT = Math.max(5, wT);
-  wR = Math.max(5, wR);
-  wS = Math.max(5, wS);
-  wP = Math.max(5, wP);
-  wC = Math.max(0, wC);
-
-  // Normalize to exact 100%
-  const sumW = wT + wR + wS + wP + wC;
-  if (sumW !== 100) {
-    const diff = 100 - sumW;
-    wR += diff; // absorb rounding delta in research
-  }
-
-  appraisalState.activeWeights = {
-    teaching: wT,
-    research: wR,
-    service: wS,
-    peer: wP,
-    clinical: wC,
-    minTeachingWU: baseProf.minTeachingWU,
-    name: profileKey,
-    basis: basis
-  };
-
-  // Update Auto-Card Display on Step 1
-  updateElementText('disp_auto_profile_name', profileKey);
-  updateElementText('disp_auto_profile_basis', basis);
-  updateElementText('disp_auto_weight_teaching', `${wT}%`);
-  updateElementText('disp_auto_weight_research', `${wR}%`);
-  updateElementText('disp_auto_weight_service', `${wS}%`);
-  updateElementText('disp_auto_weight_peer', `${wP}%`);
-  updateElementText('disp_auto_weight_clinical', `${wC}%`);
-  updateElementText('disp_auto_min_wu', `${baseProf.minTeachingWU} WU`);
-
-  const clinChip = document.getElementById('disp_auto_chip_clinical');
-  if (clinChip) {
-    clinChip.style.display = wC > 0 ? 'flex' : 'none';
-  }
-
-  toggleClinicalSection();
-  calculateAll();
-}
-
-window.toggleManualProfileOverride = function() {
-  const panel = document.getElementById('manualProfileOverridePanel');
-  if (!panel) return;
-  if (panel.style.display === 'none' || !panel.style.display) {
-    panel.style.display = 'block';
-    appraisalState.manualProfileOverride = true;
-    showToast('Manual Profile Override activated');
-  } else {
-    panel.style.display = 'none';
-    appraisalState.manualProfileOverride = false;
-    autoSelectProfileAndWeights();
-    showToast('Reverted to statutory auto-profile assignment');
-  }
-};
-
-window.applyManualProfileOverride = function(profileKey) {
-  appraisalState.manualProfileOverride = true;
-  appraisalState.selectedProfile = profileKey;
-  const baseProf = PROFILES[profileKey] || PROFILES['Balanced Profile'];
-  appraisalState.activeWeights = {
-    teaching: baseProf.teachingWeight,
-    research: baseProf.researchWeight,
-    service: baseProf.serviceWeight,
-    peer: baseProf.peerWeight,
-    clinical: baseProf.clinicalWeight,
-    minTeachingWU: baseProf.minTeachingWU,
-    name: profileKey,
-    basis: 'Manual Administrative Override (Syndicate Order)'
-  };
-  updateElementText('disp_auto_profile_name', profileKey);
-  updateElementText('disp_auto_profile_basis', 'Manual Administrative Override');
-  updateElementText('disp_auto_weight_teaching', `${baseProf.teachingWeight}%`);
-  updateElementText('disp_auto_weight_research', `${baseProf.researchWeight}%`);
-  updateElementText('disp_auto_weight_service', `${baseProf.serviceWeight}%`);
-  updateElementText('disp_auto_weight_peer', `${baseProf.peerWeight}%`);
-  updateElementText('disp_auto_weight_clinical', `${baseProf.clinicalWeight}%`);
-  updateElementText('disp_auto_min_wu', `${baseProf.minTeachingWU} WU`);
-  const clinChip = document.getElementById('disp_auto_chip_clinical');
-  if (clinChip) clinChip.style.display = baseProf.clinicalWeight > 0 ? 'flex' : 'none';
-  toggleClinicalSection();
-  calculateAll();
-};
-
-function calculateAll() {
-  if (!appraisalState.activeWeights) {
-    autoSelectProfileAndWeights();
-  }
-  const prof = appraisalState.activeWeights || {
-    teaching: 30, research: 30, service: 20, peer: 20, clinical: 0, minTeachingWU: 30, name: appraisalState.selectedProfile
-  };
-
-  const wTeaching = prof.teaching / 100;
-  const wResearch = prof.research / 100;
-  const wService = prof.service / 100;
-  const wPeer = prof.peer / 100;
-  const wClinical = prof.clinical / 100;
-  const minTeachingWU = prof.minTeachingWU;
-
-  updateElementText('navPillTeaching', `${prof.teaching}%`);
-  updateElementText('navPillResearch', `${prof.research}%`);
-  updateElementText('navPillService', `${prof.service}%`);
-  updateElementText('navPillPeer', `${prof.peer}%`);
-  if (prof.clinical > 0) {
-    updateElementText('navPillClinical', `${prof.clinical}%`);
-  }
-
-  // --- 1. SECTION A: TEACHING ---
-  const qecScore = Math.min(100, Math.max(0, parseFloat(document.getElementById('input_qec_score')?.value) || 0));
-  const actualWU = Math.max(0, parseFloat(document.getElementById('input_actual_wu')?.value) || 0);
-  const exempted = document.getElementById('input_wu_exempted')?.value || 'N';
-
-  updateElementText('disp_min_wu', minTeachingWU);
-  updateElementText('dossier_min_wu', `${minTeachingWU} WU`);
-  
-  let effectiveTeaching = qecScore;
-  if (exempted !== 'Y' && minTeachingWU > 0 && actualWU < minTeachingWU) {
-    effectiveTeaching = qecScore * (actualWU / minTeachingWU);
-  }
-  effectiveTeaching = Math.min(100, Math.max(0, effectiveTeaching));
-  
-  const attainmentA = effectiveTeaching; // 0 - 100%
-  const weightedA = (attainmentA / 100) * wTeaching * 100;
-
-  updateElementText('disp_effective_teaching', `${attainmentA.toFixed(1)}%`);
-  updateElementText('disp_weight_a', `${prof.teaching}%`);
-  updateElementText('disp_weighted_a', `${weightedA.toFixed(2)} pts`);
-
-  // --- 2. SECTION B: RESEARCH ---
-  const pubHighLead = getInputValue('input_pub_high_lead') * 10;
-  const pubHighCo = getInputValue('input_pub_high_co') * 5;
-  const pubModLead = getInputValue('input_pub_mod_lead') * 6;
-  const pubModCo = getInputValue('input_pub_mod_co') * 3;
-  const pubLowLead = getInputValue('input_pub_low_lead') * 4;
-  const pubLowCo = getInputValue('input_pub_low_co') * 2;
-  const subB1Raw = pubHighLead + pubHighCo + pubModLead + pubModCo + pubLowLead + pubLowCo;
-  const subB1Capped = Math.min(50, subB1Raw);
-  updateElementText('disp_sub_b1', subB1Capped.toFixed(1));
-
-  const bookInt = getInputValue('input_book_int') * 8;
-  const bookNat = getInputValue('input_book_nat') * 5;
-  const chapInt = getInputValue('input_chapter_int') * 4;
-  const chapNat = getInputValue('input_chapter_nat') * 2;
-  const subB2Raw = bookInt + bookNat + chapInt + chapNat;
-  const subB2Capped = Math.min(20, subB2Raw);
-  updateElementText('disp_sub_b2', subB2Capped.toFixed(1));
-
-  // Grants calculated directly from grantsList ledger
-  let wonSum = 0;
-  let appliedSum = 0;
-  appraisalState.grantsList.forEach(g => {
-    const pts = computeGrantPoints(g.amount, g.role, g.status);
-    if (g.status === 'Won') wonSum += pts;
-    if (g.status === 'Applied') appliedSum += pts;
-  });
-  const subB3Capped = Math.min(50, wonSum + Math.min(20, appliedSum));
-  updateElementText('disp_sub_b3_won', wonSum.toFixed(1));
-  updateElementText('disp_sub_b3_applied', appliedSum.toFixed(1));
-  updateElementText('disp_sub_b3', subB3Capped.toFixed(1));
-
-  const supPhD = getInputValue('input_sup_phd') * 8;
-  const supMPhil = getInputValue('input_sup_mphil') * 4;
-  const supClinSr = getInputValue('input_sup_clin_sr') * 3;
-  const supClinJr = getInputValue('input_sup_clin_jr') * 1.5;
-  const subB4Raw = supPhD + supMPhil + supClinSr + supClinJr;
-  const subB4Capped = Math.min(40, subB4Raw);
-  updateElementText('disp_sub_b4', subB4Capped.toFixed(1));
-
-  const patInt = getInputValue('input_innov_patent_int') * 15;
-  const patNat = getInputValue('input_innov_patent_nat') * 8;
-  const projCollab = getInputValue('input_innov_project') * 5;
-  const subB5Raw = patInt + patNat + projCollab;
-  const subB5Capped = Math.min(40, subB5Raw);
-  updateElementText('disp_sub_b5', subB5Capped.toFixed(1));
-
-  const rawB = Math.min(200, subB1Capped + subB2Capped + subB3Capped + subB4Capped + subB5Capped);
-  const attainmentB = (rawB / 200) * 100; // Normalized 0 - 100%
-  const weightedB = (attainmentB / 100) * wResearch * 100;
-
-  updateElementText('disp_raw_b', `${attainmentB.toFixed(1)}%`);
-  updateElementText('disp_weight_b', `${prof.research}%`);
-  updateElementText('disp_weighted_b', `${weightedB.toFixed(2)} pts`);
-
-  // --- 3. SECTION C: SERVICE ---
-  const commMember = Math.min(25, getInputValue('input_comm_member') * 5);
-  const commChair = Math.min(30, getInputValue('input_comm_chair') * 10);
-  const policyDoc = Math.min(30, getInputValue('input_policy_doc') * 15);
-  const facilityCharge = Math.min(20, getInputValue('input_facility_charge') * 10);
-  const addAppoint = document.getElementById('input_additional_appoint')?.value === 'Y' ? 10 : 0;
-  
-  const rawC = Math.min(100, commMember + commChair + policyDoc + facilityCharge + addAppoint);
-  const attainmentC = (rawC / 100) * 100; // 0 - 100%
-  const weightedC = (attainmentC / 100) * wService * 100;
-
-  updateElementText('disp_raw_c', `${attainmentC.toFixed(1)}%`);
-  updateElementText('disp_raw_c_card', `${attainmentC.toFixed(1)}%`);
-  updateElementText('disp_weight_c', `${prof.service}%`);
-  updateElementText('disp_weighted_c', `${weightedC.toFixed(2)} pts`);
-
-  // --- 4. SECTION D: PEER EVALUATION & CONDUCT (DEAN'S ASSESSMENT) ---
-  let peer13Sum = 0;
-  Object.keys(appraisalState.sectionD.peerScores).forEach(k => {
-    peer13Sum += (appraisalState.sectionD.peerScores[k] || 0);
-  });
-  updateElementText('disp_peer_13_sum', peer13Sum);
-
-  let cpdSum = 0;
-  Object.keys(appraisalState.sectionD.cpdScores).forEach(k => {
-    cpdSum += (appraisalState.sectionD.cpdScores[k] || 0);
-  });
-  updateElementText('disp_cpd_sum', cpdSum);
-
-  const rawD = Math.min(88, peer13Sum + cpdSum);
-  const attainmentD = (rawD / 88) * 100; // 0 - 100%
-  const weightedD = (attainmentD / 100) * wPeer * 100;
-
-  updateElementText('disp_raw_d', `${attainmentD.toFixed(1)}%`);
-  updateElementText('disp_weight_d', `${prof.peer}%`);
-  updateElementText('disp_weighted_d', `${weightedD.toFixed(2)} pts`);
-
-  // --- 5. SECTION E: CLINICAL SERVICE ---
-  let rawE = 0;
-  let attainmentE = 0;
-  let weightedE = 0;
-  if (prof.clinical > 0) {
-    const clinAdmin = Math.min(25, getInputValue('input_clin_admin') * 5);
-    const clinVol = Math.min(30, getInputValue('input_clin_volume') * 10);
-    const clinOnCall = Math.min(25, getInputValue('input_clin_oncall') * 5);
-    const clinTeach = Math.min(20, getInputValue('input_clin_teaching') * 10);
-    rawE = Math.min(100, clinAdmin + clinVol + clinOnCall + clinTeach);
-    attainmentE = (rawE / 100) * 100;
-    weightedE = (attainmentE / 100) * wClinical * 100;
-
-    updateElementText('disp_raw_e', `${attainmentE.toFixed(1)}%`);
-    updateElementText('disp_weight_e', `${prof.clinical}%`);
-    updateElementText('disp_weighted_e', `${weightedE.toFixed(2)} pts`);
-  }
-
-  // --- DISCIPLINARY PENALTY ---
-  const redFlagSelect = document.getElementById('input_red_flag');
-  const penalty = parseFloat(redFlagSelect?.value) || 0;
-  const refNo = document.getElementById('input_red_flag_ref')?.value?.trim();
-  const validPenalty = (penalty > 0 && refNo) ? penalty : 0;
-  updateElementText('disp_red_flag_penalty', validPenalty > 0 ? `-${validPenalty} pts` : '0 pts');
-
-  // --- CONSOLIDATED TOTALS & DOMAIN SEPARATION ---
-  const objectiveScore = weightedA + weightedB + weightedC + (prof.clinical > 0 ? weightedE : 0);
-  const objectiveMaxWeight = (wTeaching + wResearch + wService + (prof.clinical > 0 ? wClinical : 0)) * 100;
-  const objectivePercent = objectiveMaxWeight > 0 ? (objectiveScore / objectiveMaxWeight) * 100 : 0;
-
-  const subjectiveScore = weightedD;
-  const subjectiveMaxWeight = wPeer * 100;
-  const subjectivePercent = subjectiveMaxWeight > 0 ? (subjectiveScore / subjectiveMaxWeight) * 100 : 0;
-
-  const finalScore = Math.max(0, objectiveScore + subjectiveScore - validPenalty);
-
-  // Ratings
-  let ratingBand = 'Unsatisfactory';
-  let ratingClass = 'rating-unsatisfactory';
-  let pipStatus = 'Mandatory PIP Required (Section 9.5)';
-  let pipDesc = 'Consolidated score is below 50.0%. Official Performance Improvement Plan triggered.';
-
-  if (finalScore >= 85) {
-    ratingBand = 'Outstanding';
-    ratingClass = 'rating-outstanding';
-    pipStatus = 'Not Required (Exemplary)';
-    pipDesc = 'Eligible for academic honors, accelerated promotion, and research awards.';
-  } else if (finalScore >= 75) {
-    ratingBand = 'Very Good';
-    ratingClass = 'rating-very-good';
-    pipStatus = 'Not Required';
-    pipDesc = 'Meets all statutory performance criteria with commendation.';
-  } else if (finalScore >= 60) {
-    ratingBand = 'Good';
-    ratingClass = 'rating-good';
-    pipStatus = 'Not Required';
-    pipDesc = 'Fully satisfies substantive statutory baseline.';
-  } else if (finalScore >= 50) {
-    ratingBand = 'Average (Needs Improvement)';
-    ratingClass = 'rating-average';
-    pipStatus = 'Developmental PIP Advised';
-    pipDesc = 'Departmental counseling and developmental benchmarks recommended.';
-  }
-
-  let objGrade = 'Meets Expectations';
-  if (objectivePercent >= 85) objGrade = 'Outstanding Output';
-  else if (objectivePercent >= 75) objGrade = 'Very Good';
-  else if (objectivePercent < 50) objGrade = 'Shortfall Flagged';
-
-  let subjGrade = 'Commendable Conduct';
-  if (subjectivePercent >= 85) subjGrade = 'Exemplary Citizenship';
-  else if (subjectivePercent < 50) subjGrade = 'Conduct Shortfall';
-
-  // Live status bar updates
-  updateElementText('liveScore', finalScore.toFixed(1));
-  const badge = document.getElementById('liveRatingBadge');
-  if (badge) {
-    badge.textContent = ratingBand;
-    badge.className = `rating-badge ${ratingClass}`;
-  }
-  updateElementText('liveProfileName', prof.name);
-  updateElementText('top_pip_status', pipStatus);
-
-  updateElementText('kpi_final_score', `${finalScore.toFixed(1)}%`);
-  updateElementText('kpi_rating_band', ratingBand);
-  updateElementText('kpi_pip_status', pipStatus);
-  updateElementText('kpi_pip_desc', pipDesc);
-  updateElementText('kpi_penalty_applied', validPenalty > 0 ? `-${validPenalty} pts` : 'None');
-
-  // Update Split Objective vs Subjective DOM Displays
-  updateElementText('disp_objective_score', `${objectiveScore.toFixed(2)} / ${objectiveMaxWeight.toFixed(0)}%`);
-  updateElementText('disp_objective_pct', `${objectivePercent.toFixed(1)}% (${objGrade})`);
-  updateElementText('disp_subjective_score', `${subjectiveScore.toFixed(2)} / ${subjectiveMaxWeight.toFixed(0)}%`);
-  updateElementText('disp_subjective_pct', `${subjectivePercent.toFixed(1)}% (${subjGrade})`);
-
-  // Update Official Dossier Document Table (No raw score denominators)
-  updateElementText('dossier_prof_name', prof.name);
-  updateElementText('dossier_weight_a', `${prof.teaching}%`);
-  updateElementText('dossier_pct_a', `${attainmentA.toFixed(1)}%`);
-  updateElementText('dossier_weighted_a', weightedA.toFixed(2));
-
-  updateElementText('dossier_weight_b', `${prof.research}%`);
-  updateElementText('dossier_pct_b', `${attainmentB.toFixed(1)}%`);
-  updateElementText('dossier_weighted_b', weightedB.toFixed(2));
-
-  updateElementText('dossier_weight_c', `${prof.service}%`);
-  updateElementText('dossier_pct_c', `${attainmentC.toFixed(1)}%`);
-  updateElementText('dossier_weighted_c', weightedC.toFixed(2));
-
-  updateElementText('dossier_weight_d', `${prof.peer}%`);
-  updateElementText('dossier_pct_d', `${attainmentD.toFixed(1)}%`);
-  updateElementText('dossier_weighted_d', weightedD.toFixed(2));
-
-  const clinDossierRow = document.getElementById('dossier_row_clinical');
-  if (clinDossierRow) {
-    if (prof.clinical > 0) {
-      clinDossierRow.style.display = 'table-row';
-      updateElementText('dossier_weight_e', `${prof.clinical}%`);
-      updateElementText('dossier_pct_e', `${attainmentE.toFixed(1)}%`);
-      updateElementText('dossier_weighted_e', weightedE.toFixed(2));
-    } else {
-      clinDossierRow.style.display = 'none';
-    }
-  }
-
-  updateElementText('dossier_objective_total', `${objectiveScore.toFixed(2)} / ${objectiveMaxWeight.toFixed(0)}% (${objectivePercent.toFixed(1)}%)`);
-  updateElementText('dossier_subjective_total', `${subjectiveScore.toFixed(2)} / ${subjectiveMaxWeight.toFixed(0)}% (${subjectivePercent.toFixed(1)}%)`);
-  updateElementText('dossier_penalty', validPenalty > 0 ? `-${validPenalty} pts (${refNo})` : '0 pts');
-  updateElementText('dossier_final_score', `${finalScore.toFixed(1)} / 100`);
-  updateElementText('dossier_final_rating', ratingBand);
-  updateElementText('dossier_pip_note', pipStatus);
-
-  // Sync targets to printable dossier
-  const tTeaching = document.getElementById('input_target_teaching')?.value || appraisalState.nextYearTargets.teaching;
-  const tPubs = document.getElementById('input_target_pubs')?.value || appraisalState.nextYearTargets.publications;
-  const tGrants = document.getElementById('input_target_grants')?.value || appraisalState.nextYearTargets.grants;
-  const tSup = document.getElementById('input_target_sup')?.value || appraisalState.nextYearTargets.supervision;
-  const tService = document.getElementById('input_target_service')?.value || appraisalState.nextYearTargets.service_cpd;
-  const tSkills = document.getElementById('input_target_skills')?.value || appraisalState.nextYearTargets.skills_leadership;
-
-  updateElementText('dossier_target_teaching', tTeaching);
-  updateElementText('dossier_target_pubs', tPubs);
-  updateElementText('dossier_target_grants', tGrants);
-  updateElementText('dossier_target_sup', tSup);
-  updateElementText('dossier_target_service', tService);
-  updateElementText('dossier_target_skills', tSkills);
-
-  renderScoreBars({
-    teaching: attainmentA,
-    research: attainmentB,
-    service: attainmentC,
-    peer: attainmentD,
-    clinical: prof.clinical > 0 ? attainmentE : 0
-  });
-}
-
-function renderScoreBars(attainment) {
-  const container = document.getElementById('domainProgressContainer');
-  if (!container) return;
-  const isClinical = PROFILES[appraisalState.selectedProfile]?.clinicalWeight > 0;
-
-  container.innerHTML = `
-    <div style="margin-bottom:0.75rem;">
-      <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:600; margin-bottom:4px;">
-        <span>Teaching & Curriculum (Objective)</span>
-        <span>${attainment.teaching.toFixed(1)}%</span>
-      </div>
-      <div style="background:#e2e8f0; border-radius:9999px; height:8px; overflow:hidden;">
-        <div style="background:#7a1c1c; width:${Math.min(100, attainment.teaching)}%; height:100%;"></div>
-      </div>
-    </div>
-
-    <div style="margin-bottom:0.75rem;">
-      <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:600; margin-bottom:4px;">
-        <span>Research, Grants & Innovation (Objective)</span>
-        <span>${attainment.research.toFixed(1)}%</span>
-      </div>
-      <div style="background:#e2e8f0; border-radius:9999px; height:8px; overflow:hidden;">
-        <div style="background:#c59b27; width:${Math.min(100, attainment.research)}%; height:100%;"></div>
-      </div>
-    </div>
-
-    <div style="margin-bottom:0.75rem;">
-      <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:600; margin-bottom:4px;">
-        <span>Institutional Service (Objective)</span>
-        <span>${attainment.service.toFixed(1)}%</span>
-      </div>
-      <div style="background:#e2e8f0; border-radius:9999px; height:8px; overflow:hidden;">
-        <div style="background:#2563eb; width:${Math.min(100, attainment.service)}%; height:100%;"></div>
-      </div>
-    </div>
-
-    <div style="margin-bottom:0.75rem;">
-      <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:600; margin-bottom:4px;">
-        <span>Dean's Peer Evaluation & CPD (Subjective)</span>
-        <span>${attainment.peer.toFixed(1)}%</span>
-      </div>
-      <div style="background:#e2e8f0; border-radius:9999px; height:8px; overflow:hidden;">
-        <div style="background:#059669; width:${Math.min(100, attainment.peer)}%; height:100%;"></div>
-      </div>
-    </div>
-
-    ${isClinical ? `
-    <div style="margin-bottom:0.75rem;">
-      <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:600; margin-bottom:4px;">
-        <span style="color:#b91c1c;">Clinical & Diagnostic Care (Objective)</span>
-        <span>${attainment.clinical.toFixed(1)}%</span>
-      </div>
-      <div style="background:#e2e8f0; border-radius:9999px; height:8px; overflow:hidden;">
-        <div style="background:#dc2626; width:${Math.min(100, attainment.clinical)}%; height:100%;"></div>
-      </div>
-    </div>
-    ` : ''}
-  `;
-}
-
-function getInputValue(id) {
-  const el = document.getElementById(id);
-  return el ? Math.max(0, parseFloat(el.value) || 0) : 0;
-}
-
-function updateElementText(id, text) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = text;
-}
-
-function initEventListeners() {
-  document.querySelectorAll('.nav-item').forEach(item => {
-    item.addEventListener('click', () => {
-      const tabId = item.getAttribute('data-tab');
-      if (tabId) window.switchTab(tabId);
-    });
-  });
-
-  document.querySelectorAll('.wizard-step').forEach(step => {
-    step.addEventListener('click', () => {
-      const tabId = step.getAttribute('data-wizard');
-      if (tabId) window.switchTab(tabId);
-    });
-  });
-
-  document.querySelectorAll('input, select, textarea').forEach(input => {
-    input.addEventListener('input', () => {
-      calculateAll();
-      saveAllData();
-    });
-    input.addEventListener('change', () => {
-      calculateAll();
-      saveAllData();
-    });
-  });
-
-  ['emp_name', 'emp_desig', 'emp_dept', 'emp_cadre', 'emp_cycle', 'emp_appraiser', 'emp_reviewer'].forEach(f => {
-    const input = document.getElementById(`input_${f}`);
-    if (input) {
-      const syncMeta = () => {
-        const val = input.value || '—';
-        updateElementText(`dossier_${f}`, val);
-        if (f === 'emp_appraiser') {
-          updateElementText('sig_appraiser', `${val} (Appraising Officer)`);
-        }
-        if (f === 'emp_reviewer') {
-          updateElementText('sig_final', `${val} (Countersigning Officer)`);
-        }
-        if (f === 'emp_dept' || f === 'emp_desig' || f === 'emp_cadre') {
-          autoSelectProfileAndWeights();
-        }
-      };
-      input.addEventListener('input', syncMeta);
-      input.addEventListener('change', syncMeta);
-    }
-  });
-
-  ['comm_member_1', 'comm_member_2', 'comm_member_3'].forEach((f, idx) => {
-    const input = document.getElementById(`input_${f}`);
-    if (input) {
-      const syncComm = () => {
-        const val = input.value || '—';
-        updateElementText(`dossier_${f}`, val);
-        updateElementText(`sig_comm_${idx + 1}_name`, val);
-      };
-      input.addEventListener('input', syncComm);
-      input.addEventListener('change', syncComm);
-    }
-  });
-}
-
-window.loadSampleData = function() {
-  setVal('input_emp_name', 'Dr. Yasar Mehmood Yousafzai');
-  setVal('input_emp_desig', 'Associate Professor');
-  setVal('input_emp_dept', 'Institute of Pathology & Diagnostic Medicine (IPDM)');
-  setVal('input_emp_cadre', 'BPS-20 (Regular)');
-  setVal('input_emp_cycle', '2026 (01 January – 31 December 2026)');
-  setVal('input_emp_appraiser', 'Dean, Faculty of Pathology & Diagnostic Medicine');
-  setVal('input_emp_reviewer', 'Vice Chancellor, KMU');
-
-  setVal('input_comm_member_1', 'Prof. Dr. Muhammad Saleem, Professor IBMS');
-  setVal('input_comm_member_2', 'Dr. Bushra Rehman, Assistant Professor IPDM');
-  setVal('input_comm_member_3', 'Dr. Kinza Ayaz, Assistant Professor IPDM');
-
-  setVal('input_qec_score', '86');
-  setVal('input_actual_wu', '34');
-  setVal('input_wu_exempted', 'N');
-
-  setVal('input_pub_high_lead', '2');
-  setVal('input_pub_high_co', '2');
-  setVal('input_pub_mod_lead', '3');
-  setVal('input_pub_mod_co', '2');
-  setVal('input_pub_low_lead', '1');
-  setVal('input_pub_low_co', '0');
-
-  setVal('input_book_int', '0');
-  setVal('input_book_nat', '1');
-  setVal('input_chapter_int', '2');
-  setVal('input_chapter_nat', '1');
-
-  appraisalState.grantsList = [...DEFAULT_GRANTS];
-  renderGrantsTable();
-
-  setVal('input_sup_phd', '2');
-  setVal('input_sup_mphil', '4');
-  setVal('input_sup_clin_sr', '0');
-  setVal('input_sup_clin_jr', '0');
-
-  setVal('input_innov_patent_int', '0');
-  setVal('input_innov_patent_nat', '1');
-  setVal('input_innov_project', '1');
-  setVal('input_innov_overhead', '2');
-
-  setVal('input_comm_member', '4');
-  setVal('input_comm_chair', '1');
-  setVal('input_policy_doc', '3');
-  setVal('input_facility_charge', '1');
-  setVal('input_additional_appoint', 'N');
-
-  PEER_PARAMETERS.forEach(p => {
-    appraisalState.sectionD.peerScores[p.id] = 5;
-  });
-  appraisalState.sectionD.peerScores['peer_4'] = 6;
-  appraisalState.sectionD.peerScores['peer_12'] = 6;
-
-  CPD_TARGETS.forEach(t => {
-    appraisalState.sectionD.cpdScores[t.id] = 2;
-  });
-
-  initPeerControls();
-
-  setVal('input_target_teaching', appraisalState.nextYearTargets.teaching);
-  setVal('input_target_pubs', appraisalState.nextYearTargets.publications);
-  setVal('input_target_grants', appraisalState.nextYearTargets.grants);
-  setVal('input_target_sup', appraisalState.nextYearTargets.supervision);
-  setVal('input_target_service', appraisalState.nextYearTargets.service_cpd);
-  setVal('input_target_skills', appraisalState.nextYearTargets.skills_leadership);
-
-  setVal('input_red_flag', '0');
-  setVal('input_red_flag_ref', '');
-  setVal('input_red_flag_date', '');
-
-  ['emp_name', 'emp_desig', 'emp_dept', 'emp_cadre', 'emp_cycle', 'emp_appraiser', 'emp_reviewer'].forEach(f => {
-    const val = document.getElementById(`input_${f}`)?.value || '—';
-    updateElementText(`dossier_${f}`, val);
-    if (f === 'emp_appraiser') {
-      updateElementText('sig_appraiser', `${val} (Appraising Officer)`);
-    }
-    if (f === 'emp_reviewer') {
-      updateElementText('sig_final', `${val} (Countersigning Officer)`);
-    }
-  });
-
-  ['comm_member_1', 'comm_member_2', 'comm_member_3'].forEach((f, idx) => {
-    const val = document.getElementById(`input_${f}`)?.value || '—';
-    updateElementText(`dossier_${f}`, val);
-    updateElementText(`sig_comm_${idx + 1}_name`, val);
-  });
-
-  window.selectProfile('Balanced Profile');
-  calculateAll();
-  saveAllData('tab-meta');
-  showToast('✓ Verified KMU Faculty Profile Loaded!');
-};
-
-window.exportJSON = function() {
-  const raw = localStorage.getItem('KMU_APPRAISAL_DRAFT_v3');
-  const draft = raw ? JSON.parse(raw) : saveAllData();
-  const empName = draft.meta?.name || 'Faculty';
-  const blob = new Blob([JSON.stringify(draft, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `KMU_PER_Appraisal_${empName.replace(/[^a-zA-Z0-9]/g, '_')}_2026.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('Appraisal Data Exported to JSON');
-};
-
-window.exportCSV = function() {
-  var empName = document.getElementById('input_emp_name')?.value || 'Faculty';
-  var prof = PROFILES[appraisalState.selectedProfile];
-  var lines = [
-    'Khyber Medical University (KMU) Peshawar — Annual Performance Appraisal Summary',
-    'Document Reference,KMU/REG/POL/2026/01-REV (v3.0)',
-    'Employee Name,' + empName,
-    'Designation,' + (document.getElementById('input_emp_desig')?.value || ''),
-    'Department,' + (document.getElementById('input_emp_dept')?.value || ''),
-    'Appraisal Profile,' + prof.name,
-    'Appraisal Cycle,' + (document.getElementById('input_emp_cycle')?.value || ''),
-    '',
-    'Performance Classification,Score,Scale',
-    'Objective Performance Score (A+B+C+E),' + (document.getElementById('disp_objective_score')?.textContent || '') + ',' + (document.getElementById('disp_objective_pct')?.textContent || ''),
-    'Subjective Performance Score (Dean - D),' + (document.getElementById('disp_subjective_score')?.textContent || '') + ',' + (document.getElementById('disp_subjective_pct')?.textContent || ''),
-    'Disciplinary Red Flag Penalty,,,,' + (document.getElementById('disp_red_flag_penalty')?.textContent || '0'),
-    'Consolidated Final Score,,,,' + (document.getElementById('liveScore')?.textContent || ''),
-    'Performance Rating Band,,,,' + (document.getElementById('liveRatingBadge')?.textContent || ''),
-    'PIP Procedure Status,,,,' + (document.getElementById('kpi_pip_status')?.textContent || '')
-  ];
-
-  var blob = new Blob([lines.join(String.fromCharCode(10))], { type: 'text/csv;charset=utf-8;' });
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url;
-  a.download = 'KMU_PER_Summary_' + empName.replace(/[^a-zA-Z0-9]/g, '_') + '.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  showToast('Summary CSV Exported');
-};
-
-window.printDossier = function() {
-  window.switchTab('tab-summary');
-  setTimeout(() => window.print(), 200);
-};
-
-window.openModal = function(modalId) {
-  const el = document.getElementById(modalId);
-  if (el) el.classList.add('active');
-};
-
-window.closeModal = function(modalId) {
-  const el = document.getElementById(modalId);
-  if (el) el.classList.remove('active');
-};
-
-function showToast(msg) {
-  let container = document.querySelector('.toast-container');
-  if (!container) {
-    container = document.createElement('div');
-    container.className = 'toast-container';
-    document.body.appendChild(container);
-  }
-  const toast = document.createElement('div');
-  toast.className = 'toast';
-  toast.innerHTML = `<span>✓</span> <span>${msg}</span>`;
-  container.appendChild(toast);
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    setTimeout(() => {
-      if (toast.remove) toast.remove();
-      else if (toast.parentNode) toast.parentNode.removeChild(toast);
-    }, 250);
-  }, 3500);
-}
-  </script>
+  <script src="app.js"></script>
 
   <div style="display:none;">
     <span id="top_pip_status"></span>
-    <span id="disp_raw_e_card"></span>
     <span id="disp_sub_b3_raw"></span>
-    <span id="disp_weighted_e"></span>
     <span id="dossier_min_wu"></span>
   </div>
 

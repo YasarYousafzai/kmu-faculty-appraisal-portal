@@ -1,63 +1,79 @@
 #!/usr/bin/env python3
-"""
-KMU Faculty Annual Performance Appraisal Web Portal (v3.0)
-Lightweight local HTTP server for development, preview, and departmental network sharing.
-Zero external dependencies (uses standard library http.server).
-"""
+"""Local preview server for the KMU draft appraisal calculator."""
 
+from __future__ import annotations
+
+import argparse
 import http.server
-import socketserver
-import os
-import sys
-import webbrowser
+from pathlib import Path
+from urllib.parse import urlsplit
 
-PORT = 8088
 
-class KMUAppraisalHandler(http.server.SimpleHTTPRequestHandler):
+PROJECT_DIR = Path(__file__).resolve().parent
+PUBLIC_PATHS = {
+    "/", "/index.html", "/styles.css", "/app.js", "/kmu_logo.png",
+    "/KMU_Unified_Policy_Draft.docx",
+}
+
+
+class PortalHandler(http.server.SimpleHTTPRequestHandler):
+    """Serve only the public static files required by the calculator."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=str(PROJECT_DIR), **kwargs)
+
+    def _allowed(self) -> bool:
+        return urlsplit(self.path).path in PUBLIC_PATHS
+
+    def do_GET(self):  # noqa: N802 - inherited HTTP handler API
+        if not self._allowed():
+            self.send_error(404, "Not found")
+            return
+        super().do_GET()
+
+    def do_HEAD(self):  # noqa: N802 - inherited HTTP handler API
+        if not self._allowed():
+            self.send_error(404, "Not found")
+            return
+        super().do_HEAD()
+
     def end_headers(self):
-        # Enable CORS and caching headers for local testing
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
-        self.send_header('Pragma', 'no-cache')
-        self.send_header('Expires', '0')
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header(
+            "Content-Security-Policy",
+            "default-src 'self'; script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+            "connect-src 'none'; object-src 'none'; base-uri 'none'; "
+            "form-action 'none'; frame-ancestors 'none'",
+        )
         super().end_headers()
 
-def main():
-    directory = os.path.dirname(os.path.abspath(__file__))
-    os.chdir(directory)
 
-    port = PORT
-    for attempt in range(5):
-        try:
-            with socketserver.TCPServer(("", port), KMUAppraisalHandler) as httpd:
-                url = f"http://localhost:{port}"
-                print("=" * 70)
-                print("  KHYBER MEDICAL UNIVERSITY (KMU), PESHAWAR")
-                print("  Faculty Annual Performance Appraisal Web Portal (v3.0)")
-                print("  Statutory Reference: KMU/REG/POL/2026/01-REV")
-                print("=" * 70)
-                print(f"  [+] Local Portal Server running at: {url}")
-                print(f"  [+] Serving directory: {directory}")
-                print("  [+] Press Ctrl+C to stop the server")
-                print("=" * 70)
-                
-                # Attempt to open default browser automatically
-                try:
-                    webbrowser.open(url)
-                except Exception:
-                    pass
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Preview the KMU draft appraisal calculator locally.")
+    parser.add_argument("--host", default="127.0.0.1", help="Bind address; defaults to loopback only.")
+    parser.add_argument("--port", type=int, default=8088, help="Local port; defaults to 8088.")
+    return parser.parse_args()
 
-                httpd.serve_forever()
-                break
-        except OSError as e:
-            if "Address already in use" in str(e):
-                port += 1
-            else:
-                raise e
 
-if __name__ == '__main__':
+def main() -> None:
+    args = parse_args()
+    if args.host not in {"127.0.0.1", "localhost", "::1"}:
+        print("WARNING: this exposes a draft static calculator on the network. It has no authentication.")
+    server = http.server.ThreadingHTTPServer((args.host, args.port), PortalHandler)
+    print(f"KMU draft appraisal calculator preview: http://{args.host}:{args.port}")
+    print("Controlled pilot only; do not enter confidential or disciplinary personnel data.")
     try:
-        main()
+        server.serve_forever()
     except KeyboardInterrupt:
-        print("[+] KMU Appraisal Portal server stopped cleanly.")
-        sys.exit(0)
+        pass
+    finally:
+        server.server_close()
+
+
+if __name__ == "__main__":
+    main()

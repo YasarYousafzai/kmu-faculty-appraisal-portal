@@ -170,11 +170,40 @@ body {
 
 .btn-gold {
   background-color: var(--kmu-gold);
-  color: #ffffff;
+  color: #1e293b;
   border-color: #a8821d;
 }
 .btn-gold:hover {
   background-color: #b08920;
+}
+
+.policy-status-banner {
+  background: #fff7ed;
+  border-bottom: 1px solid #fdba74;
+  color: #7c2d12;
+  padding: 0.7rem 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.provisional-note {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-left: 4px solid var(--amber-600);
+  border-radius: var(--radius-sm);
+  color: #78350f;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+}
+
+.form-control[readonly] {
+  background: var(--slate-50);
+  color: var(--slate-700);
 }
 
 .btn-ghost-white {
@@ -326,6 +355,10 @@ body {
   gap: 0.35rem;
 }
 
+.benchmark-text-high { color: #15803d; }
+.benchmark-text-low { color: #b91c1c; }
+.benchmark-text-pending { color: var(--slate-500); }
+
 .rating-badge {
   display: inline-block;
   padding: 2px 10px;
@@ -341,6 +374,7 @@ body {
 .rating-good { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
 .rating-average { background: #ffedd5; color: #c2410c; border: 1px solid #fed7aa; }
 .rating-unsatisfactory { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+.rating-incomplete { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
 
 /* Main App Layout */
 .main-wrapper {
@@ -503,6 +537,71 @@ body {
   color: var(--slate-700);
 }
 
+::placeholder {
+  color: #64748b;
+  opacity: 1;
+  font-weight: 400;
+}
+
+.help-tip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-left: 0.35rem;
+  padding: 0;
+  border: 1px solid #94a3b8;
+  border-radius: 9999px;
+  background: #f8fafc;
+  color: #475569;
+  font: 700 0.72rem/1 system-ui, sans-serif;
+  cursor: help;
+  vertical-align: middle;
+}
+
+.help-tip:hover,
+.help-tip:focus-visible {
+  border-color: var(--kmu-maroon);
+  background: #fff8f8;
+  color: var(--kmu-maroon);
+  outline: 2px solid rgba(122, 28, 28, 0.18);
+  outline-offset: 2px;
+}
+
+.help-tip::after {
+  content: attr(data-help);
+  position: absolute;
+  z-index: 100;
+  left: 50%;
+  bottom: calc(100% + 0.55rem);
+  width: min(20rem, 70vw);
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.45rem;
+  background: #0f172a;
+  color: #fff;
+  box-shadow: var(--shadow-md);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.4;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+  transform: translateX(-50%) translateY(0.25rem);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.help-tip:hover::after,
+.help-tip:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
 .form-control {
   padding: 0.6rem 0.75rem;
   font-size: 0.9rem;
@@ -639,6 +738,12 @@ select.form-control optgroup {
   font-size: 0.875rem;
   font-weight: 600;
   text-align: center;
+}
+
+.input-num:invalid,
+.form-control:invalid {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.08);
 }
 
 .subtotal-row {
@@ -829,6 +934,73 @@ select.form-control optgroup {
   margin-bottom: 1.5rem;
 }
 
+.split-score-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.clinical-score-card {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.25rem;
+  background: #fff7f7;
+  border-color: #fecaca;
+}
+
+.clinical-score-card .kpi-value { color: var(--kmu-maroon); }
+
+.score-split-card {
+  background: #fff;
+  border: 2px solid var(--slate-300);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  transition: var(--transition);
+}
+
+.score-split-card .kpi-title,
+.score-split-card .kpi-value {
+  color: inherit;
+}
+
+.score-split-card.benchmark-high {
+  color: #166534;
+  background: #f0fdf4;
+  border-color: #22c55e;
+}
+
+.score-split-card.benchmark-low {
+  color: #991b1b;
+  background: #fff7f7;
+  border-color: #ef4444;
+}
+
+.score-split-card.benchmark-pending {
+  color: var(--slate-600);
+  background: var(--slate-50);
+  border-color: var(--slate-300);
+}
+
+.dimension-attainment {
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.benchmark-state {
+  display: inline-block;
+  margin-bottom: 0.65rem;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid currentColor;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
 .kpi-card {
   background: var(--slate-50);
   border: 1px solid var(--slate-200);
@@ -892,6 +1064,18 @@ select.form-control optgroup {
   color: var(--slate-600);
   font-weight: 600;
 }
+
+.dossier-completeness {
+  display: inline-block;
+  margin-top: 0.55rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.dossier-incomplete { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+.dossier-complete { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
 
 .dossier-meta-table, .dossier-scores-table {
   width: 100%;
@@ -1114,7 +1298,22 @@ select.form-control optgroup {
   margin-bottom: 0.4rem;
 }
 
+.print-blocked-notice {
+  display: none;
+}
+
 @media print {
+  body:not(.dossier-print-ready) > * {
+    display: none !important;
+  }
+  body:not(.dossier-print-ready) > .print-blocked-notice {
+    display: block !important;
+    margin: 2rem;
+    padding: 1.5rem;
+    border: 3px solid #7f1d1d;
+    color: #450a0a;
+    font-family: Arial, sans-serif;
+  }
   body { background: #fff; font-size: 11pt; }
   .kmu-header, .wizard-progress-bar, .draft-banner, .quick-status-bar, .portal-nav, .header-actions, .kmu-footer, .btn, .no-print {
     display: none !important;
@@ -1127,11 +1326,46 @@ select.form-control optgroup {
 }
 
 @media (max-width: 900px) {
+  .kmu-header { position: static; }
+  .policy-status-banner { grid-template-columns: 1fr; }
   .portal-grid { grid-template-columns: 1fr; }
-  .portal-nav { position: static; }
+  .portal-nav { display: none; }
+  .status-bar-container { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .status-item { min-width: 0; }
+  .status-item:nth-child(3) { grid-column: 1 / -1; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid > * { grid-column: auto !important; }
   .signature-grid { grid-template-columns: repeat(2, 1fr); gap: 2rem; }
   .step-footer-actions { flex-direction: column; align-items: stretch; }
   .step-footer-actions-right { justify-content: space-between; }
+  .split-score-grid { grid-template-columns: 1fr; }
+  .clinical-score-card { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+  .kmu-header { padding: 0.75rem 1rem; }
+  .brand-wrapper { gap: 0.7rem; }
+  .kmu-logo { height: 42px; }
+  .brand-text h1 { font-size: 1rem; }
+  .brand-text p { font-size: 0.72rem; }
+  .header-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+  .header-actions #lastSavedIndicator { grid-column: 1 / -1; }
+  .header-actions .btn { justify-content: center; padding: 0.45rem 0.55rem; font-size: 0.75rem; }
+  .wizard-progress-bar { padding: 0.5rem 0.75rem; }
+  .wizard-steps-container { justify-content: flex-start; }
+  .quick-status-bar { padding: 0.7rem 1rem; }
+  .status-bar-container { gap: 0.55rem; }
+  .status-item { padding-right: 0.4rem; }
+  .status-val { font-size: 0.95rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 
@@ -1148,6 +1382,21 @@ select.form-control optgroup {
   display: flex;
   gap: 0.6rem;
   flex-wrap: wrap;
+}
+.profile-assignment-explainer {
+  margin-top: 0.9rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid #f1d58a;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.72);
+  color: #5f4a16;
+  font-size: 0.78rem;
+}
+.profile-assignment-explainer ul {
+  margin: 0.4rem 0 0 1.1rem;
+}
+.profile-assignment-explainer li + li {
+  margin-top: 0.2rem;
 }
 .weight-chip {
   background: #ffffff;

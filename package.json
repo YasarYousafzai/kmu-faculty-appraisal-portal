@@ -1,0 +1,12 @@
+{
+  "name": "kmu-faculty-appraisal-calculator",
+  "version": "1.0.0-pilot",
+  "private": true,
+  "description": "Controlled draft pilot of the KMU faculty appraisal calculator.",
+  "scripts": {
+    "test": "node tests/portal-qa.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.62.1"
+  }
+}
