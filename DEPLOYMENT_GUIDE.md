@@ -44,7 +44,7 @@ npx playwright install chromium
 npm test
 ```
 
-The test command first runs a browser-free model stress check, then starts a loopback-only preview server for the Playwright browser check. Together they cover all five profile totals, designation/institute mapping, theory/practical credit conversion, the proposed quality-first research rubric and legacy audit-trace separation, faculty-to-reviewer handoff and invalidation, clinical/patient-care evidence controls, 80% dimension display references, incomplete-record and due-process safeguards, explicit-only browser storage, injection handling, printable dossier values, and desktop/mobile rendering. By default Playwright uses its bundled Chromium. Set `KMU_CHROME_PATH` only when an institutionally managed Chrome/Chromium executable is required. If a local sandbox cannot launch a browser, `npm run test:model` still runs the arithmetic checks; the browser suite must then run in CI or an authorized local environment.
+The model test checks all five profile totals, course-review averages, paper impact-factor bands, best-three caps, book and grant limits, and synthetic discrimination. The browser suite checks reporting-line defaults, course forms, reviewer-stage invalidation, clinical navigation, printable dossier scales, saved drafts and mobile layout. By default Playwright uses its bundled Chromium. Set `KMU_CHROME_PATH` only when an institutionally managed Chrome/Chromium executable is required. If a managed environment cannot launch a browser, `npm run test:model` still checks the arithmetic; the browser suite must then run in a suitable environment before formal pilot use.
 
 ## Current configuration summary
 
@@ -53,11 +53,12 @@ The test command first runs a browser-free model stress check, then starts a loo
 | Portal appraisal cycle | 1 January–31 December (calendar year); align in the final approved policy/notification |
 | Profiles | Balanced; Research-focused; Regional IHS teaching-focused; Clinical; Research cadre/postdoc |
 | Rank adjustments | None |
-| Teaching entry | Annual delivered theory and practical credit components; 1+1 = 16+32 contact hours and 5 draft teaching WU. QEC/workload proration remains proposed pending KMU approval. |
-| Research scoring | Proposed quality-first 0–100 rubric: up to three distinct selected outputs (60), documented execution (25, including optional 0–5 funding/proposal evidence within its ceiling), and mentorship/translation (15). The old B1–B5 raw/200 schedule is visible only as an audit trace and does not alter the weighted score. |
+| Teaching entry | Up to ten course entries: title, code, semester/term, level, discipline, theory/practical credits and certified student review. The simple mean of course reviews is the proposed teaching score. A 1+1 course = 16+32 contact hours. Credits do not prorate the score. |
+| Research scoring | Proposed 0–100 B1–B5 rubric: best three eligible individual papers (50), books/chapters (5), documented execution including optional grant bonus inside its cap (25), supervision (10), innovation (10). The paper IF bands are not HEC categories and require evidence verification. The grant ledger's historical funding-band marks are reference only. |
 | Submission/review sequence | Faculty completes objective evidence before the reviewer screen opens. Any later faculty evidence change closes that screen and clears prior reviewer scores. This is a same-browser demonstration gate, not authentication. |
 | Service / peer / clinical rubrics | Marked as proposed/open pending ratification; clinical entries require aggregate unit evidence and exclude patient identifiers |
-| Dimension benchmark display | Two stacked 0–100 scales, green at ≥80% of each dimension's own ceiling and red below 80%; visual aid only, not a KMU percentile or statutory rating |
+| Dimension benchmark display | Two stacked 0–100 scales appear only on the final dossier and its print/PDF view; green at ≥80% of each dimension's own ceiling and red below 80%. Visual aid only, not a KMU percentile or statutory rating. |
+| Reporting-line defaults | Proposed immediate supervisor as Appraising Officer, Additional Director HR as reviewer/countersigner, Vice Chancellor as final authority; actual KMU arrangements and delegations prevail. The appointment/reporting reference-number field is removed. |
 | Cohort-relative categories | Well-below/below/average/above/well-above labels deferred pending comparable KMU cohort data and approved thresholds; the draft's fixed absolute rating bands remain separate |
 | Rating bands | Outstanding ≥85; Very Good ≥75; Good ≥60; Average 50–59.9; Unsatisfactory <50 |
 | PIP | Mandatory below 50; discretionary at 50–59.9 |

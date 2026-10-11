@@ -282,8 +282,8 @@ body {
 }
 
 .comparison-panel {
-  max-width: 1400px;
-  margin: 0.85rem auto;
+  max-width: none;
+  margin: 1.2rem 0;
   padding: 0.9rem 1.25rem;
   border: 1px solid var(--slate-200);
   border-radius: var(--radius-md);
@@ -763,6 +763,29 @@ select.form-control optgroup {
   color: var(--slate-800);
 }
 
+.teaching-courses { display: grid; gap: 1rem; margin: 1rem 0; }
+.teaching-course-card {
+  padding: 1rem;
+  border: 1px solid var(--slate-300);
+  border-radius: var(--radius-md);
+  background: #fff;
+}
+.teaching-course-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--kmu-maroon);
+  margin-bottom: 0.8rem;
+}
+.course-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem 1rem;
+}
+.course-fields .form-group { min-width: 0; }
+.course-fields .field-hint:empty { display: none; }
+
 .teaching-credit-fields,
 .teaching-load-result {
   display: grid;
@@ -1232,6 +1255,14 @@ select.form-control optgroup {
   color: var(--slate-600);
   font-weight: 600;
 }
+.dossier-subheading {
+  margin: 1rem 0 0.4rem;
+  color: var(--kmu-maroon);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+.dossier-course-table { font-size: 0.72rem; }
+.dossier-course-table th, .dossier-course-table td { overflow-wrap: anywhere; }
 
 .dossier-completeness {
   display: inline-block;
@@ -1489,14 +1520,20 @@ select.form-control optgroup {
   .portal-grid { display: block !important; }
   .tab-content { display: none !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
   #tab-summary { display: block !important; }
-  .official-dossier { border: none !important; padding: 0 !important; box-shadow: none !important; }
+  .official-dossier { border: none !important; padding: 0 !important; box-shadow: none !important; overflow: visible !important; }
+  .comparison-panel { box-shadow: none !important; break-inside: avoid; margin: 0.8rem 0 !important; }
+  .comparison-fill { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .main-wrapper { margin: 0 !important; padding: 0 !important; max-width: 100% !important; }
 }
 
 @media (max-width: 900px) {
   .kmu-header { position: static; }
   .policy-status-banner { grid-template-columns: 1fr; }
-  .portal-grid { grid-template-columns: 1fr; }
+  .portal-grid { grid-template-columns: minmax(0, 1fr); }
+  .portal-main-panel, .tab-content, .official-dossier { min-width: 0; max-width: 100%; }
+  .official-dossier { overflow-x: auto; padding: 1rem; }
+  .section-title-wrap { min-width: 0; flex-wrap: wrap; }
+  .section-title-wrap > * { min-width: 0; }
   .portal-nav { display: none; }
   .status-bar-container { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .status-item { min-width: 0; }
@@ -1511,6 +1548,7 @@ select.form-control optgroup {
 }
 
 @media (max-width: 600px) {
+  .course-fields { grid-template-columns: 1fr; }
   .help-tip::after {
     position: fixed;
     left: 1rem;

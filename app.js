@@ -6,35 +6,37 @@
  */
 'use strict';
 
-const CONFIG_VERSION = 'KMU-CONTROLLED-PILOT-2026-10-11';
-const STORAGE_KEY = 'KMU_APPRAISAL_DRAFT_v3_3';
-const LEGACY_STORAGE_KEYS = Object.freeze(['KMU_APPRAISAL_DRAFT_v3_2', 'KMU_APPRAISAL_DRAFT_v3_1', 'KMU_APPRAISAL_DRAFT_v3']);
-const SCHEMA_VERSION = 3;
+const CONFIG_VERSION = 'KMU-CONTROLLED-PILOT-2026-10-11-COURSES';
+const STORAGE_KEY = 'KMU_APPRAISAL_DRAFT_v4';
+const LEGACY_STORAGE_KEYS = Object.freeze(['KMU_APPRAISAL_DRAFT_v3_3', 'KMU_APPRAISAL_DRAFT_v3_2', 'KMU_APPRAISAL_DRAFT_v3_1', 'KMU_APPRAISAL_DRAFT_v3']);
+const SCHEMA_VERSION = 4;
+const MAX_COURSES = 10;
+const MAX_PAPERS = 10;
 
 const PROFILES = Object.freeze({
   'Balanced Profile': Object.freeze({
     name: 'Balanced Profile', teachingWeight: 30, researchWeight: 30,
-    serviceWeight: 20, peerWeight: 20, clinicalWeight: 0, minTeachingWU: 30,
+    serviceWeight: 20, peerWeight: 20, clinicalWeight: 0,
     description: 'Standard academic assignment combining teaching, research and institutional service.'
   }),
   'Research-Focused Profile': Object.freeze({
     name: 'Research-Focused Profile', teachingWeight: 20, researchWeight: 50,
-    serviceWeight: 15, peerWeight: 15, clinicalWeight: 0, minTeachingWU: 20,
+    serviceWeight: 15, peerWeight: 15, clinicalWeight: 0,
     description: 'Documented research-intensive annual assignment; it is not inferred from TTS status alone.'
   }),
   'Teaching-Focused Profile (Regional IHS)': Object.freeze({
     name: 'Teaching-Focused Profile (Regional IHS)', teachingWeight: 50, researchWeight: 15,
-    serviceWeight: 20, peerWeight: 15, clinicalWeight: 0, minTeachingWU: 50,
+    serviceWeight: 20, peerWeight: 15, clinicalWeight: 0,
     description: 'Regional Institute of Health Sciences assignment with a high teaching-load expectation.'
   }),
   'Clinical-Focused Profile (Hospital Faculty)': Object.freeze({
     name: 'Clinical-Focused Profile (Hospital Faculty)', teachingWeight: 15, researchWeight: 20,
-    serviceWeight: 10, peerWeight: 10, clinicalWeight: 45, minTeachingWU: 15,
+    serviceWeight: 10, peerWeight: 10, clinicalWeight: 45,
     description: 'Documented hospital or clinical academic assignment including clinical service.'
   }),
   'Research Cadres / Postdocs': Object.freeze({
     name: 'Research Cadres / Postdocs', teachingWeight: 10, researchWeight: 65,
-    serviceWeight: 10, peerWeight: 15, clinicalWeight: 0, minTeachingWU: 10,
+    serviceWeight: 10, peerWeight: 15, clinicalWeight: 0,
     description: 'Dedicated research scientist, research associate or postdoctoral appointment.'
   })
 });
@@ -76,28 +78,14 @@ const CPD_TARGETS = [
   ['cpd_5', 'Presenter / Facilitator at a CPD Event', 'Documented contribution as a presenter, facilitator or resource person.']
 ].map(([id, label, desc]) => ({ id, label, desc }));
 
-const RESEARCH_OUTPUT_COUNT = 3;
-const RESEARCH_OUTPUT_CRITERIA = Object.freeze([
-  { key: 'rigor', label: 'Scientific rigor and ethics', max: 8 },
-  { key: 'significance', label: 'Originality and significance', max: 6 },
-  { key: 'contribution', label: 'Documented personal contribution', max: 4 },
-  { key: 'relevance', label: 'Relevance or usable dissemination', max: 2 }
-]);
-const RESEARCH_RUBRIC_NUMERIC_IDS = Object.freeze([
-  ...Array.from({ length: RESEARCH_OUTPUT_COUNT }, (_, index) => RESEARCH_OUTPUT_CRITERIA.map(criterion => `input_research_output_${index + 1}_${criterion.key}`)).flat(),
-  'input_research_execution', 'input_research_funding', 'input_research_translation'
-]);
+const RESEARCH_RUBRIC_NUMERIC_IDS = Object.freeze(['input_research_execution']);
 const RESEARCH_RUBRIC_TEXT_IDS = Object.freeze([
-  ...Array.from({ length: RESEARCH_OUTPUT_COUNT }, (_, index) => `input_research_output_${index + 1}_id`),
-  'input_research_execution_ref', 'input_research_funding_ref',
-  'input_research_translation_ref', 'input_research_review_ref'
+  'input_research_execution_ref', 'input_research_review_ref',
+  'input_books_ref', 'input_supervision_ref', 'input_innovation_ref'
 ]);
 
 const NUMERIC_INPUT_IDS = [
-  'input_qec_score', 'input_theory_credits', 'input_practical_credits', 'input_approved_teaching_wu',
   'input_actual_wu', // Legacy draft value only: never used for a new teaching score.
-  'input_pub_high_lead', 'input_pub_high_co',
-  'input_pub_mod_lead', 'input_pub_mod_co', 'input_pub_low_lead', 'input_pub_low_co',
   'input_book_int', 'input_book_nat', 'input_chapter_int', 'input_chapter_nat',
   'input_sup_phd', 'input_sup_mphil', 'input_sup_clin_sr', 'input_sup_clin_jr',
   'input_innov_patent_int', 'input_innov_patent_nat', 'input_innov_project',
@@ -107,8 +95,7 @@ const NUMERIC_INPUT_IDS = [
 ];
 
 const COUNT_INPUT_IDS = Object.freeze([
-  'input_pub_high_lead', 'input_pub_high_co', 'input_pub_mod_lead', 'input_pub_mod_co',
-  'input_pub_low_lead', 'input_pub_low_co', 'input_book_int', 'input_book_nat',
+  'input_book_int', 'input_book_nat',
   'input_chapter_int', 'input_chapter_nat', 'input_sup_phd', 'input_sup_mphil',
   'input_sup_clin_sr', 'input_sup_clin_jr', 'input_innov_patent_int',
   'input_innov_patent_nat', 'input_innov_project', 'input_innov_overhead',
@@ -116,20 +103,13 @@ const COUNT_INPUT_IDS = Object.freeze([
 ]);
 
 const NUMERIC_MAXIMA = Object.freeze({
-  input_qec_score: 100,
-  input_theory_credits: 1000,
-  input_practical_credits: 1000,
-  input_approved_teaching_wu: 150,
   input_actual_wu: 150,
   input_clin_admin: 100,
   input_clin_volume: 100,
   input_clin_oncall: 100,
   input_clin_teaching: 100,
   input_research_execution: 25,
-  input_research_funding: 5,
-  input_research_translation: 15,
-  ...Object.fromEntries(Array.from({ length: RESEARCH_OUTPUT_COUNT }, (_, index) =>
-    RESEARCH_OUTPUT_CRITERIA.map(criterion => [`input_research_output_${index + 1}_${criterion.key}`, criterion.max])).flat())
+  input_research_execution: 25
 });
 
 const TARGET_IDS = [
@@ -145,25 +125,18 @@ const FIELD_HELP = Object.freeze({
   input_emp_cadre: 'Select only the appointment basis: BPS, TTS, or Fixed Pay. The substantive designation is recorded separately.',
   input_emp_cycle: 'Select the calendar year being appraised: 1 January through 31 December.',
   input_work_assignment: 'Use automatic mapping unless an approved annual workload, JD, contract, or assignment gives a different profile.',
-  input_emp_appraiser: 'Draft reporting-line recommendation only. The current appointment or reporting notification prevails.',
-  input_emp_reviewer: 'Draft countersigning recommendation only. Verify it against the current reporting notification.',
-  input_emp_final: 'Draft final-authority recommendation only. Verify it against the applicable service rules and current notification.',
-  input_reporting_ref: 'Enter the current appointment, posting, reporting, workload, or exemption order reference and date, where applicable.',
+  input_emp_appraiser: 'Proposed immediate supervisory level. The current KMU reporting arrangement and competent authority prevail.',
+  input_emp_reviewer: 'Proposed pilot countersigning role: Additional Director HR. Confirm against current KMU instructions before formal use.',
+  input_emp_final: 'Proposed pilot final authority: Vice Chancellor, subject to applicable statutes and delegation.',
   input_comm_member_1: 'Optional: enter the member’s name, official designation, and KMU unit exactly as notified.',
   input_comm_member_2: 'Optional: enter the member’s name, official designation, and KMU unit exactly as notified.',
   input_comm_member_3: 'Optional: enter the member’s name, official designation, and KMU unit exactly as notified.',
   input_profile_assignment_ref: 'Required for a manual profile assignment. Cite the approved workload, JD, contract, or assignment reference.',
-  input_qec_score: 'Enter the certified annual QEC/student-feedback percentage from 0 to 100.',
-  input_theory_credits: 'Add the theory credit-hour component of every KMU course or section personally delivered in this calendar year. Each theory credit is 16 contact hours and 3 draft teaching WU. Enter 0 if none.',
-  input_practical_credits: 'Add the practical/lab credit-hour component of every KMU course or section personally delivered in this calendar year. Each practical credit is 32 contact hours and 2 draft teaching WU. Enter 0 if none.',
-  input_approved_teaching_wu: 'Optional. Enter a positive annual teaching-WU threshold only where the current approved workload or appointment order explicitly gives a different target; it does not change appraisal weights.',
-  input_teaching_target_ref: 'Required when entering a different teaching-WU target. Cite the current approved workload or appointment order and date.',
   input_service_complete: 'Confirm this section is complete, including when every verified institutional-service activity is zero.',
   input_research_complete: 'Confirm this faculty research self-assessment is complete, including a deliberate zero where there was no activity.',
   input_reviewer_role: 'Choose the capacity specified by the current reporting or committee notification; this static pilot cannot authenticate that capacity.',
   input_reviewer_name: 'Enter the designated officer name or exact committee identifier from the current notification.',
-  input_research_review_confirm: 'The reviewer confirms that the selected outputs and provisional quality ratings were checked against the actual work and evidence.',
-  input_wu_exempted: 'Select Yes only where the shortfall is covered by a documented approval; cite that approval in the reporting-reference field.',
+  input_research_review_confirm: 'The reviewer confirms paper identity, indexing, publication-year impact factor, authorship, grants and supporting evidence were checked.',
   input_new_grant_title: 'Enter the exact title shown on the award letter or submitted application.',
   input_new_grant_agency: 'Enter the funding body named in the award letter or submission evidence.',
   input_new_grant_amount: 'Enter the total approved or applied-for amount in whole Pakistani rupees.',
@@ -192,18 +165,18 @@ const CONTEXT_HELP = Object.freeze({
   statusCycleTitle: 'Each record covers one calendar year, from 1 January through 31 December.',
   metaSectionTitle: 'Use the substantive appointment and current posting order. Acting or additional leadership roles are recorded separately.',
   profileAssignmentTitle: 'The default mix comes from designation and institute/unit. It changes only for a clinical, regional IHS, dedicated research, or documented special assignment.',
-  teachingSectionTitle: 'Enter annual theory and practical course credits separately. A 1+1 course is 16 theory plus 32 practical contact hours, converted to 5 draft teaching WU before the QEC proration rule is applied.',
+  teachingSectionTitle: 'Enter each course, its taught theory and practical credits, and its certified student review. The arithmetic average of course reviews is the proposed teaching score; credit hours are evidence, not a proration factor.',
   teachingScoreTitle: 'This is the 0–100 teaching attainment before the profile weight is applied.',
   teachingContributionTitle: 'Teaching attainment multiplied by the teaching weight contributes this many points to the 100-point total.',
-  researchSectionTitle: 'The proposed quality-first pilot scores up to three distinct selected outputs, documented research execution, and mentorship or translation. The draft-policy quantity schedule below is audit trace only.',
-  researchScoreTitle: 'This is a provisional 0–100 quality-first research score: at most 60 for three distinct outputs, 25 for research execution, and 15 for mentorship or translation. Reviewer evidence confirmation is required before a final draft rating.',
+  researchSectionTitle: 'The proposed pilot scores the best three eligible papers, a small book allowance, research progress with optional grants, supervision and innovation. Reviewer verification is required.',
+  researchScoreTitle: 'This provisional 0–100 research score has caps of 50 papers, 5 books, 25 execution with optional grants, 10 supervision and 10 innovation.',
   researchContributionTitle: 'Research attainment multiplied by the assigned research weight contributes this many points to the 100-point total.',
-  serviceSectionTitle: 'Institutional service includes verified committee, policy, leadership and facility responsibilities. Patient care is scored separately for Clinical / Patient Care assignments to avoid double counting.',
+  serviceSectionTitle: 'Section D institutional service includes verified committee, policy, leadership and facility responsibilities. Section C patient care is scored separately where applicable.',
   serviceScoreTitle: 'This is the 0–100 institutional-service attainment before the profile weight is applied.',
   serviceContributionTitle: 'Institutional-service attainment multiplied by the service weight contributes this many points to the 100-point total.',
-  officerSectionTitle: 'The designated Appraising Officer records all 13 professional criteria and five CPD results. This is the subjective component and remains reviewable.',
-  officerScoreTitle: 'This percentage is the attained share of the Section D ceiling; the profile weight determines its contribution to the final score.',
-  officerContributionTitle: 'Section D attainment multiplied by the Appraising Officer assessment weight contributes this many points to the 100-point total.',
+  officerSectionTitle: 'The designated Appraisal Committee or Appraising Officer records all 13 professional criteria and five CPD results. This is the subjective component and remains reviewable.',
+  officerScoreTitle: 'This percentage is the attained share of the Appraisal Committee assessment ceiling; the profile weight determines its contribution to the final score.',
+  officerContributionTitle: 'Committee assessment attainment multiplied by its profile weight contributes this many points to the 100-point total.',
   clinicalSectionTitle: 'For clinical assignments, verified patient treatment, safety, continuity, on-call service and bedside teaching form a separate objective patient-care measure.',
   clinicalScoreTitle: 'This is the 0–100 clinical and patient-care attainment from four verified measures, using the proposed 25/35/20/20 contribution split.',
   clinicalContributionTitle: 'Clinical and patient-care attainment multiplied by the assigned clinical weight contributes this many points to the 100-point total.',
@@ -247,80 +220,196 @@ function getActivityCount(id) {
   return Number.isInteger(numeric) && numeric >= 0 ? numeric : 0;
 }
 function clamp(value, minimum, maximum) { return Math.min(maximum, Math.max(minimum, Number(value) || 0)); }
+function averageStudentReviews(scores) {
+  return scores.length ? scores.reduce((sum, value) => sum + Number(value), 0) / scores.length : 0;
+}
+function paperPilotPoints(impactFactor, role, indexed) {
+  const factor = Number(impactFactor);
+  if (indexed !== 'Y' || !Number.isFinite(factor) || factor < 0 || factor > 100
+    || !['first', 'corresponding', 'co'].includes(role)) return 0;
+  const lead = role === 'first' || role === 'corresponding';
+  return factor >= 5 ? (lead ? 20 : 10) : factor >= 1 ? (lead ? 15 : 8) : (lead ? 8 : 4);
+}
+function allocateSelectedPaperPoints(rawScores) {
+  const allocated = Array(rawScores.length).fill(0);
+  let remaining = 50;
+  rawScores.map((score, index) => ({ score: Number(score) || 0, index }))
+    .sort((a, b) => b.score - a.score).slice(0, 3).forEach(item => {
+      allocated[item.index] = Math.min(item.score, remaining);
+      remaining -= allocated[item.index];
+    });
+  return { allocated, total: 50 - remaining };
+}
+function scoreResearchPilot({ paperScores, booksRaw, milestone, grantStatuses, supervisionRaw, innovationRaw }) {
+  const publication = allocateSelectedPaperPoints(paperScores);
+  const books = Math.min(5, Math.max(0, booksRaw));
+  const funding = grantStatuses.includes('Won') ? 5 : grantStatuses.includes('Applied') ? 2 : 0;
+  const execution = Math.min(25, Math.max(0, milestone) + funding);
+  const supervision = Math.min(10, Math.max(0, supervisionRaw));
+  const innovation = Math.min(10, Math.max(0, innovationRaw));
+  return { publication, books, funding, execution, supervision, innovation,
+    score: publication.total + books + execution + supervision + innovation };
+}
 function getTeachingLoad() {
-  const theory = el('input_theory_credits');
-  const practical = el('input_practical_credits');
-  const hasEntry = theory?.value !== '' && practical?.value !== '';
-  const valid = [theory, practical].every(input => input && input.validity.valid
-    && (input.value === '' || (Number.isFinite(Number(input.value)) && Number(input.value) >= 0)));
-  const theoryCredits = valid ? getInputValue('input_theory_credits') : 0;
-  const practicalCredits = valid ? getInputValue('input_practical_credits') : 0;
+  const records = Array.from(document.querySelectorAll('.teaching-course-card')).map(card =>
+    Object.fromEntries(Array.from(card.querySelectorAll('[data-course-field]'))
+      .map(node => [node.dataset.courseField, node.value.trim()])));
+  const entered = records.filter(record => Object.values(record).some(value => value !== ''));
+  const issues = [];
+  entered.forEach((record, index) => {
+    const theory = Number(record.theory);
+    const practical = Number(record.practical);
+    const review = Number(record.review);
+    if (!record.title || !record.code || !record.term || !record.level || !record.specialty
+      || record.theory === '' || record.practical === '' || record.review === ''
+      || !Number.isFinite(theory) || theory < 0 || theory > 100
+      || !Number.isFinite(practical) || practical < 0 || practical > 100
+      || theory + practical <= 0 || !Number.isFinite(review) || review < 0 || review > 100) {
+      issues.push(`complete course ${index + 1} (including both credit components and a 0–100 student review)`);
+    }
+  });
+  const valid = issues.length === 0;
+  const complete = valid ? entered : [];
+  const theoryCredits = complete.reduce((sum, record) => sum + Number(record.theory), 0);
+  const practicalCredits = complete.reduce((sum, record) => sum + Number(record.practical), 0);
+  const reviewAverage = averageStudentReviews(complete.map(record => record.review));
   return {
-    hasEntry, valid, theoryCredits, practicalCredits,
+    records, entered, issues, hasEntry: complete.length > 0, valid, reviewAverage,
+    courseCount: complete.length, theoryCredits, practicalCredits,
     theoryHours: theoryCredits * 16, practicalHours: practicalCredits * 32,
-    contactHours: theoryCredits * 16 + practicalCredits * 32,
-    teachingWU: theoryCredits * 3 + practicalCredits * 2
+    contactHours: theoryCredits * 16 + practicalCredits * 32
   };
 }
-function getTeachingThreshold(profile) {
-  const leadership = getTextValue('input_leadership_role');
-  const academicLeader = leadership === 'Dean of Faculty'
-    || leadership === 'Director / Principal / Head of Institute';
-  const leaderReferenced = academicLeader && Boolean(getTextValue('input_reporting_ref'));
-  const ordinaryTarget = Number(profile?.minTeachingWU) || 0;
-  const baseTarget = leaderReferenced ? 15 : ordinaryTarget;
-  const targetInput = el('input_approved_teaching_wu');
-  const overrideEntered = targetInput?.value !== '';
-  const overrideValid = overrideEntered && targetInput.validity.valid
-    && Number.isFinite(Number(targetInput.value)) && Number(targetInput.value) > 0;
-  const overrideReferenced = overrideValid && Boolean(getTextValue('input_teaching_target_ref'));
-  return {
-    targetWU: overrideReferenced ? Number(targetInput.value) : baseTarget,
-    basis: overrideReferenced ? 'Different approved annual teaching target entered; verify the cited order'
-      : leaderReferenced ? 'Draft academic-leader threshold (Dean/Director); verify the notified appointment'
-        : academicLeader ? 'Substantive profile threshold shown until the Dean/Director appointment reference is entered on Step 1'
-          : 'Draft substantive-profile threshold; a separately approved target may be recorded below',
-    academicLeader, leaderReferenced, overrideEntered, overrideValid, overrideReferenced
-  };
+function renderTeachingCourses(records = [{}, {}, {}]) {
+  const container = el('teachingCourses'); if (!container) return;
+  container.replaceChildren();
+  records.slice(0, MAX_COURSES).forEach((record, index) => {
+    const card = document.createElement('div'); card.className = 'teaching-course-card';
+    const fields = [
+      ['title', 'Course heading / title', 'text', 'e.g., Human Anatomy'],
+      ['code', 'Course code', 'text', 'e.g., ANAT-301'],
+      ['specialty', 'Discipline / specialty', 'text', 'e.g., Anatomy'],
+      ['theory', 'Theory credit hours taught', 'number', 'e.g., 1'],
+      ['practical', 'Practical / lab credit hours taught', 'number', 'e.g., 1'],
+      ['review', 'Student review score (0–100)', 'number', 'e.g., 85']
+    ];
+    const heading = document.createElement('div'); heading.className = 'teaching-course-heading';
+    const title = document.createElement('strong'); title.textContent = `Course ${index + 1}`;
+    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'btn btn-secondary no-print';
+    remove.textContent = 'Remove'; remove.disabled = records.length === 1;
+    remove.addEventListener('click', () => {
+      const current = getTeachingLoad().records; current.splice(index, 1);
+      renderTeachingCourses(current.length ? current : [{}]); calculateAll();
+    });
+    heading.append(title, remove); card.appendChild(heading);
+    const grid = document.createElement('div'); grid.className = 'course-fields';
+    fields.forEach(([key, labelText, type, placeholder]) => {
+      const field = document.createElement('div'); field.className = 'form-group';
+      const label = document.createElement('label'); label.textContent = labelText;
+      const input = document.createElement('input'); input.type = type; input.className = 'form-control';
+      input.id = `course-${index + 1}-${key}`; label.htmlFor = input.id;
+      input.dataset.courseField = key; input.value = safeString(record[key] ?? '', 240);
+      input.placeholder = placeholder; if (type === 'text') input.maxLength = 240;
+      if (type === 'number') { input.min = '0'; input.max = '100'; input.step = 'any'; }
+      input.addEventListener('input', calculateAll);
+      const hint = document.createElement('span'); hint.className = 'field-hint';
+      hint.textContent = key === 'theory' ? 'One theory credit = 16 contact hours; enter 0 if none.'
+        : key === 'practical' ? 'One practical credit = 32 contact hours; enter 0 if none.'
+          : key === 'review' ? 'Certified course-level student feedback; each completed course has equal weight.' : '';
+      const tip = document.createElement('button'); tip.type = 'button'; tip.className = 'help-tip';
+      tip.textContent = '?'; tip.title = hint.textContent || `Enter the ${labelText.toLowerCase()} exactly as shown in the course record.`;
+      tip.setAttribute('aria-label', `Help: ${tip.title}`); tip.addEventListener('click', () => showToast(tip.title));
+      label.appendChild(tip); field.append(label, input, hint); grid.appendChild(field);
+    });
+    const addSelect = (key, labelText, options) => {
+      const field = document.createElement('div'); field.className = 'form-group';
+      const label = document.createElement('label'); label.textContent = labelText;
+      const select = document.createElement('select'); select.className = 'form-control'; select.dataset.courseField = key;
+      select.id = `course-${index + 1}-${key}`; label.htmlFor = select.id;
+      [['', `Select ${labelText.toLowerCase()}`], ...options.map(option => [option, option])].forEach(([value, caption]) => {
+        const option = document.createElement('option'); option.value = value; option.textContent = caption; select.appendChild(option);
+      });
+      select.value = safeString(record[key] ?? '', 80); select.addEventListener('change', calculateAll);
+      field.append(label, select); grid.appendChild(field);
+    };
+    addSelect('term', 'Term / semester', ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8', 'Winter Semester', 'Summer Semester', 'Annual Course']);
+    addSelect('level', 'Level of teaching', ['Undergraduate', 'Postgraduate', 'MPhil / MS', 'PhD', 'Clinical Residency / Fellowship']);
+    card.appendChild(grid); container.appendChild(card);
+  });
+  if (el('addTeachingCourseButton')) el('addTeachingCourseButton').disabled = records.length >= MAX_COURSES;
 }
+window.addTeachingCourse = function () {
+  const records = getTeachingLoad().records;
+  if (records.length >= MAX_COURSES) return;
+  renderTeachingCourses([...records, {}]); calculateAll();
+};
 function formatTeachingNumber(value) {
   return Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 function safeString(value, maxLength = 500) { return typeof value === 'string' ? value.slice(0, maxLength) : ''; }
 function slug(value) { return (value || 'Faculty').replace(/[^a-zA-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 80) || 'Faculty'; }
 
-function initResearchOutputCards() {
+function getPaperRecords() {
+  return Array.from(document.querySelectorAll('.research-output-card')).map(card =>
+    Object.fromEntries(Array.from(card.querySelectorAll('[data-paper-field]'))
+      .map(node => [node.dataset.paperField, node.value.trim()])));
+}
+function renderResearchPaperCards(records = [{}, {}, {}, {}]) {
   const container = el('researchOutputCards'); if (!container) return;
   container.replaceChildren();
-  for (let index = 1; index <= RESEARCH_OUTPUT_COUNT; index += 1) {
+  records.slice(0, MAX_PAPERS).forEach((record, index) => {
     const card = document.createElement('div'); card.className = 'research-output-card';
     const heading = document.createElement('div'); heading.className = 'research-output-heading';
-    const title = document.createElement('span'); title.textContent = `Selected output ${index}`;
-    const subtotal = document.createElement('span'); subtotal.id = `disp_research_output_${index}`; subtotal.textContent = '0 / 20 pts';
-    heading.append(title, subtotal); card.appendChild(heading);
-    const grid = document.createElement('div'); grid.className = 'research-rubric-grid';
-    const record = document.createElement('div'); record.className = 'form-group research-rubric-wide';
-    const recordLabel = document.createElement('label'); recordLabel.htmlFor = `input_research_output_${index}_id`;
-    recordLabel.textContent = 'Output DOI or unique institutional record ID';
-    const recordInput = document.createElement('input'); recordInput.type = 'text'; recordInput.className = 'form-control';
-    recordInput.id = recordLabel.htmlFor; recordInput.maxLength = 240;
-    recordInput.placeholder = 'Example: DOI 10.xxxx/... or approved KMU record ID';
-    const recordHint = document.createElement('span'); recordHint.className = 'field-hint';
-    recordHint.textContent = 'Use one identifier per distinct output. A repeated item is counted once and prevents completion.';
-    record.append(recordLabel, recordInput, recordHint); grid.appendChild(record);
-    const criteria = document.createElement('div'); criteria.className = 'research-criteria-grid research-rubric-wide';
-    RESEARCH_OUTPUT_CRITERIA.forEach(criterion => {
-      const field = document.createElement('div'); field.className = 'form-group';
-      const label = document.createElement('label'); label.htmlFor = `input_research_output_${index}_${criterion.key}`;
-      label.textContent = `${criterion.label} (0–${criterion.max})`;
-      const input = document.createElement('input'); input.type = 'number'; input.className = 'form-control';
-      input.id = label.htmlFor; input.min = '0'; input.max = String(criterion.max); input.step = '1';
-      input.placeholder = `Example: ${Math.round(criterion.max * 0.75)}`;
-      field.append(label, input); criteria.appendChild(field);
+    const title = document.createElement('span'); title.textContent = `Paper ${index + 1}`;
+    const subtotal = document.createElement('span'); subtotal.className = 'paper-mark'; subtotal.textContent = '0 points';
+    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'btn btn-secondary no-print';
+    remove.textContent = 'Remove'; remove.disabled = records.length === 1;
+    remove.addEventListener('click', () => {
+      const current = getPaperRecords(); current.splice(index, 1);
+      renderResearchPaperCards(current.length ? current : [{}]); calculateAll();
     });
-    grid.appendChild(criteria); card.appendChild(grid); container.appendChild(card);
-  }
+    heading.append(title, subtotal, remove); card.appendChild(heading);
+    const grid = document.createElement('div'); grid.className = 'course-fields';
+    const addInput = (key, labelText, type, placeholder) => {
+      const field = document.createElement('div'); field.className = 'form-group';
+      const label = document.createElement('label'); label.textContent = labelText;
+      const input = document.createElement('input'); input.type = type; input.className = 'form-control';
+      input.id = `paper-${index + 1}-${key}`; label.htmlFor = input.id;
+      input.dataset.paperField = key; input.value = safeString(record[key] ?? '', 240);
+      input.placeholder = placeholder; if (type === 'text') input.maxLength = 240;
+      if (type === 'number') { input.min = '0'; input.max = '100'; input.step = 'any'; }
+      input.addEventListener('input', calculateAll);
+      const tip = document.createElement('button'); tip.type = 'button'; tip.className = 'help-tip';
+      tip.textContent = '?'; tip.title = key === 'impactFactor'
+        ? 'Enter the journal impact factor applicable to the publication year, not the current figure. This is a pilot scoring band, not HEC recognition.'
+        : `Enter the ${labelText.toLowerCase()} from the published article record.`;
+      tip.setAttribute('aria-label', `Help: ${tip.title}`); tip.addEventListener('click', () => showToast(tip.title));
+      label.appendChild(tip); field.append(label, input); grid.appendChild(field);
+    };
+    const addSelect = (key, labelText, options) => {
+      const field = document.createElement('div'); field.className = 'form-group';
+      const label = document.createElement('label'); label.textContent = labelText;
+      const select = document.createElement('select'); select.className = 'form-control'; select.dataset.paperField = key;
+      select.id = `paper-${index + 1}-${key}`; label.htmlFor = select.id;
+      [['', `Select ${labelText.toLowerCase()}`], ...options].forEach(([value, caption]) => {
+        const option = document.createElement('option'); option.value = value; option.textContent = caption; select.appendChild(option);
+      });
+      select.value = safeString(record[key] ?? '', 80); select.addEventListener('change', calculateAll);
+      field.append(label, select); grid.appendChild(field);
+    };
+    addInput('title', 'Article / paper title', 'text', 'e.g., published article title');
+    addInput('id', 'DOI or stable publication ID', 'text', 'e.g., 10.xxxx/...');
+    addInput('impactFactor', 'Journal impact factor (publication year)', 'number', 'e.g., 3.2');
+    addSelect('role', 'Authorship role', [['first', 'First author'], ['corresponding', 'Corresponding author'], ['co', 'Co-author']]);
+    addSelect('indexed', 'Indexed / recognized for publication year?', [['Y', 'Yes — evidence available'], ['N', 'No / not verified']]);
+    card.appendChild(grid); container.appendChild(card);
+  });
+  if (el('addResearchPaperButton')) el('addResearchPaperButton').disabled = records.length >= MAX_PAPERS;
 }
+window.addResearchPaper = function () {
+  const records = getPaperRecords(); if (records.length >= MAX_PAPERS) return;
+  renderResearchPaperCards([...records, {}]); calculateAll();
+};
 
 function normaliseResearchId(value) {
   return value.trim().toLowerCase().replace(/^https?:\/\/(?:dx\.)?doi\.org\//, '').replace(/^doi:\s*/, '');
@@ -329,28 +418,25 @@ function normaliseResearchId(value) {
 function getResearchRubric({ requireReview = false } = {}) {
   const issues = [];
   const seen = new Set();
-  let outputQuality = 0;
-  const outputScores = [];
-  for (let index = 1; index <= RESEARCH_OUTPUT_COUNT; index += 1) {
-    const identifier = getTextValue(`input_research_output_${index}_id`);
-    const criteria = RESEARCH_OUTPUT_CRITERIA.map(({ key, max }) => {
-      const input = el(`input_research_output_${index}_${key}`);
-      const raw = input?.value ?? '';
-      const value = Number(raw);
-      return { raw, value, valid: raw !== '' && Number.isInteger(value) && value >= 0 && value <= max && input.validity.valid };
-    });
-    const anyScore = criteria.some(item => item.raw !== '');
-    if ((identifier && !criteria.every(item => item.valid)) || (!identifier && anyScore)) {
-      issues.push(`complete identifier and all four ratings for selected output ${index}`);
+  const papers = getPaperRecords().filter(record => Object.values(record).some(value => value !== ''));
+  const outputScores = papers.map((paper, index) => {
+    const id = normaliseResearchId(paper.id || '');
+    const impactFactor = Number(paper.impactFactor);
+    if (!paper.title || !id || paper.impactFactor === '' || !Number.isFinite(impactFactor)
+      || impactFactor < 0 || impactFactor > 100 || !['first', 'corresponding', 'co'].includes(paper.role)
+      || !['Y', 'N'].includes(paper.indexed)) {
+      issues.push(`complete paper ${index + 1} (title, ID, impact factor, author role and indexing status)`);
     }
-    const canonicalId = normaliseResearchId(identifier);
-    if (canonicalId && seen.has(canonicalId)) issues.push('remove duplicate selected research output identifiers');
-    if (canonicalId) seen.add(canonicalId);
-    const score = identifier && criteria.every(item => item.valid) && !outputScores.some(item => item.id === canonicalId)
-      ? criteria.reduce((sum, item) => sum + item.value, 0) : 0;
-    outputScores.push({ id: canonicalId, score });
-    outputQuality += score;
-  }
+    if (id && seen.has(id)) issues.push('remove duplicate paper identifiers');
+    if (id) seen.add(id);
+    const score = paper.indexed === 'Y' && id && paper.title && paper.impactFactor !== ''
+      && Number.isFinite(impactFactor) && impactFactor >= 0 && impactFactor <= 100
+      && ['first', 'corresponding', 'co'].includes(paper.role) && !seen.has(`scored:${id}`)
+      ? paperPilotPoints(impactFactor, paper.role, paper.indexed)
+      : 0;
+    if (id) seen.add(`scored:${id}`);
+    return { id, score };
+  });
   const readScore = (id, maximum, label, referenceId) => {
     const input = el(id);
     const raw = input?.value ?? '';
@@ -363,17 +449,28 @@ function getResearchRubric({ requireReview = false } = {}) {
     return value;
   };
   const milestone = readScore('input_research_execution', 25, 'research milestone progress', 'input_research_execution_ref');
-  const funding = readScore('input_research_funding', 5, 'competitive funding or proposal', 'input_research_funding_ref');
-  const execution = Math.min(25, milestone + funding);
-  const translation = readScore('input_research_translation', 15, 'research mentorship or translation', 'input_research_translation_ref');
+  const booksRaw = getActivityCount('input_book_int') * 5 + getActivityCount('input_book_nat') * 4
+    + getActivityCount('input_chapter_int') * 3 + getActivityCount('input_chapter_nat') * 2;
+  const supervisionRaw = getActivityCount('input_sup_phd') * 8 + getActivityCount('input_sup_mphil') * 4
+    + getActivityCount('input_sup_clin_sr') * 8 + getActivityCount('input_sup_clin_jr') * 4;
+  const innovationRaw = getActivityCount('input_innov_patent_int') * 10 + getActivityCount('input_innov_patent_nat') * 6
+    + getActivityCount('input_innov_project') * 8 + getActivityCount('input_innov_overhead') * 10;
+  const pilot = scoreResearchPilot({ paperScores: outputScores.map(item => item.score), booksRaw,
+    milestone, grantStatuses: appraisalState.grantsList.map(grant => grant.status), supervisionRaw, innovationRaw });
+  outputScores.forEach((item, index) => { item.rawScore = item.score; item.score = pilot.publication.allocated[index]; });
+  const outputQuality = pilot.publication.total;
+  const { books, funding, execution, supervision, innovation } = pilot;
+  if (books > 0 && !getTextValue('input_books_ref')) issues.push('cite B2 book/chapter evidence');
+  if (supervision > 0 && !getTextValue('input_supervision_ref')) issues.push('cite B4 supervision evidence');
+  if (innovation > 0 && !getTextValue('input_innovation_ref')) issues.push('cite B5 innovation evidence');
   if (!el('input_research_complete')?.checked) issues.push('confirm Section B is complete, including zero activity');
   if (requireReview) {
     if (!el('input_research_review_confirm')?.checked) issues.push('Appraising Officer research-evidence confirmation');
     if (!getTextValue('input_research_review_ref')) issues.push('Appraising Officer research-review reference');
   }
   return {
-    outputScores, outputQuality: Math.min(60, outputQuality), milestone, funding, execution, translation,
-    score: Math.min(100, outputQuality + execution + translation), issues
+    outputScores, outputQuality, milestone, funding, execution, books, supervision, innovation,
+    score: pilot.score, issues
   };
 }
 
@@ -409,7 +506,7 @@ function applyProfile(profileKey, basis, { pending = false } = {}) {
   appraisalState.activeWeights = {
     teaching: profile.teachingWeight, research: profile.researchWeight,
     service: profile.serviceWeight, peer: profile.peerWeight,
-    clinical: profile.clinicalWeight, minTeachingWU: profile.minTeachingWU,
+    clinical: profile.clinicalWeight,
     name: profile.name, basis
   };
   updateElementText('disp_auto_profile_name', pending ? 'Complete designation and institute' : profile.name);
@@ -422,7 +519,6 @@ function applyProfile(profileKey, basis, { pending = false } = {}) {
   updateElementText('disp_auto_weight_service', pending ? '—' : `${profile.serviceWeight}%`);
   updateElementText('disp_auto_weight_peer', pending ? '—' : `${profile.peerWeight}%`);
   updateElementText('disp_auto_weight_clinical', pending ? '—' : `${profile.clinicalWeight}%`);
-  updateElementText('disp_auto_min_wu', `${profile.minTeachingWU} WU`);
   setVal('profileDropdownSelect', profileKey);
   setVal('overrideProfileSelect', profileKey);
   const clinicalChip = el('disp_auto_chip_clinical');
@@ -459,7 +555,7 @@ function autoSelectProfileAndWeights() {
   }
   const result = determineBaseProfile(
     department, designation,
-    getTextValue('input_work_assignment'), getTextValue('input_reporting_ref')
+    getTextValue('input_work_assignment'), getTextValue('input_profile_assignment_ref')
   );
   applyProfile(result.profileKey, result.basis);
 }
@@ -491,24 +587,23 @@ window.selectProfile = function (profileKey) { window.applyManualProfileOverride
 function updateReportingLine() {
   const leadership = getTextValue('input_leadership_role');
   const designation = getTextValue('input_emp_desig');
-  let appraiser = 'Current appointment / reporting notification';
-  let reviewer = 'Next superior officer under the current notification';
-  const seniorAcademicPost = ['Meritorious Professor', 'Professor', 'Associate Professor'].includes(designation);
-  let finalAuthority = seniorAcademicPost ? 'Vice Chancellor' : 'Registrar';
+  let appraiser = 'Immediate supervisory officer (verify current reporting line)';
+  const reviewer = 'Additional Director HR';
+  const finalAuthority = 'Vice Chancellor';
   if (leadership === 'Dean of Faculty') {
-    [appraiser, reviewer, finalAuthority] = ['Vice Chancellor', 'Syndicate moderation committee (draft arrangement)', 'Syndicate'];
+    appraiser = 'Vice Chancellor';
   } else if (leadership === 'Director / Principal / Head of Institute') {
-    [appraiser, reviewer, finalAuthority] = ['Dean of the applicable current faculty', 'Vice Chancellor', 'Vice Chancellor'];
+    appraiser = 'Dean of the applicable current faculty';
   } else if (leadership === 'Chairperson / Head of Department') {
-    [appraiser, reviewer, finalAuthority] = ['Director / Principal', 'Dean of the applicable current faculty', 'Vice Chancellor'];
+    appraiser = 'Director / Principal';
   } else if (designation === 'Meritorious Professor' || designation === 'Professor' || designation === 'Associate Professor') {
-    [appraiser, reviewer, finalAuthority] = ['Head of Department / Director', 'Dean of the applicable current faculty', 'Vice Chancellor'];
+    appraiser = 'Head of Department / Director';
   } else if (designation === 'Assistant Professor' || designation === 'Lecturer') {
-    [appraiser, reviewer, finalAuthority] = ['Head of Department', 'Director / Dean, as applicable', 'Dean of the applicable current faculty'];
+    appraiser = 'Head of Department';
   } else if (designation === 'Demonstrator' || CLINICAL_DESIGNATIONS.has(designation)) {
-    [appraiser, reviewer, finalAuthority] = ['Head of Department / Unit Head', 'Director / Principal', 'Dean of the applicable current faculty'];
+    appraiser = 'Section In-Charge / Head of Department';
   } else if (RESEARCH_DESIGNATIONS.has(designation)) {
-    [appraiser, reviewer, finalAuthority] = ['Principal Investigator / Laboratory Head', 'Head of Department / Director', 'Dean of the applicable current faculty'];
+    appraiser = 'Principal Investigator / Laboratory Head';
   }
   setVal('input_emp_appraiser', appraiser); setVal('input_emp_reviewer', reviewer); setVal('input_emp_final', finalAuthority);
   syncMetaToDossier();
@@ -710,10 +805,10 @@ function updateReviewStageDisplay() {
   const open = appraisalState.objectiveSubmitted;
   updateElementText('stageBannerTitle', open ? 'Stage 2 — Designated reviewer assessment' : 'Stage 1 — Faculty evidence');
   updateElementText('stageBannerText', open
-    ? 'Faculty evidence was handed off in this browser. The designated Appraising Officer or notified committee may now review the evidence and complete Section D. This is not authenticated access control.'
-    : 'Complete the profile, teaching, research, institutional service and, if applicable, clinical sections. Then hand this same-browser pilot draft to the designated reviewer.');
+    ? 'Faculty evidence was handed off in this browser. The designated Appraising Officer or notified Appraisal Committee may now review the evidence and complete the subjective assessment. This is not authenticated access control.'
+    : 'Complete the profile, teaching, research, patient care where applicable, and institutional service. Then hand this same-browser pilot draft to the designated reviewer.');
   updateElementText('reviewHandoffStatus', open
-    ? `Faculty objective evidence submitted for review at ${appraisalState.objectiveSubmittedAt || 'the current session'}. Recheck all source records before entering Section D scores.`
+    ? `Faculty objective evidence submitted for review at ${appraisalState.objectiveSubmittedAt || 'the current session'}. Recheck all source records before entering Appraisal Committee scores.`
     : 'This section opens after the faculty member submits a complete objective evidence draft.');
   document.querySelectorAll('[data-tab], [data-wizard]').forEach(node => {
     const tab = node.dataset.tab || node.dataset.wizard;
@@ -749,17 +844,9 @@ function getObjectiveReadiness() {
     ['input_emp_cycle', 'calendar-year appraisal cycle']
   ];
   required.forEach(([id, label]) => { if (!getTextValue(id)) missing.push(label); });
-  if (getTextValue('input_qec_score') === '') missing.push('certified QEC score');
-  const workloadExempted = el('input_wu_exempted')?.value === 'Y';
-  if (!getTeachingLoad().hasEntry) missing.push('both theory and practical credit-hour totals (enter 0 if none)');
-  const teachingThreshold = getTeachingThreshold(appraisalState.activeWeights);
-  if (teachingThreshold.academicLeader && !teachingThreshold.leaderReferenced) {
-    missing.push('Dean/Director appointment or reporting reference');
-  }
-  if (teachingThreshold.overrideEntered && !teachingThreshold.overrideReferenced) {
-    missing.push('valid approved teaching target and order reference');
-  }
-  if (workloadExempted && !getTextValue('input_reporting_ref')) missing.push('approved workload-exemption reference');
+  const teaching = getTeachingLoad();
+  if (!teaching.hasEntry) missing.push('at least one complete course and student-review score');
+  missing.push(...teaching.issues);
   missing.push(...getResearchRubric().issues);
   if (!el('input_service_complete')?.checked) missing.push('institutional-service completion declaration');
   const profile = appraisalState.activeWeights;
@@ -893,67 +980,34 @@ function calculateAll() {
   updateElementText('navPillService', visibleWeight(profile.service));
   updateElementText('navPillPeer', visibleWeight(profile.peer));
   updateElementText('navPillClinical', visibleWeight(profile.clinical));
-  const teachingThreshold = getTeachingThreshold(profile);
-  const requiredWU = teachingThreshold.targetWU;
-  updateElementText('disp_min_wu', appraisalState.profilePending ? '—' : `${formatTeachingNumber(requiredWU)} WU`);
-  updateElementText('disp_teaching_target_basis', appraisalState.profilePending
-    ? 'The teaching target appears after the substantive designation and institute are selected.' : teachingThreshold.basis);
-  updateElementText('dossier_min_wu', appraisalState.profilePending ? 'Pending profile details' : `${formatTeachingNumber(requiredWU)} WU`);
-
-  const qec = clamp(getInputValue('input_qec_score'), 0, 100);
   const teachingLoad = getTeachingLoad();
   const legacyTeachingNote = el('legacyTeachingNote');
   if (legacyTeachingNote) {
     const hasLegacy = appraisalState.legacyTeachingWU !== null;
     legacyTeachingNote.hidden = !hasLegacy;
-    if (hasLegacy) legacyTeachingNote.textContent = `This resumed draft had ${formatTeachingNumber(appraisalState.legacyTeachingWU)} teaching WU in the previous portal version. WU cannot identify the theory/practical credit-hour mix, so it has not been converted or scored. Re-enter the verified course credits above and check them against the old record.`;
+    if (hasLegacy) legacyTeachingNote.textContent = `This older draft recorded ${formatTeachingNumber(appraisalState.legacyTeachingWU)} teaching WU. It cannot be converted into course-level student reviews. Re-enter each course and certified review; the old WU has not been scored.`;
   }
-  const actualWU = teachingLoad.teachingWU;
-  const exemptionSelected = el('input_wu_exempted')?.value === 'Y';
-  const exemptionReferenced = exemptionSelected && Boolean(getTextValue('input_reporting_ref'));
-  const qecInput = el('input_qec_score');
-  const teachingReady = !appraisalState.profilePending && teachingLoad.hasEntry && teachingLoad.valid
-    && qecInput?.value !== '' && qecInput?.validity.valid;
-  const loadRatio = requiredWU > 0 ? Math.min(1, actualWU / requiredWU) : 1;
-  const attainmentA = teachingReady ? clamp(qec * (exemptionReferenced ? 1 : loadRatio), 0, 100) : 0;
+  const teachingReady = !appraisalState.profilePending && teachingLoad.hasEntry && teachingLoad.valid;
+  const attainmentA = teachingReady ? clamp(teachingLoad.reviewAverage, 0, 100) : 0;
   const weightedA = attainmentA * profile.teaching / 100;
+  updateElementText('disp_course_count', teachingLoad.courseCount);
   updateElementText('disp_teaching_hours', teachingLoad.hasEntry && teachingLoad.valid
     ? `${formatTeachingNumber(teachingLoad.contactHours)} contact hours` : '—');
   updateElementText('disp_teaching_hours_detail', teachingLoad.hasEntry && teachingLoad.valid
     ? `${formatTeachingNumber(teachingLoad.theoryHours)} theory + ${formatTeachingNumber(teachingLoad.practicalHours)} practical`
     : 'Theory + practical hours');
-  updateElementText('disp_actual_wu', teachingLoad.hasEntry && teachingLoad.valid
-    ? `${formatTeachingNumber(actualWU)} WU` : '—');
-  updateElementText('disp_actual_wu_detail', teachingLoad.hasEntry && teachingLoad.valid
-    ? `3 × ${formatTeachingNumber(teachingLoad.theoryCredits)} theory + 2 × ${formatTeachingNumber(teachingLoad.practicalCredits)} practical`
-    : 'Compared with the profile threshold');
-  let teachingExplanation = 'Enter the certified QEC score and teaching credit hours to calculate the effective score.';
-  if (appraisalState.profilePending) teachingExplanation = 'Choose a substantive designation and KMU institute on Step 1 to assign a teaching threshold.';
-  else if (!teachingLoad.valid) teachingExplanation = 'Check the credit-hour entries: use non-negative numeric values.';
-  else if (!teachingLoad.hasEntry) teachingExplanation = 'Enter your annual theory and/or practical credit-hour totals. Enter 0 if no teaching was delivered.';
-  else if (!qecInput?.validity.valid || qecInput?.value === '') teachingExplanation = 'Enter a valid certified QEC score from 0 to 100 to calculate the effective score.';
-  else if (exemptionReferenced) teachingExplanation = `Documented shortfall exemption selected: effective teaching score is the QEC score (${qec.toFixed(1)}%), subject to verification of the approval reference.`;
-  else if (exemptionSelected) teachingExplanation = `An exemption was selected, but no approval reference is entered on Step 1. Standard proration is shown until it is documented: ${qec.toFixed(1)}% × ${formatTeachingNumber(actualWU)} / ${formatTeachingNumber(requiredWU)} WU = ${attainmentA.toFixed(1)}%.`;
-  else if (actualWU < requiredWU) teachingExplanation = `QEC ${qec.toFixed(1)}% × (${formatTeachingNumber(actualWU)} delivered / ${formatTeachingNumber(requiredWU)} required WU) = ${attainmentA.toFixed(1)}%.`;
-  else teachingExplanation = `Delivered ${formatTeachingNumber(actualWU)} WU meets or exceeds ${formatTeachingNumber(requiredWU)} WU; effective teaching score equals QEC ${qec.toFixed(1)}%.`;
-  if (teachingReady && teachingThreshold.overrideEntered && !teachingThreshold.overrideReferenced) {
-    teachingExplanation += ' A different teaching target was entered but is not used without a valid value and approval reference.';
-  }
-  if (teachingReady && teachingThreshold.academicLeader && !teachingThreshold.leaderReferenced) {
-    teachingExplanation += ' The Dean/Director threshold is not used until its appointment reference is entered on Step 1.';
-  }
+  let teachingExplanation = 'Enter at least one complete course with its certified student-review score.';
+  if (appraisalState.profilePending) teachingExplanation = 'Choose the substantive designation and KMU institute on Step 1 first.';
+  else if (!teachingLoad.valid) teachingExplanation = teachingLoad.issues.join('; ');
+  else if (teachingReady) teachingExplanation = `Course student reviews: (${teachingLoad.entered.map(record => Number(record.review).toFixed(1)).join(' + ')}) ÷ ${teachingLoad.courseCount} = ${attainmentA.toFixed(1)}%. Credit hours document ${formatTeachingNumber(teachingLoad.contactHours)} contact hours but do not alter the average.`;
   updateElementText('disp_teaching_formula', teachingExplanation);
   updateElementText('disp_effective_teaching', teachingReady ? `${attainmentA.toFixed(1)}%` : '—');
   updateElementText('disp_weight_a', appraisalState.profilePending ? '—' : `${profile.teaching}%`);
   updateElementText('disp_weighted_a', teachingReady ? `${weightedA.toFixed(2)} pts` : '—');
 
-  const b1Raw = getActivityCount('input_pub_high_lead') * 10 + getActivityCount('input_pub_high_co') * 5
-    + getActivityCount('input_pub_mod_lead') * 6 + getActivityCount('input_pub_mod_co') * 3
-    + getActivityCount('input_pub_low_lead') * 4 + getActivityCount('input_pub_low_co') * 2;
-  const b1 = Math.min(50, b1Raw);
-  const b2Raw = getActivityCount('input_book_int') * 8 + getActivityCount('input_book_nat') * 5
-    + getActivityCount('input_chapter_int') * 4 + getActivityCount('input_chapter_nat') * 2;
-  const b2 = Math.min(20, b2Raw);
+  const b2Raw = getActivityCount('input_book_int') * 5 + getActivityCount('input_book_nat') * 4
+    + getActivityCount('input_chapter_int') * 3 + getActivityCount('input_chapter_nat') * 2;
+  const b2 = Math.min(5, b2Raw);
   let grantWon = 0; let grantApplied = 0;
   appraisalState.grantsList.forEach(grant => {
     const points = computeGrantPoints(grant.amount, grant.role, grant.status, grant.band);
@@ -961,34 +1015,36 @@ function calculateAll() {
     if (grant.status === 'Applied') grantApplied += points;
   });
   const b3Raw = grantWon + grantApplied;
-  const b3 = Math.min(50, grantWon + Math.min(20, grantApplied));
+  const b3 = grantWon > 0 ? 5 : grantApplied > 0 ? 2 : 0;
   const b4Raw = getActivityCount('input_sup_phd') * 8 + getActivityCount('input_sup_mphil') * 4
     + getActivityCount('input_sup_clin_sr') * 8 + getActivityCount('input_sup_clin_jr') * 4;
-  const b4 = Math.min(40, b4Raw);
+  const b4 = Math.min(10, b4Raw);
   const b5Raw = getActivityCount('input_innov_patent_int') * 10 + getActivityCount('input_innov_patent_nat') * 6
     + getActivityCount('input_innov_project') * 8 + getActivityCount('input_innov_overhead') * 10;
-  const b5 = Math.min(40, b5Raw);
-  const rawB = Math.min(200, b1 + b2 + b3 + b4 + b5);
+  const b5 = Math.min(10, b5Raw);
   const researchRubric = getResearchRubric();
   const attainmentB = researchRubric.score;
   const weightedB = attainmentB * profile.research / 100;
-  [['disp_sub_b1_raw', b1Raw], ['disp_sub_b1', b1], ['disp_sub_b2_raw', b2Raw], ['disp_sub_b2', b2],
+  [['disp_sub_b2_raw', b2Raw], ['disp_sub_b2', b2],
     ['disp_sub_b3_raw', b3Raw], ['disp_sub_b3_won', grantWon], ['disp_sub_b3_applied', grantApplied], ['disp_sub_b3', b3],
     ['disp_sub_b4_raw', b4Raw], ['disp_sub_b4', b4], ['disp_sub_b5_raw', b5Raw], ['disp_sub_b5', b5]]
     .forEach(([id, value]) => updateElementText(id, Number(value).toFixed(1)));
-  researchRubric.outputScores.forEach((item, index) =>
-    updateElementText(`disp_research_output_${index + 1}`, `${item.score} / 20 pts`));
+  document.querySelectorAll('.research-output-card .paper-mark').forEach((node, index) => {
+    const score = researchRubric.outputScores[index]?.score || 0;
+    node.textContent = `${score} provisional points`;
+  });
   updateElementText('disp_raw_b', `${attainmentB.toFixed(1)} / 100`);
-  updateElementText('disp_research_quality_summary', `${researchRubric.outputQuality.toFixed(1)} / 60 selected-output points`);
+  updateElementText('disp_research_quality_summary', `${researchRubric.outputQuality.toFixed(1)} / 50 papers`);
+  updateElementText('disp_research_books_summary', `${researchRubric.books.toFixed(1)} / 5 books`);
   updateElementText('disp_research_execution_summary', `${researchRubric.execution.toFixed(1)} / 25 execution points`);
-  updateElementText('disp_research_execution_detail', `milestones ${researchRubric.milestone.toFixed(1)} + optional funding ${researchRubric.funding.toFixed(1)}, capped at 25`);
-  updateElementText('disp_research_translation_summary', `${researchRubric.translation.toFixed(1)} / 15 mentorship/translation points`);
+  updateElementText('disp_research_execution_detail', `milestones ${researchRubric.milestone.toFixed(1)} + optional grant bonus ${researchRubric.funding.toFixed(1)}, capped at 25`);
+  updateElementText('disp_research_supervision_summary', `${researchRubric.supervision.toFixed(1)} / 10 supervision`);
+  updateElementText('disp_research_innovation_summary', `${researchRubric.innovation.toFixed(1)} / 10 innovation`);
   updateElementText('disp_research_verification_state', researchRubric.issues.length
     ? `Provisional; resolve: ${researchRubric.issues.join(', ')}.`
     : el('input_research_review_confirm')?.checked && getTextValue('input_research_review_ref')
       ? 'Appraising Officer review recorded; verify the cited evidence independently.'
       : 'Faculty self-assessment complete; awaiting Appraising Officer evidence review.');
-  updateElementText('disp_research_raw_summary', `${rawB.toFixed(1)} raw points`);
   updateElementText('disp_weight_b', `${profile.research}%`);
   updateElementText('disp_weighted_b', `${weightedB.toFixed(2)} pts`);
 
@@ -1073,18 +1129,30 @@ function calculateAll() {
     'Awaiting faculty completion');
   updateComparisonScale('subjectiveScaleFill', 'subjectiveScaleValue', subjectivePercent, subjectiveReady,
     'Awaiting reviewer assessment');
-  updateElementText('comparisonNote', objectiveReady && subjectiveReady
-    ? `The two dimensions differ by ${Math.abs(objectivePercent - subjectivePercent).toFixed(1)} percentage points. These are percentages of different scoring ceilings, not KMU percentiles. Comparable-faculty categories remain pending cohort calibration.`
-    : 'Well-below, below, average, above and well-above-average labels will be added only after KMU validates percentiles for comparable faculty groups. No relative category is assigned in this pilot.');
 
   updateElementText('dossier_prof_name', appraisalState.profilePending ? 'Pending profile details' : profile.name);
   [['a', profile.teaching], ['b', profile.research], ['c', profile.service], ['d', profile.peer], ['e', profile.clinical]]
     .forEach(([key, value]) => updateElementText(`dossier_weight_${key}`, `${value}%`));
   updateElementText('dossier_raw_a', teachingReady ? `${attainmentA.toFixed(1)} / 100` : 'Pending');
+  const dossierCourseRows = el('dossierCourseRows');
+  if (dossierCourseRows) {
+    dossierCourseRows.replaceChildren();
+    if (!teachingLoad.hasEntry || !teachingLoad.valid) {
+      const row = document.createElement('tr'); const cell = document.createElement('td');
+      cell.colSpan = 6; cell.textContent = 'Complete and validate course entries before the dossier is available'; row.appendChild(cell); dossierCourseRows.appendChild(row);
+    } else teachingLoad.entered.forEach(course => {
+      const row = document.createElement('tr');
+      [`${course.title} (${course.code})`, course.term, course.level, course.specialty,
+        `${course.theory}+${course.practical}`, `${Number(course.review).toFixed(1)}%`].forEach(value => {
+        const cell = document.createElement('td'); cell.textContent = value; row.appendChild(cell);
+      });
+      dossierCourseRows.appendChild(row);
+    });
+  }
   updateElementText('dossier_teaching_detail', teachingLoad.hasEntry && teachingLoad.valid
-    ? `Delivered: ${formatTeachingNumber(teachingLoad.theoryCredits)} theory + ${formatTeachingNumber(teachingLoad.practicalCredits)} practical credits = ${formatTeachingNumber(teachingLoad.contactHours)} contact hours = ${formatTeachingNumber(actualWU)} teaching WU. Draft target: ${formatTeachingNumber(requiredWU)} WU (${teachingThreshold.basis}).`
-    : 'Teaching credit-hour conversion and WU threshold pending.');
-  updateElementText('dossier_raw_b', `${attainmentB.toFixed(1)} / 100 quality-first pilot (legacy draft raw ${rawB.toFixed(1)} / 200; not scored)`);
+    ? `${teachingLoad.courseCount} courses; ${formatTeachingNumber(teachingLoad.theoryCredits)} theory + ${formatTeachingNumber(teachingLoad.practicalCredits)} practical credits = ${formatTeachingNumber(teachingLoad.contactHours)} contact hours. Certified course-review mean: ${attainmentA.toFixed(1)}%.`
+    : 'Complete course-level credit hours and student reviews pending.');
+  updateElementText('dossier_raw_b', `${attainmentB.toFixed(1)} / 100 (papers ${researchRubric.outputQuality.toFixed(1)}, books ${researchRubric.books.toFixed(1)}, execution ${researchRubric.execution.toFixed(1)}, supervision ${researchRubric.supervision.toFixed(1)}, innovation ${researchRubric.innovation.toFixed(1)})`);
   updateElementText('dossier_raw_c', `${rawC.toFixed(1)} / 100`);
   updateElementText('dossier_raw_d', `${rawD.toFixed(1)} / 88`);
   updateElementText('dossier_raw_e', `${rawE.toFixed(1)} / 100`);
@@ -1099,8 +1167,8 @@ function calculateAll() {
   syncMetaToDossier(); syncTargetsToDossier(); updateDossierCompleteness(readiness);
   renderScoreBars({ teaching: attainmentA, research: attainmentB, service: attainmentC, peer: attainmentD, clinical: attainmentE });
   window.KMUCalculator.lastResult = {
-    profile: profile.name, teachingReady, teachingLoad, teachingTargetWU: requiredWU,
-    attainmentA, rawB, researchRubric, attainmentB, rawC, rawD, rawE, weightedA, weightedB,
+    profile: profile.name, teachingReady, teachingLoad,
+    attainmentA, researchRubric, attainmentB, rawC, rawD, rawE, weightedA, weightedB,
     weightedC, weightedD, weightedE, penalty: penalty.value,
     objectivePercent, subjectivePercent, objectiveReady, subjectiveReady,
     finalScore: readiness.ready ? displayedScore : null,
@@ -1121,7 +1189,8 @@ function syncMetaToDossier() {
     dossier_reviewer_identity: [getTextValue('input_reviewer_role'), getTextValue('input_reviewer_name')].filter(Boolean).join(' — ') || '—',
     dossier_research_review_ref: getTextValue('input_research_review_ref') || '—',
     dossier_emp_final: getTextValue('input_emp_final') || '—',
-    dossier_reporting_ref: getTextValue('input_reporting_ref') || '—'
+    dossier_work_assignment: getTextValue('input_work_assignment') === 'AUTO'
+      ? 'Automatic mapping from designation and institute' : getTextValue('input_work_assignment') || '—'
   };
   Object.entries(mapping).forEach(([id, value]) => updateElementText(id, value));
   [1, 2, 3].forEach(index => {
@@ -1160,11 +1229,11 @@ function renderScoreBars(attainment) {
   container.replaceChildren();
   const rows = [
     ['Teaching & Curriculum', attainment.teaching, '#7a1c1c'],
-    ['Research, Grants & Innovation', attainment.research, '#c59b27'],
-    ['Institutional Service', attainment.service, '#2563eb'],
-    ['Appraising Officer Assessment & CPD', attainment.peer, '#059669']
+    ['Research, Grants & Innovation', attainment.research, '#c59b27']
   ];
   if ((appraisalState.activeWeights?.clinical || 0) > 0) rows.push(['Clinical / Patient Care Service', attainment.clinical, '#dc2626']);
+  rows.push(['Institutional Service', attainment.service, '#2563eb']);
+  rows.push(['Appraisal Committee Assessment & CPD', attainment.peer, '#059669']);
   rows.forEach(([label, value, colour]) => {
     const wrapper = document.createElement('div'); wrapper.style.marginBottom = '0.75rem';
     const heading = document.createElement('div'); heading.style.cssText = 'display:flex;justify-content:space-between;font-size:0.8rem;font-weight:600;margin-bottom:4px;';
@@ -1192,9 +1261,8 @@ function collectDraft(activeTabId) {
       cadre: getTextValue('input_emp_cadre'), cycle: getTextValue('input_emp_cycle'),
       workAssignment: getTextValue('input_work_assignment'),
       appraiser: getTextValue('input_emp_appraiser'), reviewer: getTextValue('input_emp_reviewer'),
-      finalAuthority: getTextValue('input_emp_final'), reportingRef: getTextValue('input_reporting_ref'),
+      finalAuthority: getTextValue('input_emp_final'),
       profileAssignmentRef: getTextValue('input_profile_assignment_ref'),
-      teachingTargetRef: getTextValue('input_teaching_target_ref'),
       clinicalServiceMode: getTextValue('input_clin_service_mode'),
       clinicalEvidenceRef: getTextValue('input_clin_evidence_ref'),
       committeeMember1: getTextValue('input_comm_member_1'),
@@ -1202,6 +1270,8 @@ function collectDraft(activeTabId) {
       committeeMember3: getTextValue('input_comm_member_3')
     },
     values: Object.fromEntries(NUMERIC_INPUT_IDS.map(id => [id, el(id)?.value ?? ''])),
+    teachingCourses: getTeachingLoad().records,
+    researchPapers: getPaperRecords(),
     research: {
       text: Object.fromEntries(RESEARCH_RUBRIC_TEXT_IDS.map(id => [id, getTextValue(id)])),
       complete: Boolean(el('input_research_complete')?.checked),
@@ -1245,12 +1315,12 @@ window.saveAndContinue = function (nextTabId, sectionLabel) {
   calculateAll(); window.switchTab(nextTabId); showToast(`Updated. Continuing to ${sectionLabel}.`);
 };
 
-window.continueFromService = function () {
+window.continueFromResearch = function () {
   if ((appraisalState.activeWeights?.clinical || 0) > 0) {
     window.switchTab('tab-clinical');
     return;
   }
-  window.submitObjectiveForReview();
+  window.switchTab('tab-service');
 };
 
 window.submitObjectiveForReview = function () {
@@ -1284,9 +1354,17 @@ window.saveAndReturnLater = function () {
 
 function validateImportedDraft(draft) {
   if (!draft || typeof draft !== 'object' || Array.isArray(draft)) throw new Error('The file does not contain a valid draft object.');
-  if (draft.schemaVersion !== SCHEMA_VERSION) throw new Error('This backup uses an unsupported schema version.');
+  if (![3, SCHEMA_VERSION].includes(draft.schemaVersion)) throw new Error('This backup uses an unsupported schema version.');
   if (!draft.meta || typeof draft.meta !== 'object') throw new Error('The backup is missing profile metadata.');
   if (!Array.isArray(draft.grantsList) || draft.grantsList.length > 200) throw new Error('The grant ledger is invalid or too large.');
+  if (draft.schemaVersion === 4) {
+    for (const [name, records, maximum] of [['teaching courses', draft.teachingCourses, MAX_COURSES], ['research papers', draft.researchPapers, MAX_PAPERS]]) {
+      if (!Array.isArray(records) || records.length > maximum || records.some(record => !record || typeof record !== 'object' || Array.isArray(record)
+        || Object.values(record).some(value => typeof value !== 'string' || value.length > 240))) {
+        throw new Error(`The ${name} list is invalid or too large.`);
+      }
+    }
+  }
   if (draft.research && (typeof draft.research !== 'object' || Array.isArray(draft.research))) {
     throw new Error('The research evidence record is invalid.');
   }
@@ -1348,9 +1426,8 @@ function restoreDraftObject(rawDraft) {
     input_emp_name: safeString(meta.name, 160), input_emp_desig: safeString(meta.desig, 100),
     input_leadership_role: safeString(meta.leadershipRole, 100), input_emp_dept: safeString(meta.dept, 200),
     input_emp_cadre: safeString(meta.cadre, 100), input_emp_cycle: safeString(meta.cycle, 120),
-    input_work_assignment: safeString(meta.workAssignment, 120), input_reporting_ref: safeString(meta.reportingRef, 200),
+    input_work_assignment: safeString(meta.workAssignment, 120),
     input_profile_assignment_ref: safeString(meta.profileAssignmentRef, 200),
-    input_teaching_target_ref: safeString(meta.teachingTargetRef, 200),
     input_clin_service_mode: safeString(meta.clinicalServiceMode, 120),
     input_clin_evidence_ref: safeString(meta.clinicalEvidenceRef, 240),
     input_comm_member_1: safeString(meta.committeeMember1, 160),
@@ -1358,12 +1435,16 @@ function restoreDraftObject(rawDraft) {
     input_comm_member_3: safeString(meta.committeeMember3, 160)
   };
   Object.entries(metaMapping).forEach(([id, value]) => setVal(id, value));
+  renderTeachingCourses(draft.schemaVersion === 4 ? draft.teachingCourses : [{}, {}, {}]);
+  renderResearchPaperCards(draft.schemaVersion === 4 ? draft.researchPapers : [{}, {}, {}, {}]);
   RESEARCH_RUBRIC_TEXT_IDS.forEach(id => setVal(id, safeString(draft.research?.text?.[id], 240)));
   setVal('input_reviewer_role', safeString(draft.reviewStage?.reviewerRole, 80));
   setVal('input_reviewer_name', safeString(draft.reviewStage?.reviewerName, 160));
   if (el('input_research_complete')) el('input_research_complete').checked = draft.research?.complete === true;
   if (el('input_research_review_confirm')) el('input_research_review_confirm').checked = draft.research?.reviewConfirmed === true;
-  const oldTeachingWU = draft.legacyTeachingWU ?? draft.values?.input_actual_wu;
+  const oldTeachingWU = draft.schemaVersion === 3
+    ? (draft.legacyTeachingWU ?? draft.values?.input_actual_wu ?? '')
+    : draft.legacyTeachingWU;
   appraisalState.legacyTeachingWU = oldTeachingWU === null || oldTeachingWU === undefined || oldTeachingWU === ''
     ? null : Number(oldTeachingWU);
   Object.entries(draft.values || {}).forEach(([id, value]) => {
@@ -1406,8 +1487,11 @@ function restoreDraftObject(rawDraft) {
     && appraisalState.objectiveSnapshot === getObjectiveFingerprint();
   appraisalState.objectiveSubmittedAt = appraisalState.objectiveSubmitted
     ? safeString(draft.reviewStage?.objectiveSubmittedAt, 80) : '';
-  if (!appraisalState.objectiveSubmitted && el('input_research_review_confirm')) {
-    el('input_research_review_confirm').checked = false;
+  if (!appraisalState.objectiveSubmitted) {
+    if (el('input_research_review_confirm')) el('input_research_review_confirm').checked = false;
+    setVal('input_research_review_ref', '');
+    PEER_PARAMETERS.forEach(item => { appraisalState.sectionD.peerScores[item.id] = null; });
+    CPD_TARGETS.forEach(item => { appraisalState.sectionD.cpdScores[item.id] = null; });
   }
   updateReviewStageDisplay();
   initPeerControls(); renderGrantsTable(); calculateAll();
@@ -1417,8 +1501,11 @@ function restoreDraftObject(rawDraft) {
 
 window.restoreDraft = function () {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return false;
-    restoreDraftObject(JSON.parse(raw)); showToast('Locally stored draft restored.'); return true;
+    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('KMU_APPRAISAL_DRAFT_v3_3'); if (!raw) return false;
+    const older = !localStorage.getItem(STORAGE_KEY);
+    restoreDraftObject(JSON.parse(raw));
+    showToast(older ? 'Older draft restored. Re-enter course-level reviews and papers before submission.' : 'Locally stored draft restored.');
+    return true;
   } catch (error) {
     console.error(error); alert(`The locally stored draft could not be restored: ${error.message}`); return false;
   }
@@ -1446,8 +1533,13 @@ function checkExistingDraft() {
       if (resumeButton) resumeButton.style.display = '';
       if (freshButton) freshButton.textContent = legacyKeysFound.length ? 'Delete All Browser Drafts & Start Fresh' : 'Start Fresh';
       if (banner) banner.style.display = 'flex';
+    } else if (legacyKeysFound.includes('KMU_APPRAISAL_DRAFT_v3_3')) {
+      if (info) info.textContent = 'An earlier pilot draft is available. You may restore it, but course reviews and the simpler paper entries must be re-entered; older scores are not automatically converted.';
+      if (resumeButton) resumeButton.style.display = '';
+      if (freshButton) freshButton.textContent = 'Delete All Browser Drafts & Start Fresh';
+      if (banner) banner.style.display = 'flex';
     } else if (legacyKeysFound.length) {
-      if (info) info.textContent = 'An older pilot draft remains in this browser. It is not opened because its validation rules are obsolete; delete it before entering live-like test data.';
+      if (info) info.textContent = 'An older unsupported pilot draft remains in this browser. Download a backup before deleting browser data.';
       if (resumeButton) resumeButton.style.display = 'none';
       if (freshButton) freshButton.textContent = 'Delete Old Browser Data & Start Blank';
       if (banner) banner.style.display = 'flex';
@@ -1494,20 +1586,21 @@ window.exportCSV = function () {
     ['Reviewing officer', getTextValue('input_emp_reviewer')], ['Final authority', getTextValue('input_emp_final')],
     ['Pilot reviewer capacity', getTextValue('input_reviewer_role')],
     ['Pilot reviewer identifier', getTextValue('input_reviewer_name')],
-    [], ['Theory credits delivered', getTextValue('input_theory_credits')],
-    ['Practical credits delivered', getTextValue('input_practical_credits')],
+    [], ['Course', 'Code', 'Term', 'Level', 'Discipline', 'Theory credits', 'Practical credits', 'Student review'],
+    ...result.teachingLoad.entered.map(course => [course.title, course.code, course.term, course.level, course.specialty, course.theory, course.practical, course.review]),
     ['Converted contact hours', result.teachingReady ? formatTeachingNumber(result.teachingLoad.contactHours) : 'Pending'],
-    ['Converted teaching WU', result.teachingReady ? formatTeachingNumber(result.teachingLoad.teachingWU) : 'Pending'],
-    ['Draft teaching-WU threshold', formatTeachingNumber(result.teachingTargetWU)],
-    ['Teaching attainment', result.teachingReady ? `${result.attainmentA.toFixed(1)}%` : 'Pending'],
-    [], ['Research selected-output quality', result.researchRubric.outputQuality.toFixed(1)],
+    ['Course student-review mean', result.teachingReady ? `${result.attainmentA.toFixed(1)}%` : 'Pending'],
+    [], ['Paper title', 'DOI / stable ID', 'Impact factor', 'Author role', 'Indexed', 'Provisional points'],
+    ...getPaperRecords().map((paper, index) => [paper.title, paper.id, paper.impactFactor, paper.role, paper.indexed, result.researchRubric.outputScores[index]?.score || 0]),
+    ['Best three eligible papers, capped', result.researchRubric.outputQuality.toFixed(1)],
+    ['Books and chapters, capped', result.researchRubric.books.toFixed(1)],
     ['Research milestone progress', result.researchRubric.milestone.toFixed(1)],
     ['Competitive funding/proposal bonus (within execution cap)', result.researchRubric.funding.toFixed(1)],
     ['Research execution', result.researchRubric.execution.toFixed(1)],
-    ['Research mentorship or translation', result.researchRubric.translation.toFixed(1)],
-    ['Research quality-first pilot score', `${result.attainmentB.toFixed(1)} / 100`],
+    ['Supervision, capped', result.researchRubric.supervision.toFixed(1)],
+    ['Innovation, capped', result.researchRubric.innovation.toFixed(1)],
+    ['Research pilot score', `${result.attainmentB.toFixed(1)} / 100`],
     ['Research reviewer reference', getTextValue('input_research_review_ref')],
-    ['Legacy policy-draft raw points (audit only)', result.rawB.toFixed(1)],
     [], ['Domain', 'Weighted points'], ['Teaching', result.weightedA.toFixed(2)], ['Research', result.weightedB.toFixed(2)],
     ['Institutional service', result.weightedC.toFixed(2)], ['Officer assessment / CPD', result.weightedD.toFixed(2)],
     ['Clinical / patient care service', result.weightedE.toFixed(2)], ['Valid penalty', result.penalty],
@@ -1521,8 +1614,9 @@ window.exportCSV = function () {
 
 function loadBlankData() {
   Object.assign(appraisalState, createBlankState());
-  ['input_emp_name', 'input_emp_desig', 'input_emp_dept', 'input_emp_cadre', 'input_reporting_ref',
-    'input_profile_assignment_ref', 'input_teaching_target_ref', 'input_comm_member_1', 'input_comm_member_2', 'input_comm_member_3',
+  renderTeachingCourses(); renderResearchPaperCards();
+  ['input_emp_name', 'input_emp_desig', 'input_emp_dept', 'input_emp_cadre',
+    'input_profile_assignment_ref', 'input_comm_member_1', 'input_comm_member_2', 'input_comm_member_3',
     'input_red_flag_ref', 'input_red_flag_date', 'input_clin_evidence_ref'].forEach(id => setVal(id, ''));
   setVal('input_leadership_role', 'None'); setVal('input_emp_cycle', 'Calendar Year 2026 (01 January – 31 December 2026)');
   setVal('input_clin_service_mode', '');
@@ -1546,20 +1640,19 @@ window.loadSampleData = function () {
   loadBlankData();
   setVal('input_emp_name', 'Dr. Ayesha Khan (Fictional Example)');
   setVal('input_emp_desig', 'Assistant Professor'); setVal('input_emp_dept', 'KMU Institute of Basic Medical Sciences (KMU-IBMS), Peshawar');
-  setVal('input_emp_cadre', 'BPS'); setVal('input_qec_score', 86);
-  setVal('input_theory_credits', 10); setVal('input_practical_credits', 2);
-  RESEARCH_OUTPUT_CRITERIA.forEach(criterion => setVal(`input_research_output_1_${criterion.key}`, Math.max(1, criterion.max - 1)));
-  setVal('input_research_output_1_id', 'EXAMPLE/OUTPUT/001');
+  setVal('input_emp_cadre', 'BPS');
+  renderTeachingCourses([{ title: 'Fictional course', code: 'EX-301', specialty: 'Example science', theory: '1', practical: '1', review: '86', term: 'Semester 3', level: 'Undergraduate' }]);
+  renderResearchPaperCards([{ title: 'Fictional paper', id: 'EXAMPLE/OUTPUT/001', impactFactor: '3.2', role: 'first', indexed: 'Y' }]);
   setVal('input_research_execution', 20); setVal('input_research_execution_ref', 'EXAMPLE/ORIC/PLAN/001');
-  setVal('input_research_funding', 0);
-  setVal('input_research_translation', 10); setVal('input_research_translation_ref', 'EXAMPLE/ASRB/001');
+  setVal('input_books_ref', 'EXAMPLE/BOOK/001');
+  setVal('input_supervision_ref', 'EXAMPLE/ASRB/001');
+  setVal('input_innovation_ref', 'EXAMPLE/ORIC/PRODUCT/001');
   if (el('input_research_complete')) el('input_research_complete').checked = true;
   if (el('input_service_complete')) el('input_service_complete').checked = true;
   setVal('input_reviewer_role', 'Designated Appraising Officer');
   setVal('input_reviewer_name', 'Fictional reviewer');
   setVal('input_research_review_ref', 'EXAMPLE/REVIEW/001');
   if (el('input_research_review_confirm')) el('input_research_review_confirm').checked = true;
-  setVal('input_pub_high_lead', 1); setVal('input_pub_high_co', 1); setVal('input_pub_mod_lead', 2);
   setVal('input_book_nat', 1); setVal('input_sup_phd', 1); setVal('input_sup_mphil', 2);
   setVal('input_innov_project', 1); setVal('input_comm_member', 3); setVal('input_comm_chair', 1);
   setVal('input_policy_doc', 1); setVal('input_facility_charge', 1);
@@ -1622,28 +1715,14 @@ function showToast(message) {
 function initHelpTips() {
   const helpEntries = { ...FIELD_HELP };
   RESEARCH_RUBRIC_TEXT_IDS.forEach(id => {
-    helpEntries[id] = id.includes('output')
-      ? 'Enter a DOI or unique approved institutional record identifier. One study/output may be selected once; no journal metric automatically certifies its quality.'
-      : 'Cite the approved evidence or review reference and date. The faculty score remains provisional until independently checked.';
+    helpEntries[id] = 'Cite the publication, institutional evidence or reviewer record and date. Faculty-entered counts remain provisional until checked.';
   });
   RESEARCH_RUBRIC_NUMERIC_IDS.forEach(id => {
     helpEntries[id] = 'Enter a provisional whole-number self-rating within the stated rubric maximum. The Appraising Officer must verify it against the cited evidence.';
   });
-  const criterionHelp = {
-    rigor: 'Proposed anchor: 0 if evidence or ethics is not verified; 1–3 for major methodological limitations; 4–6 for a sound, reproducible design; 7–8 for especially rigorous, transparent work. Judge the work, not the journal.',
-    significance: 'Proposed anchor: 0 if the claim is unsupported; 1–2 for limited incremental value; 3–4 for a meaningful advance; 5–6 for a substantial, well-supported contribution.',
-    contribution: 'Proposed anchor: 0 if individual contribution is unverified; 1 for a minor documented role; 2–3 for a material role; 4 for a documented leading role. Author position alone is insufficient.',
-    relevance: 'Proposed anchor: 0 for no demonstrated relevance or dissemination; 1 for a clear audience and documented dissemination; 2 for verified usable adoption or substantial field relevance.'
-  };
-  for (let index = 1; index <= RESEARCH_OUTPUT_COUNT; index += 1) {
-    RESEARCH_OUTPUT_CRITERIA.forEach(({ key }) => {
-      helpEntries[`input_research_output_${index}_${key}`] = criterionHelp[key];
-    });
-  }
   helpEntries.input_research_execution = 'Proposed anchor for progress against an approved annual research plan: 0 none; 1–9 limited; 10–17 documented partial progress; 18–22 substantial progress; 23–25 completed high-quality milestones. A grant is not required.';
-  helpEntries.input_research_funding = 'Optional 0–5 points within, not above, the 25-point execution ceiling. Count a documented competitive proposal or award only once; enter 0 when none. Winning a grant is not required for full execution credit.';
-  helpEntries.input_research_translation = 'Proposed anchor: 0 none; 1–5 limited documented activity; 6–10 meaningful trainee, method, data or translation progress; 11–15 independently verified completion or uptake. Avoid double-counting teaching or clinical service.';
   helpEntries.input_research_review_ref = 'Cite the designated reviewer’s evidence-check record and date. A checked box alone does not authenticate the reviewer or establish that the research was independently verified.';
+  helpEntries.input_wu_exempted = 'Record a documented reduced teaching assignment or shortfall exemption. This does not change the course-review average in the pilot.';
   COUNT_INPUT_IDS.forEach(id => {
     helpEntries[id] = 'Enter the verified non-negative whole-number count for this activity. Fractions are not accepted.';
   });
@@ -1676,7 +1755,6 @@ function initHelpTips() {
     setCountValidity(input);
   });
   const pointPlaceholders = {
-    input_qec_score: 'e.g., 82', input_theory_credits: 'e.g., 1', input_practical_credits: 'e.g., 1',
     input_clin_admin: 'e.g., 85', input_clin_volume: 'e.g., 90',
     input_clin_oncall: 'e.g., 100', input_clin_teaching: 'e.g., 80'
   };
@@ -1719,7 +1797,7 @@ function initEventListeners() {
   ['input_leadership_role'].forEach(id => el(id)?.addEventListener('change', () => {
     updateReportingLine(); calculateAll();
   }));
-  ['input_emp_dept', 'input_work_assignment', 'input_reporting_ref'].forEach(id => el(id)?.addEventListener('change', () => {
+  ['input_emp_dept', 'input_work_assignment', 'input_profile_assignment_ref'].forEach(id => el(id)?.addEventListener('change', () => {
     appraisalState.manualProfileOverride = false; autoSelectProfileAndWeights(); calculateAll();
   }));
 }
@@ -1727,12 +1805,14 @@ function initEventListeners() {
 window.KMUCalculator = {
   CONFIG_VERSION, PROFILES, determineBaseProfile, computeGrantPoints, classifyScore,
   calculate: calculateAll, collectDraft, cycleDateRange, benchmarkState,
-  calculatePilotScenario, getTeachingLoad, getResearchRubric,
+  calculatePilotScenario, averageStudentReviews, paperPilotPoints,
+  allocateSelectedPaperPoints, scoreResearchPilot, getTeachingLoad, getResearchRubric,
   getObjectiveReadiness, getAssessmentReadiness, lastResult: null
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  initResearchOutputCards(); loadBlankData(); initHelpTips(); initEventListeners(); checkExistingDraft();
+  el('tab-service')?.before(el('tab-clinical'));
+  renderTeachingCourses(); renderResearchPaperCards(); loadBlankData(); initHelpTips(); initEventListeners(); checkExistingDraft();
 });
 
 window.addEventListener('beforeprint', () => calculateAll());

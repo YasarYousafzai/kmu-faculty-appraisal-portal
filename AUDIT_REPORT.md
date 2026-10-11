@@ -1,70 +1,44 @@
-# KMU Faculty Appraisal Portal — Calibration and Stress-Test Report
+# KMU Faculty Appraisal Portal — Pilot Audit
 
-Date: 11 October 2026
-Status: Controlled software pilot. Not a KMU-approved policy, official PER, or validated personnel-decision instrument.
+11 October 2026 · Controlled software pilot, not an approved KMU policy or official PER.
 
-## Scope and source-of-authority limits
+## Authority and validity limits
 
-This audit checks arithmetic, form completion, stage handoff, and plausible separation of **synthetic** performance patterns. It is not a psychometric validation or a measurement of actual KMU faculty. The attached downloadable policy is a draft. The portal's requested **January–December** cycle conflicts with draft Section 10's **July–June** cycle and requires formal reconciliation before approval. The teaching proration, research quality rubric, and clinical and service operational details remain proposals until KMU's competent forums approve and notify them. Current law, statutes, appointment and workload orders, and valid notifications prevail.
+The downloadable draft policy is not notified. Its July–June cycle conflicts with the January–December cycle requested for this portal. The proposed teaching average, paper impact-factor bands, category caps, reporting-line defaults, reviewer role, and section arrangement must be approved or corrected by the competent KMU authorities before personnel use. Current law, statutes, valid notifications, appointments and approved assignments prevail. This static site has no authenticated roles, secure personnel database or tamper-proof approval workflow; synthetic records only should be used here.
 
-The site is public and static: no authenticated faculty/reviewer accounts, secure record transfer, server-side audit trail, or tamper-proof approvals. The staged reviewer screen is a same-browser usability gate only. Do not enter genuine confidential personnel or patient data.
+## Calculations implemented
 
-## Teaching conversion checked
+| Domain | Pilot calculation | Evidence/control |
+| --- | --- | --- |
+| Teaching | Simple mean of the certified 0–100 student-review scores for complete courses. Credits do not multiply or prorate the mean. | Each course records title, code, term, level, discipline, theory and practical credits, and review score. Up to 10. One theory credit = 16 contact hours; one practical credit = 32. A 1+1 course = 48 contact hours. |
+| B1 papers | Best three eligible individual papers, at most 50 points. Proposed IF bands: ≥5 gives 20 lead/10 co; 1–<5 gives 15 lead/8 co; <1 gives 8 lead/4 co. First and corresponding authors use one lead rate, never both. | Title, DOI/stable ID, publication-year IF, role, and indexing/recognition declaration; duplicate IDs block completion. Reviewer must check year, integrity and evidence. Additional papers may be listed but do not increase B1. |
+| B2 books/chapters | Proposed differentiated pilot points: international book 5, national book 4, international chapter 3, national chapter 2; category cap **5**. | Positive counts require an evidence reference. Zero is permissible; annual book publication is not expected of everyone. |
+| B3 execution/grants | Research milestone self-rating 0–25. A documented award adds 5 or, if no award, a competitive application adds 2, **inside** the 25-point cap. | Milestone evidence reference for a positive rating. The grant ledger's funding-band marks are displayed as historical reference, not added to the pilot total. No grant is required for full execution credit. |
+| B4 supervision | Historical draft activity points, capped at 10. | Positive counts require an evidence reference. |
+| B5 innovation | Historical draft activity points, capped at 10. | Positive counts require an evidence reference. |
 
-The faculty enters annual delivered *theory* and *practical* credit-hour components separately. For the pilot, 1 theory credit equals 16 contact hours and 3 draft teaching workload units (WU); 1 practical credit equals 32 contact hours and 2 WU. Thus a 1+1 course gives **48 contact hours** and **5 WU**. The contact hours are not themselves WU. Both credit entries must be explicit, including zero. The effective teaching percentage updates as `QEC × min(1, delivered WU ÷ applicable draft target WU)`, except for a referenced approved shortfall exemption. A Dean/Director's alternative draft target requires an appointment/reporting reference; a different individual target requires its approved order reference. The annual thresholds and proration require policy approval and workload calibration.
+Research = B1+B2+B3+B4+B5 (maximum 100). The profile weight then determines its contribution to the final 100-point appraisal. Both objective and Appraising Officer subjective results appear on the **final dossier and its print/PDF view**, each as attainment of its own weighted ceiling on a common 0–100 scale. Green at ≥80% and red below 80% are visual references, not KMU percentiles or statutory ratings. Relative cohort labels remain deferred.
 
-## Quality-first research pilot
+The proposed IF rates are deliberately simple in response to user feedback, but impact factor and author order alone cannot establish an article's quality or research integrity. The best-three cap limits quantity inflation; it does not solve journal gaming, unequal disciplinary opportunity or rater bias. Those are approval and pilot-study issues, not validated by this software audit.
 
-The earlier portal normalized draft raw publication/book/grant/supervision/innovation points against profile-specific 15/20/30/45/60-point benchmarks. That could give excessive credit for quantity or imply several major grants in one year. These benchmarks have been **removed from the weighted calculation**. The policy-draft B1–B5 raw schedule remains in a collapsed audit trace only and cannot raise the research score.
+## Synthetic stress cases
 
-The proposed 0–100 Section B score is:
+These are arithmetic examples, not KMU employee observations or cohort norms. The browser-free test file checks the examples and boundary conditions.
 
-| Element | Ceiling | Pilot rule |
-| --- | ---: | --- |
-| Up to three distinct selected outputs | 60 | Each output is rated 0–20 for rigor/ethics (8), significance (6), documented personal contribution (4), and relevance/dissemination (2). A DOI or unique institutional record ID is required. Duplicate IDs block completion. |
-| Annual research execution | 25 | Progress against a documented plan/ethics/method/data milestone. An optional competitive proposal or award may add 0–5 **inside** the 25-point ceiling, not above it. No annual grant win is required. |
-| Mentorship or translation | 15 | Documented trainee, method/data-product, or practice/policy progress, avoiding teaching and clinical double counting. |
+| Research pattern | B1 | B2 | B3 | B4 | B5 | Research /100 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| No evidenced research | 0 | 0 | 0 | 0 | 0 | 0 |
+| Two strong papers (20+8), partial milestones | 28 | 0 | 20 | 0 | 0 | 48 |
+| Three eligible papers (20+8+20), milestones, one MPhil/MS completion | 48 | 0 | 20 | 4 | 0 | 72 |
+| Same record plus a book and grant award | 48 | 5 | 25 | 4 | 0 | 82 |
+| Three top-band lead papers, complete execution/supervision/innovation, no book/grant | 50 | 0 | 25 | 10 | 10 | 95 |
+| Ten low-band lead papers alone | 24 | 0 | 0 | 0 | 0 | 24 |
 
-A fourth or fifteenth paper adds no further weighted points. A 100-point research score is possible without a grant, book, patent or completed PhD, but requires independently judged high-quality outputs and documented execution/translation. Two excellent outputs can earn up to 40 output points and, with full execution and translation, up to **80 overall research points**; three distinct high-quality outputs can reach 100. This two-output ceiling should be tested with KMU faculty before ratification, because some disciplines may produce fewer but more substantial outputs. The faculty enters provisional quality ratings; the reviewer must examine the actual outputs and cited evidence, not merely check a box. A static web form cannot verify originality, retraction status, journal legitimacy, ethics, contribution, or reviewer identity.
+For the Balanced profile (30% research), moving research attainment from 48 to 82 changes the overall appraisal by 10.2 points with other domains held fixed. This is material but not a claim that 82 is “above average” among KMU researchers.
 
-This quality-over-quantity direction is consistent with [DORA's research-assessment declaration](https://sfdora.org/read/) and the [CoARA commitments](https://www.coara.org/agreement/the-commitments/). HEC's [journal-recognition system](https://www.hec.gov.pk/english/services/RnD/Pages/HEC-Recognized-Journals.aspx) should not be treated as a fixed impact-factor conversion; the historical draft table is labelled accordingly. These sources inform the design but do not authorize a KMU scoring rule.
+## Verification and remaining work
 
-## Synthetic discrimination checks
-
-The examples below are arithmetic stress cases, **not** observed KMU distributions, not grade norms, and not proposed percentiles. Domain inputs are hypothetical 0–100 attainments. `node tests/model-qa.js` checks ordering and the 100-point cap.
-
-| Synthetic pattern | Mix | Teaching | Research | Service | Officer | Clinical | Consolidated pilot points |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Limited performance across domains | Balanced | 45 | 10 | 20 | 40 | — | 28.5 |
-| Strong teaching, weak elsewhere | Balanced | 95 | 18 | 10 | 45 | — | 44.9 |
-| Mixed documented performance | Balanced | 70 | 45 | 50 | 65 | — | 57.5 |
-| Strong performance across domains | Balanced | 90 | 85 | 80 | 85 | — | 85.5 |
-| Strong regional teaching assignment | Teaching-focused IHS | 92 | 60 | 75 | 85 | — | 82.8 |
-| Strong verified patient-care assignment | Clinical | 80 | 60 | 70 | 85 | 90 | 80.0 |
-| Strong dedicated researcher | Research cadre | 75 | 90 | 65 | 85 | — | 85.3 |
-
-Holding the other Balanced domains at teaching 80, service 65 and officer 75, changing research from **25 to 85** changes the consolidated score from **59.5 to 77.5**—an 18-point difference. This confirms that research can materially affect the overall score without a publication-count multiplier. It does **not** prove that the pilot rubric will reliably distinguish real good from average researchers: raters could disagree about rigor or significance, output opportunity differs by discipline, and self-ratings may be inflated. A blinded multi-rater pilot is essential.
-
-## Functional and safety checks
-
-Execution on this machine: the browser-free model suite passed. The local in-app browser was used to verify a 1+1 credit conversion, a 63-point two-output/no-grant case, a 100-point three-output/no-grant case, a zero-research low-scoring case, reviewer-stage unlocking, both 0–100 comparison scales, explicit save/resume, and clearing prior reviewer scores after a faculty edit. The 390 px mobile layout was visually checked and had no document-level horizontal overflow after a tooltip fix. The full Playwright browser suite is written but could not launch here because its Chromium binary is not installed in this sandbox; it must be run in CI or an authorized environment before formal pilot release.
-
-- Designation plus KMU unit determines a default appraisal mix; BPS/TTS/Fixed Pay and the person's name do not. Special assignments need a documented reference. Ambiguous unit names are not automatically assigned to a regional IHS mix.
-- Unfinished QEC or one missing credit component leaves teaching pending. A 1+1 example displays 48 contact hours, 5 WU, and the visible QEC/proration calculation.
-- A research section needs all selected-output ratings, unique identifiers, scored-element evidence references, deliberate zero entries where applicable, and a completion declaration. Old quantity counts do not alter Section B's weighted score.
-- Reviewer tabs stay locked until complete faculty evidence is handed off. A subsequent change to faculty evidence relocks them, removes research confirmation and review reference, and clears all 13 peer and five CPD scores.
-- Objective and Appraising Officer percentages appear on stacked, equal 0–100 scales. Green is at/above 80% of that dimension's own ceiling and red is below 80%. This visual reference is **not a cohort percentile or statutory rating**.
-- Relative well-below/below/average/above/well-above-average labels are deferred until KMU defines comparable cohorts and validates distributions. Existing draft fixed absolute rating bands are explicitly labelled as such.
-- A nonzero disciplinary deduction requires the formal reference, in-period date, concluded inquiry and appeal controls. Completion and printing are blocked when required fields or scores are invalid.
-- Browser storage occurs only on explicit Save. Grant text is rendered as text to prevent HTML/script insertion. The site requests no patient identifiers.
-
-## Remaining validity and governance work
-
-1. Obtain approval of the appraisal cycle, profile weights, role-specific teaching targets/proration, research rubric, evidence standards, fixed rating bands, and implementation date. Reconcile the portal and attached policy before institution-wide use.
-2. Run anonymized/blinded, cross-disciplinary pilot dossiers scored independently by more than one reviewer. Measure inter-rater agreement, score distribution, ceiling/floor effects, and sensitivity to two versus three high-quality outputs.
-3. Calibrate discipline, rank, institute, employment basis, appointment fraction, approved leave, and clinical case-mix effects. Do not equate raw patient volume or paper counts across incomparable settings.
-4. Establish a documented process for verifying outputs, ethics/retractions, contribution, grant/proposal evidence, duplicates, and double counting. Keep research and service audit trails without sensitive data on public static hosting.
-5. Build a KMU-controlled, authenticated server-backed workflow with role-based access, immutable submission/review timestamps, privacy protections, and an appeal/correction path before handling real records.
-6. Define comparable cohorts and prospectively test percentile thresholds; do not retroactively label any individual well-above or below average from synthetic examples.
-
-Terminology note: the institute selector was checked against the [KMU constituent directory](https://kmu.edu.pk/institutes/constituent) and [KMU 2026 admissions list](https://bsadmissions.kmu.edu.pk/constituentlist.php). Their Lakki Marwat labels differ; the current posting/appointment notification must resolve that case. The [KMU affiliated-institute directory](https://kmu.edu.pk/institutes/affiliated) is kept separate from constituent units.
+- `npm run test:model` passed for profile totals, course averages, paper bands and best-three caps, book/grant ceilings and synthetic profile discrimination.
+- In the local in-app browser, professor reporting defaults displayed Head of Department/Director → Additional Director HR → Vice Chancellor; two course reviews of 80 and 90 averaged to 85, with 64 contact hours for a 1+1 plus 1+0 record. Three papers (20+8+20) plus 20 execution points yielded 68; a fourth lower-band paper did not increase it. A clinical designation advanced directly from Research to Patient Care. The final dossier showed both scales and course evidence; at a 442-pixel viewport it had no document-level horizontal overflow.
+- The full scripted Playwright suite is maintained in `tests/portal-qa.js` but could not launch the locally installed Chrome in this managed environment. It must be run in a suitable browser-test environment before a formal pilot release. This is a test limitation, not a pass.
+- Before adoption, KMU should reconcile the calendar-year policy text, ratify reporting lines and scoring, pilot anonymized cross-disciplinary dossiers with independent reviewers, measure inter-rater agreement and score distribution, audit journal eligibility/retractions and duplicate work, and deploy an authenticated server-backed workflow for real records.
