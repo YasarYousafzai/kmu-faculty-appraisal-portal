@@ -44,7 +44,7 @@ npx playwright install chromium
 npm test
 ```
 
-The check starts and stops its own loopback-only preview server. It covers the five profiles, designation/institute mapping, pilot research normalization, clinical/patient-care evidence controls, principal formulas and caps, 80% dimension benchmarks, incomplete-record safeguards, red-flag controls, explicit-only browser storage, injection handling, printable dossier values, and desktop/mobile rendering. By default it uses the Chromium installed by Playwright. Set `KMU_CHROME_PATH` only when an institutionally managed Chrome/Chromium executable is required.
+The test command first runs a browser-free model stress check, then starts a loopback-only preview server for the Playwright browser check. Together they cover all five profile totals, designation/institute mapping, theory/practical credit conversion, the proposed quality-first research rubric and legacy audit-trace separation, faculty-to-reviewer handoff and invalidation, clinical/patient-care evidence controls, 80% dimension display references, incomplete-record and due-process safeguards, explicit-only browser storage, injection handling, printable dossier values, and desktop/mobile rendering. By default Playwright uses its bundled Chromium. Set `KMU_CHROME_PATH` only when an institutionally managed Chrome/Chromium executable is required. If a local sandbox cannot launch a browser, `npm run test:model` still runs the arithmetic checks; the browser suite must then run in CI or an authorized local environment.
 
 ## Current configuration summary
 
@@ -53,9 +53,12 @@ The check starts and stops its own loopback-only preview server. It covers the f
 | Portal appraisal cycle | 1 January–31 December (calendar year); align in the final approved policy/notification |
 | Profiles | Balanced; Research-focused; Regional IHS teaching-focused; Clinical; Research cadre/postdoc |
 | Rank adjustments | None |
-| Research normalization | Draft raw points retain a theoretical 200 cap; proposed annual full-credit benchmarks are 15 Regional IHS, 20 Clinical, 30 Balanced, 45 Research-focused, and 60 Research Cadre/Postdoc. These require validation and approval. |
+| Teaching entry | Annual delivered theory and practical credit components; 1+1 = 16+32 contact hours and 5 draft teaching WU. QEC/workload proration remains proposed pending KMU approval. |
+| Research scoring | Proposed quality-first 0–100 rubric: up to three distinct selected outputs (60), documented execution (25, including optional 0–5 funding/proposal evidence within its ceiling), and mentorship/translation (15). The old B1–B5 raw/200 schedule is visible only as an audit trace and does not alter the weighted score. |
+| Submission/review sequence | Faculty completes objective evidence before the reviewer screen opens. Any later faculty evidence change closes that screen and clears prior reviewer scores. This is a same-browser demonstration gate, not authentication. |
 | Service / peer / clinical rubrics | Marked as proposed/open pending ratification; clinical entries require aggregate unit evidence and exclude patient identifiers |
-| Dimension benchmark display | Green at ≥80% of that dimension's ceiling; red below 80%; visual aid only, not a statutory rating |
+| Dimension benchmark display | Two stacked 0–100 scales, green at ≥80% of each dimension's own ceiling and red below 80%; visual aid only, not a KMU percentile or statutory rating |
+| Cohort-relative categories | Well-below/below/average/above/well-above labels deferred pending comparable KMU cohort data and approved thresholds; the draft's fixed absolute rating bands remain separate |
 | Rating bands | Outstanding ≥85; Very Good ≥75; Good ≥60; Average 50–59.9; Unsatisfactory <50 |
 | PIP | Mandatory below 50; discretionary at 50–59.9 |
 | Red-flag deduction | −25 or −50 only after all recorded due-process controls pass |

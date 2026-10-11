@@ -45,11 +45,16 @@
 
   <section class="policy-status-banner no-print" role="status" aria-label="Policy and privacy status">
     <div>
-      <strong>Controlled pilot only.</strong> This appraisal configuration is pending re-vetting, approval and notification. It has no operative statutory force yet. Proposed scoring rules are identified throughout the portal.
+      <strong>Controlled pilot only.</strong> This appraisal configuration is pending re-vetting, approval and notification. It has no operative statutory force yet. Proposed scoring rules are identified throughout the portal. The portal's January–December cycle conflicts with Section 10 of the downloadable draft policy (July–June) and requires formal reconciliation before approval.
     </div>
     <div>
       <strong>Privacy:</strong> this static site has no secure KMU login or server database. Do not enter live disciplinary or confidential personnel data. Browser storage is used only when you explicitly choose “Save & Return Later.”
     </div>
+  </section>
+
+  <section class="stage-banner no-print" aria-live="polite">
+    <strong id="stageBannerTitle">Stage 1 — Faculty evidence</strong>
+    <span id="stageBannerText">Complete the profile, teaching, research, institutional service and, if applicable, clinical sections. Then hand this same-browser pilot draft to the designated reviewer.</span>
   </section>
 
   <!-- In-Progress Draft Recovery Banner -->
@@ -84,8 +89,12 @@
         <span class="wizard-step-num">4</span> <span>Service</span>
       </div>
       <span class="wizard-arrow">➔</span>
+      <div class="wizard-step" data-wizard="tab-clinical" id="wizardStepClinical" style="display:none;" onclick="switchTab('tab-clinical')">
+        <span class="wizard-step-num">5</span> <span>Patient Care</span>
+      </div>
+      <span class="wizard-arrow" id="wizardArrowAfterClinical" style="display:none;">➔</span>
       <div class="wizard-step" data-wizard="tab-peer" onclick="switchTab('tab-peer')">
-        <span class="wizard-step-num">5</span> <span>Officer Assessment</span>
+        <span class="wizard-step-num">5</span> <span>Officer Review</span>
       </div>
       <span class="wizard-arrow">➔</span>
       <div class="wizard-step" data-wizard="tab-targets" onclick="switchTab('tab-targets')">
@@ -124,7 +133,7 @@
         </span>
       </div>
       <div class="status-item">
-        <span class="status-label" id="statusRatingTitle">Rating Classification</span>
+        <span class="status-label" id="statusRatingTitle">Draft Absolute Rating Band</span>
         <span class="status-val">
           <span id="liveRatingBadge" class="rating-badge rating-incomplete">Incomplete draft</span>
         </span>
@@ -136,6 +145,23 @@
         </span>
       </div>
     </div>
+  </section>
+
+  <section class="comparison-panel no-print" aria-label="Objective and reviewer score comparison">
+    <div class="comparison-intro">
+      <strong>Compare the two dimensions on the same 0–100% scale</strong>
+      <span>Each percentage is the earned share of that dimension’s own ceiling. These are not KMU percentiles.</span>
+    </div>
+    <div class="comparison-row">
+      <div class="comparison-label"><strong>Faculty evidence / objective</strong><span id="objectiveScaleValue">Awaiting faculty completion</span></div>
+      <div class="comparison-track"><div class="comparison-fill comparison-objective" id="objectiveScaleFill"></div></div>
+    </div>
+    <div class="comparison-row">
+      <div class="comparison-label"><strong>Appraising Officer / subjective</strong><span id="subjectiveScaleValue">Awaiting reviewer assessment</span></div>
+      <div class="comparison-track"><div class="comparison-fill comparison-subjective" id="subjectiveScaleFill"></div></div>
+    </div>
+    <div class="comparison-ticks"><span>0</span><span>25</span><span>50</span><span>75</span><span>100%</span></div>
+    <p class="comparison-note" id="comparisonNote">Well-below, below, average, above and well-above-average labels will be added only after KMU validates percentiles for comparable faculty groups. No relative category is assigned in this pilot.</p>
   </section>
 
   <!-- Main App Body -->
@@ -164,13 +190,13 @@
             <span>Section C: Service</span>
             <span class="nav-pill" id="navPillService">20%</span>
           </li>
-          <li class="nav-item" data-tab="tab-peer">
-            <span>Section D: Officer Assessment</span>
-            <span class="nav-pill" id="navPillPeer">20%</span>
-          </li>
           <li class="nav-item" data-tab="tab-clinical" id="navItemClinical" style="display:none;">
             <span>Section E: Patient Care</span>
             <span class="nav-pill" id="navPillClinical">45%</span>
+          </li>
+          <li class="nav-item reviewer-nav" data-tab="tab-peer">
+            <span>Section D: Officer Assessment</span>
+            <span class="nav-pill" id="navPillPeer">Locked</span>
           </li>
           <li class="nav-item" data-tab="tab-targets">
             <span>Perf & Personal Dev Targets</span>
@@ -187,7 +213,7 @@
         </ul>
         <div style="padding:1rem; border-top:1px solid var(--slate-200); background:var(--slate-50);">
           <div style="font-size:0.75rem; color:#64748b; line-height:1.4;">
-            <strong>Portal cycle configuration:</strong> 01 January to 31 December; this correction must be carried into the final approved policy/notification. Section D is completed by the designated Appraising Officer.
+            <strong>Portal cycle configuration:</strong> 01 January to 31 December at the user's request. Downloadable draft Section 10 still says July–June; the competent forum must reconcile this before approval. Section D is entered only after the faculty evidence handoff.
           </div>
         </div>
       </aside>
@@ -574,7 +600,7 @@
           <div class="section-title-wrap">
             <div>
               <h2 class="section-title" id="teachingSectionTitle">Step 2: Section A — Teaching & Curriculum Delivery (Objective)</h2>
-              <p class="section-desc">Evaluates pedagogical delivery, student feedback, and workload unit fulfillment.</p>
+              <p class="section-desc">Enter your delivered course credit hours; the portal converts them to contact hours and the draft-policy teaching WU automatically.</p>
             </div>
             <div style="text-align:right;">
               <span class="section-badge">Weight: <strong id="disp_weight_a">30%</strong></span>
@@ -583,7 +609,7 @@
           </div>
 
           <div class="warning-callout">
-            <strong>Workload Delivery Proration Safeguard (Section 9.2 Formula 1):</strong> High student feedback cannot substitute for an undelivered teaching schedule. If actual teaching workload falls below the profile minimum without Competent Authority approval, the score is proportionally prorated: <code>Effective Score = QEC × (Actual WU / Required WU)</code>.
+            <strong>How the draft teaching score works (Sections 6 and 9.2):</strong> A certified QEC score is adjusted only if the verified teaching load is below the profile's minimum WU and there is no documented exemption. The portal converts entered credit hours to WU first: <code>Teaching WU = (theory credits × 3) + (practical credits × 2)</code>; then <code>Effective score = QEC × min(1, actual WU / required WU)</code>. These are proposed policy rules pending approval.
           </div>
 
           <div class="form-grid">
@@ -593,15 +619,43 @@
               <span class="field-hint">Certified annual Quality Enhancement Cell evaluation score.</span>
             </div>
             <div class="form-group">
-              <label>Minimum Teaching Workload Required (Section 6)</label>
-              <div class="form-control" style="background:#f8fafc; font-weight:700;" id="disp_min_wu">30</div>
-              <span class="field-hint">Derived automatically from your selected profile.</span>
+              <label>Draft teaching WU threshold for this profile</label>
+              <div class="form-control" style="background:#f8fafc; font-weight:700;" id="disp_min_wu">—</div>
+              <span class="field-hint" id="disp_teaching_target_basis">Assigned automatically from the draft profile. WU is an appraisal workload measure, not a contact hour or a course credit hour.</span>
             </div>
-            <div class="form-group" style="grid-column: span 2;">
-              <label for="input_actual_wu">Actual Teaching WU Delivered This Year *</label>
-              <input type="number" id="input_actual_wu" class="form-control" min="0" max="150" step="0.1" placeholder="Example: 34">
+            <div class="form-group">
+              <label for="input_approved_teaching_wu">Different approved annual teaching-WU target (optional)</label>
+              <input type="number" id="input_approved_teaching_wu" class="form-control" min="0.1" max="150" step="any" inputmode="decimal" placeholder="Example: 15">
+              <span class="field-hint">Use only if a current approved workload or appointment order states a different teaching target. This changes the proration threshold, not the appraisal mix.</span>
+            </div>
+            <div class="form-group">
+              <label for="input_teaching_target_ref">Approval reference for different target</label>
+              <input type="text" id="input_teaching_target_ref" class="form-control" placeholder="Example: annual workload order no. and date">
+              <span class="field-hint">Required if you enter a different target above. Dean/Director appointments need their notified appointment/reporting reference on Step 1.</span>
+            </div>
+            <div class="form-group teaching-entry-group" style="grid-column: span 2;">
+              <div class="teaching-entry-heading">Actual KMU teaching credit hours delivered in this calendar year *</div>
+              <p class="field-hint">Add the credit-hour components of each verified course or section you personally delivered across the year. Enter 0 for a component you did not teach. Count a repeated section only when it was separately delivered and recorded.</p>
+              <div class="teaching-credit-fields">
+                <div>
+                  <label for="input_theory_credits">Theory credit hours</label>
+                  <input type="number" id="input_theory_credits" class="form-control" min="0" step="any" inputmode="decimal" placeholder="Example: 1">
+                  <span class="field-hint">1 theory credit = 16 annual contact hours = 3 teaching WU.</span>
+                </div>
+                <div>
+                  <label for="input_practical_credits">Practical / lab credit hours</label>
+                  <input type="number" id="input_practical_credits" class="form-control" min="0" step="any" inputmode="decimal" placeholder="Example: 1">
+                  <span class="field-hint">1 practical credit = 32 annual contact hours = 2 teaching WU.</span>
+                </div>
+              </div>
+              <div class="teaching-example">Example: a <strong>1+1 course</strong> means enter 1 theory and 1 practical credit. That is <strong>16 + 32 = 48 contact hours</strong> and <strong>3 + 2 = 5 teaching WU</strong>.</div>
+              <div class="teaching-load-result" aria-live="polite">
+                <div><span>Verified contact time</span><strong id="disp_teaching_hours">—</strong><small id="disp_teaching_hours_detail">Theory + practical hours</small></div>
+                <div><span>Converted teaching workload</span><strong id="disp_actual_wu">—</strong><small id="disp_actual_wu_detail">Compared with the profile threshold</small></div>
+              </div>
+              <p id="legacyTeachingNote" class="teaching-legacy-note" hidden></p>
               <span class="field-hint" style="color:#b91c1c; font-weight:600; margin-top:4px;">
-                ⚠️ Clarification: These teaching hours strictly exclude teaching conducted as visiting faculty, outside the constituent institute, or for which separate remuneration/honorarium has been received.
+                Exclude visiting or outside-institute teaching and any teaching separately paid by honorarium. Credit hours and evidence must be checked against the approved timetable or course record.
               </span>
             </div>
             <div class="form-group">
@@ -618,15 +672,16 @@
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
                 <span class="kpi-title" id="teachingScoreTitle">Effective Teaching Score (Objective)</span>
-                <div class="kpi-value" style="color:var(--kmu-maroon);" id="disp_effective_teaching">0.0%</div>
-                <span class="kpi-desc">Teaching Attainment Percentage (based on QEC evaluation & workload delivery)</span>
+                <div class="kpi-value" style="color:var(--kmu-maroon);" id="disp_effective_teaching">—</div>
+                <span class="kpi-desc">Teaching attainment based on the certified QEC score and converted workload.</span>
               </div>
               <div style="text-align:right;">
                 <span class="kpi-title" id="teachingContributionTitle">Weighted Contribution</span>
-                <div class="kpi-value" style="color:var(--slate-800);" id="disp_weighted_a">0.00 pts</div>
+                <div class="kpi-value" style="color:var(--slate-800);" id="disp_weighted_a">—</div>
                 <span class="kpi-desc">Points added to Objective Score</span>
               </div>
             </div>
+            <p class="teaching-score-explanation" id="disp_teaching_formula" role="status">Choose a designation and institute, then enter QEC and teaching credit hours to see the effective score.</p>
           </div>
 
           <div class="step-footer-actions">
@@ -647,7 +702,7 @@
           <div class="section-title-wrap">
             <div>
               <h2 class="section-title" id="researchSectionTitle">Step 3: Section B — Research, Grants, Supervision & Commercialization</h2>
-              <p class="section-desc">Measures indexed research papers, competitive grants, postgraduate completions, and patents.</p>
+              <p class="section-desc">Score selected, independently reviewed research outputs and verified annual research work. The old draft point schedule remains below for audit trace only.</p>
             </div>
             <div style="text-align:right;">
               <span class="section-badge">Weight: <strong id="disp_weight_b">30%</strong></span>
@@ -656,8 +711,61 @@
           </div>
 
           <div class="info-callout">
-            <strong>Pilot research calibration:</strong> the draft point values and category caps below are retained, but annual attainment is compared with a profile-specific full-credit benchmark instead of requiring all five categories to approach their theoretical maxima. Current pilot benchmarks are 15 raw points (Regional IHS), 20 (Clinical), 30 (Balanced), 45 (Research-focused) and 60 (Research Cadre). These values require ORIC/ASRB validation before policy approval and cannot support a personnel decision in their present form.
+            <strong>Proposed quality-first pilot, not KMU-approved:</strong> Section B provisionally scores up to three distinct research outputs (60 points), annual research execution (25 points), and research mentorship or translation (15 points). A grant is optional evidence, never a required annual win. A fourth paper or further quantity does not increase this score. The faculty member enters a self-assessment first; the Appraising Officer must review the evidence and quality ratings before a final draft dossier is complete. The old policy draft instead divides capped raw points by 200; its historical schedule below is retained for comparison, not for the weighted score. ORIC, ASRB and the competent approval forum must review this departure before personnel use.
           </div>
+          <details class="research-rubric-guide">
+            <summary>How to choose provisional research ratings</summary>
+            <p>Use these proposed anchors consistently across comparable faculty. They are guidance for the pilot, not approved KMU standards; the reviewer must inspect the work and record any correction.</p>
+            <ul>
+              <li><strong>Each selected output (20):</strong> rigor and ethics 0–8; significance 0–6; documented personal contribution 0–4; relevance or usable dissemination 0–2. A journal metric or author position alone never proves quality. Retracted, unverifiable or duplicate work should not receive credit.</li>
+              <li><strong>Research execution (25):</strong> 0 for no evidenced progress; 1–9 limited; 10–17 documented partial progress; 18–22 substantial progress; 23–25 completed high-quality milestones against an approved plan. A documented competitive proposal or award can add up to 5 within this same 25-point ceiling, not above it.</li>
+              <li><strong>Mentorship or translation (15):</strong> 0 for none; 1–5 limited documented work; 6–10 meaningful trainee, method, data or translation progress; 11–15 independently verified completion or uptake. Do not count teaching or patient care again.</li>
+            </ul>
+          </details>
+
+          <h3 class="research-rubric-heading">B1 Pilot: Up to Three Selected Research Outputs <span class="cap-badge">Maximum 60 pts</span></h3>
+          <p class="section-desc">Choose at most three of your strongest distinct outputs for this calendar year. A DOI or stable institutional record ID is required for each scored item. Enter a provisional self-rating for scientific rigor and ethics (0–8), significance (0–6), your documented contribution (0–4), and relevance or usable dissemination (0–2). The Appraising Officer must check these ratings against the work itself. Journal impact factor is not a substitute for judging the work.</p>
+          <div id="researchOutputCards"></div>
+
+          <h3 class="research-rubric-heading">B2 Pilot: Annual Research Execution and Contribution <span class="cap-badge">Maximum 40 pts</span></h3>
+          <div class="research-rubric-grid">
+            <div class="form-group">
+              <label for="input_research_execution">Research milestone progress (0–25)</label>
+              <input type="number" id="input_research_execution" class="form-control" min="0" max="25" step="1" placeholder="Example: 18">
+              <span class="field-hint">Provisional self-rating of progress against an approved study plan, ethics, methods and data stewardship. A grant award is not required for full credit.</span>
+            </div>
+            <div class="form-group">
+              <label for="input_research_execution_ref">Research execution evidence reference</label>
+              <input type="text" id="input_research_execution_ref" class="form-control" maxlength="240" placeholder="Example: approved annual plan and ORIC progress record">
+            </div>
+            <div class="form-group">
+              <label for="input_research_funding">Optional competitive funding/proposal bonus (0–5)</label>
+              <input type="number" id="input_research_funding" class="form-control" min="0" max="5" step="1" placeholder="Example: 0">
+              <span class="field-hint">Enter 0 if none. This can contribute at most five of the 25 execution points; a win is never required.</span>
+            </div>
+            <div class="form-group">
+              <label for="input_research_funding_ref">Funding or proposal evidence reference</label>
+              <input type="text" id="input_research_funding_ref" class="form-control" maxlength="240" placeholder="Example: ORIC proposal receipt or award reference">
+            </div>
+            <div class="form-group">
+              <label for="input_research_translation">Research mentorship or translation (0–15)</label>
+              <input type="number" id="input_research_translation" class="form-control" min="0" max="15" step="1" placeholder="Example: 10">
+              <span class="field-hint">Provisional self-rating of research-trainee progress, method or data product, or use in practice or policy. Do not count teaching or clinical service again here.</span>
+            </div>
+            <div class="form-group">
+              <label for="input_research_translation_ref">Mentorship or translation evidence reference</label>
+              <input type="text" id="input_research_translation_ref" class="form-control" maxlength="240" placeholder="Example: ASRB milestone or documented adoption record">
+            </div>
+            <div class="form-group research-rubric-wide">
+              <label class="research-complete-label" for="input_research_complete"><input type="checkbox" id="input_research_complete"> I have completed Section B; any research activity not entered here is zero for this appraisal year.</label>
+              <span class="field-hint">Select this even if your research score is zero. It distinguishes a completed no-activity declaration from an unfinished page.</span>
+            </div>
+          </div>
+          <p id="researchQualityWarning" class="provisional-note" role="status">Section B is a provisional self-assessment until the Appraising Officer reviews the evidence and ratings.</p>
+
+          <details class="research-audit-trace">
+            <summary>Show draft-policy raw-point schedule — audit trace only, not used in the pilot Section B score</summary>
+            <p class="provisional-note">The B1–B5 counts and grant ledger below reproduce the unapproved draft's category caps (50/20/50/40/40; theoretical total 200). They do not change the quality-first score or weighted research contribution above. HEC W/X/Y journal recognition is not equivalent to a fixed journal impact-factor threshold; any journal eligibility must be checked for the publication year.</p>
 
           <!-- B1: Publications -->
           <h3 style="font-size:0.95rem; font-weight:700; color:var(--kmu-maroon); margin-bottom:0.75rem;">
@@ -677,7 +785,7 @@
               <tbody>
                 <tr>
                   <td>High Impact Factor</td>
-                  <td>IF ≥ 5.0 (W-Category / Top Tier)</td>
+                  <td>Historic draft band: IF ≥ 5.0; verify journal separately</td>
                   <td>Lead / Principal Author</td>
                   <td>10</td>
                   <td><input type="number" id="input_pub_high_lead" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
@@ -691,7 +799,7 @@
                 </tr>
                 <tr>
                   <td>Moderate Impact Factor</td>
-                  <td>IF 1.0 – 4.99 (X-Category)</td>
+                  <td>Historic draft band: IF 1.0–4.99; verify journal separately</td>
                   <td>Lead / Principal Author</td>
                   <td>6</td>
                   <td><input type="number" id="input_pub_mod_lead" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
@@ -705,7 +813,7 @@
                 </tr>
                 <tr>
                   <td>Indexed Low Impact Factor</td>
-                  <td>HEC Recognized / Y-Category</td>
+                  <td>Historic draft low-IF band; verify HJRS status separately</td>
                   <td>Lead / Principal Author</td>
                   <td>4</td>
                   <td><input type="number" id="input_pub_low_lead" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
@@ -946,13 +1054,15 @@
             </table>
           </div>
 
+          </details>
+
           <!-- Section B Aggregate Box -->
           <div class="kpi-card" style="margin-top:1.25rem; background:#fffdf5; border-color:#fde68a;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
-                <span class="kpi-title" id="researchScoreTitle">Research Attainment Score (%)</span>
+                <span class="kpi-title" id="researchScoreTitle">Pilot Research Score (0–100)</span>
                 <div class="kpi-value" style="color:var(--kmu-gold);" id="disp_raw_b">0.0</div>
-                <span class="kpi-desc"><strong id="disp_research_raw_summary">0.0 raw points</strong> compared with the <strong id="disp_research_benchmark">profile full-credit benchmark</strong>. The underlying draft raw total remains capped at 200 for audit traceability.</span>
+                <span class="kpi-desc"><strong id="disp_research_quality_summary">0.0 / 60 selected-output points</strong> + <strong id="disp_research_execution_summary">0.0 / 25 execution points</strong> (<span id="disp_research_execution_detail">milestones 0 + optional funding 0, capped at 25</span>) + <strong id="disp_research_translation_summary">0.0 / 15 mentorship/translation points</strong>. <span id="disp_research_verification_state">Provisional; complete evidence and independent review.</span> Draft-policy raw total: <span id="disp_research_raw_summary">0.0 raw points</span> / 200 (audit trace only).</span>
               </div>
               <div style="text-align:right;">
                 <span class="kpi-title" id="researchContributionTitle">Weighted Contribution</span>
@@ -1069,14 +1179,16 @@
             </div>
           </div>
 
+          <label class="research-complete-label objective-declaration" for="input_service_complete"><input type="checkbox" id="input_service_complete"> I have completed the institutional-service entries; blank activity counts mean zero for this year.</label>
+
           <div class="step-footer-actions">
             <button type="button" class="btn btn-secondary" onclick="switchTab('tab-research')">← Back to Step 3</button>
             <div class="step-footer-actions-right">
               <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()">
                 <span>💾</span> Save & Return Later
               </button>
-              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-peer', 'Step 5: Officer Assessment')">
-                Continue ➔
+              <button type="button" class="btn btn-primary btn-lg" onclick="continueFromService()">
+                Continue to patient care or submit faculty evidence ➔
               </button>
             </div>
           </div>
@@ -1100,6 +1212,28 @@
           <div class="info-callout" style="background:#fff8f8; border-left-color:var(--kmu-maroon); color:#781212;">
             <strong>Subjective evaluation:</strong> Section D records professional conduct, collegiality and development. It is assessed by the designated Appraising Officer and remains subject to review and moderation.
           </div>
+
+          <div class="review-handoff-card" id="reviewHandoffStatus" role="status">This section opens after the faculty member submits a complete objective evidence draft.</div>
+          <div class="form-grid reviewer-identity-grid">
+            <div class="form-group">
+              <label for="input_reviewer_role">Notified reviewer capacity *</label>
+              <select id="input_reviewer_role" class="form-control">
+                <option value="" selected>Select the capacity in the current notification</option>
+                <option value="Designated Appraising Officer">Designated Appraising Officer</option>
+                <option value="Notified Appraisal Committee">Notified Appraisal Committee</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="input_reviewer_name">Reviewer or committee identifier *</label>
+              <input type="text" id="input_reviewer_name" class="form-control" maxlength="160" placeholder="Example: notified officer name or committee reference">
+            </div>
+            <div class="form-group research-rubric-wide">
+              <label for="input_research_review_ref">Research evidence-review reference *</label>
+              <input type="text" id="input_research_review_ref" class="form-control" maxlength="240" placeholder="Example: output review record and date">
+              <label class="research-complete-label" for="input_research_review_confirm"><input type="checkbox" id="input_research_review_confirm"> I checked the selected outputs, individual contributions and evidence against the faculty self-ratings. Any disputed item was returned for correction before this confirmation.</label>
+            </div>
+          </div>
+          <p class="provisional-note">Same-browser handoff only: this public static pilot cannot authenticate a Dean, supervisor or committee, transfer a confidential record securely, or provide a tamper-proof audit trail. Do not use it for real personnel decisions.</p>
 
           <h3 style="font-size:0.95rem; font-weight:700; color:var(--kmu-maroon); margin-bottom:0.75rem;">
             Part I: 13 Core Behavioral & Professional Parameters (Scored 1 = Unsatisfactory to 6 = Outstanding | Max 78)
@@ -1133,12 +1267,12 @@
           </div>
 
           <div class="step-footer-actions">
-            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-service')">← Back to Step 4</button>
+            <button type="button" class="btn btn-secondary" onclick="switchTab(appraisalState.activeWeights?.clinical > 0 ? 'tab-clinical' : 'tab-service')">← Review faculty evidence</button>
             <div class="step-footer-actions-right">
               <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()">
                 <span>💾</span> Save & Return Later
               </button>
-              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue(appraisalState.selectedProfile === 'Clinical-Focused Profile (Hospital Faculty)' ? 'tab-clinical' : 'tab-targets', 'Step 6: Next Reporting Period Targets')">
+              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-targets', 'Next Reporting Period Targets')">
                 Continue ➔
               </button>
             </div>
@@ -1239,13 +1373,13 @@
           </div>
 
           <div class="step-footer-actions">
-            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-peer')">← Back to Step 5</button>
+            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-service')">← Back to Section C</button>
             <div class="step-footer-actions-right">
               <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()">
                 <span>💾</span> Save & Return Later
               </button>
-              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-targets', 'Step 6: Performance & Personal Development Targets')">
-                Continue ➔
+              <button type="button" class="btn btn-primary btn-lg" onclick="submitObjectiveForReview()">
+                Submit faculty evidence for reviewer stage ➔
               </button>
             </div>
           </div>
@@ -1439,7 +1573,7 @@
               <div class="kpi-value" id="disp_objective_score">Not assessed</div>
               <div class="dimension-attainment" id="disp_objective_pct">Complete all required fields</div>
               <div class="benchmark-state" id="objectiveBenchmarkState">Awaiting complete appraisal</div>
-              <span class="kpi-desc">Verified contact hours, published papers, competitive grants won, supervision and service.</span>
+              <span class="kpi-desc">Faculty-entered teaching, selected research outputs, institutional service and applicable patient-care evidence. Provisional until the designated reviewer checks source records.</span>
             </div>
 
             <div class="score-split-card benchmark-pending" id="subjectiveSplitCard">
@@ -1459,7 +1593,7 @@
               <span class="kpi-desc">Objective + Subjective - Disciplinary Penalty</span>
             </div>
             <div class="kpi-card">
-              <span class="kpi-title" id="ratingScoreTitle">Rating Classification</span>
+              <span class="kpi-title" id="ratingScoreTitle">Draft Absolute Rating Band</span>
               <div class="kpi-value" style="font-size:1.4rem;" id="kpi_rating_band">Incomplete draft</div>
               <span class="kpi-desc">Draft Section 9.2 rating band</span>
             </div>
@@ -1522,6 +1656,12 @@
                 <td id="dossier_emp_reviewer">—</td>
               </tr>
               <tr>
+                <th>Pilot reviewer capacity / identifier</th>
+                <td id="dossier_reviewer_identity">—</td>
+                <th>Research evidence-review reference</th>
+                <td id="dossier_research_review_ref">—</td>
+              </tr>
+              <tr>
                 <th>Final Authority</th>
                 <td id="dossier_emp_final">—</td>
                 <th>Reporting Order Reference</th>
@@ -1560,10 +1700,13 @@
                   <td id="dossier_weighted_a">0.00</td>
                 </tr>
                 <tr>
-                  <td>Section B: Research, Grants &amp; Innovation (Draft points; proposed annual benchmark)</td>
+                  <td colspan="5" class="dossier-teaching-detail" id="dossier_teaching_detail">Teaching credit-hour conversion and WU threshold pending.</td>
+                </tr>
+                <tr>
+                  <td>Section B: Research, Grants &amp; Innovation (proposed quality-first pilot; independently reviewed)</td>
                   <td id="dossier_weight_b">30%</td>
-                  <td id="dossier_raw_b">0.0 raw / benchmark 30 (0.0%)</td>
-                  <td>200 theoretical raw cap</td>
+                  <td id="dossier_raw_b">Pilot quality-first research score pending</td>
+                  <td>100 pilot points</td>
                   <td id="dossier_weighted_b">0.00</td>
                 </tr>
                 <tr>
@@ -1771,11 +1914,11 @@
         
         <h4 style="color:var(--kmu-maroon); font-weight:700; margin-bottom:0.5rem;">Objective vs Subjective Structure</h4>
         <ul style="margin:0.5rem 0 1rem 1.25rem;">
-          <li><strong>Objective Domains (A, B, C, E):</strong> Quantifiable, verified teaching load (excluding outside/visiting teaching), research grants ledger (funding agency & volume in PKR), publications, supervision, and institutional charges.</li>
+          <li><strong>Faculty evidence domains (A, B, C, E):</strong> Teaching credits and QEC, selected research outputs with provisional quality self-ratings, documented research progress, institutional service, and clinical service where applicable. Section B needs independent reviewer verification; the draft-policy publication/grant count schedule remains visible only as an audit trace.</li>
           <li><strong>Appraising Officer Domain (Section D):</strong> Proposed qualitative evaluation by the designated Appraising Officer across 13 professional criteria and 5 CPD goals.</li>
-          <li><strong>Research pilot calibration:</strong> Draft output points/caps are retained, but the portal uses proposed profile-specific annual full-credit benchmarks of 15/20/30/45/60 raw points. The original theoretical cap is 200. The benchmarks require KMU data validation and ORIC/ASRB/statutory approval.</li>
+          <li><strong>Research pilot calibration:</strong> The weighted Section B score uses up to three independently reviewed outputs (60 points), annual execution (25 points), and research mentorship or translation (15 points). Legacy B1–B5 raw points/caps remain visible only for audit comparison with the unapproved policy draft, whose 200-point denominator differs from this proposed pilot rubric. ORIC/ASRB and the competent forum must approve any operational use.</li>
           <li><strong>80% display benchmark:</strong> Green means a dimension reached at least 80% of its available weighted-point ceiling; red means it is below 80%. This visual aid does not replace the overall rating bands.</li>
-          <li><strong>Open items:</strong> Research normalization, grant sub-rules, service rubric, peer/CPD rubric and clinical/patient-care rubric remain proposed/configurable pending ratification.</li>
+          <li><strong>Open items:</strong> The quality-first research rubric, grant sub-rules, service rubric, peer/CPD rubric and clinical/patient-care rubric remain proposed/configurable pending ratification. Comparable-faculty percentile categories are deferred until KMU has suitable cohort data.</li>
           <li><strong>Precedence:</strong> Current law, statutes, appointment orders and valid notifications prevail over this calculator and over any unnotified future-state organogram.</li>
         </ul>
 

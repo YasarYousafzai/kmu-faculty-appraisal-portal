@@ -4,7 +4,8 @@
   "private": true,
   "description": "Controlled draft pilot of the KMU faculty appraisal calculator.",
   "scripts": {
-    "test": "node tests/portal-qa.js"
+    "test": "node tests/model-qa.js && node tests/portal-qa.js",
+    "test:model": "node tests/model-qa.js"
   },
   "devDependencies": {
     "playwright": "^1.62.1"
