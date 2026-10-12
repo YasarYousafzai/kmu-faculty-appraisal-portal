@@ -103,6 +103,25 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   assert((await result(page)).researchRubric.issues.some(issue => issue.includes('duplicate')), 'Duplicate papers must be flagged.');
   await fillCard(page, 'paper', 4, { id: '10.1000/d' });
 
+  // The printable work-done report must carry the evidence behind its totals,
+  // not just the Section B/D aggregate scores.
+  await set(page, '#input_book_nat', 1);
+  await set(page, '#input_chapter_nat', 1);
+  await set(page, '#input_books_ref', 'SYNTHETIC/ISBN');
+  await set(page, '#input_innov_patent_nat', 1);
+  await set(page, '#input_innovation_ref', 'SYNTHETIC/PATENT');
+  await set(page, '#input_comm_member', 2);
+  await set(page, '#input_facility_charge', 1);
+  await set(page, '#input_new_grant_title', 'Synthetic Research Grant Alpha');
+  await set(page, '#input_new_grant_agency', 'Synthetic Funding Agency');
+  await set(page, '#input_new_grant_amount', 5000000);
+  await set(page, '#input_new_grant_band', 'National 1–10M');
+  await set(page, '#input_new_grant_role', 'PI');
+  await set(page, '#input_new_grant_status', 'Won');
+  await page.evaluate(() => window.addGrantRecord());
+  assert(await page.locator('#grantsTableBody').innerText().then(text => text.includes('Synthetic Research Grant Alpha')),
+    'Valid pilot grant was not recorded.');
+
   await check(page, '#input_service_complete', true);
   assert(await page.evaluate(() => window.KMUCalculator.getObjectiveReadiness().ready), 'Faculty evidence should be ready.');
   await page.evaluate(() => window.continueFromResearch());
@@ -124,8 +143,34 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
     scaleText.includes('Appraising Officer / subjective') &&
     scaleText.includes('No relative category is assigned in this pilot.'), 'Final dossier scale is missing the requested presentation.');
   assert((await page.locator('#dossierCourseRows').innerText()).includes('ANAT-301'), 'Course evidence missing from dossier.');
+  assert((await page.locator('#dossierResearchPaperRows').innerText()).includes('Paper A') &&
+    (await page.locator('#dossierResearchPaperRows').innerText()).includes('10.1000/a'),
+    'Paper-level research evidence missing from dossier.');
+  assert((await page.locator('#dossierGrantRows').innerText()).includes('Synthetic Research Grant Alpha') &&
+    (await page.locator('#dossierGrantRows').innerText()).includes('Synthetic Funding Agency') &&
+    (await page.locator('#dossierGrantRows').innerText()).includes('PKR 5,000,000'),
+    'Grant-level research evidence missing from dossier.');
+  const researchSummary = await page.locator('#dossierResearchSummaryRows').innerText();
+  assert(researchSummary.includes('SYNTHETIC/ISBN') && researchSummary.includes('SYNTHETIC/ASRB') &&
+    researchSummary.includes('SYNTHETIC/PATENT') &&
+    researchSummary.includes('optional grant bonus 5.0 included within the 25-point cap'),
+    'Book, supervision or innovation evidence missing from dossier.');
+  assert(await page.locator('#dossierServiceRows tr:nth-child(1) td:nth-child(2)').innerText() === '2' &&
+    await page.locator('#dossierServiceRows tr:nth-child(4) td:nth-child(2)').innerText() === '1',
+    'Institutional-service activity counts missing from dossier.');
+  const objectiveText = await page.locator('#dossier_objective_total').innerText();
+  const subjectiveText = await page.locator('#dossier_subjective_total').innerText();
+  assert(objectiveText.includes('% attainment') && subjectiveText.includes('% attainment'),
+    'Both objective and appraising-officer scores must appear in the final dossier.');
+  assert(await page.locator('#dossierClinicalEvidence').evaluate(node => getComputedStyle(node).display) === 'none',
+    'Clinical evidence should not appear for a nonclinical profile.');
   await page.emulateMedia({ media: 'print' });
   assert(await page.locator('.comparison-panel').isVisible(), 'Scales must appear in PDF print view.');
+  assert(await page.locator('#dossierResearchPaperRows').isVisible() &&
+    await page.locator('#dossierGrantRows').isVisible() &&
+    await page.locator('#dossierResearchSummaryRows').isVisible() &&
+    await page.locator('#dossierServiceRows').isVisible(),
+    'Work-done evidence must be visible in PDF print view.');
   assert(await page.locator('.dossier-final-assessment').evaluate(node => getComputedStyle(node).breakBefore) === 'page',
     'Final scoring and sign-off must start on the last PDF page.');
   await page.emulateMedia({ media: 'screen' });
@@ -138,6 +183,18 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   assert((await result(page)).missing.includes('all four clinical service scores'), 'Clinical evidence must be required.');
   await page.evaluate(() => window.continueFromResearch());
   assert(await page.locator('#tab-clinical').evaluate(node => node.classList.contains('active')), 'Clinical research should lead directly to patient care.');
+  await set(page, '#input_clin_service_mode', 'Patient care');
+  await set(page, '#input_clin_evidence_ref', 'SYNTHETIC/UNIT-ROSTER');
+  await set(page, '#input_clin_admin', 84);
+  await set(page, '#input_clin_volume', 91);
+  await set(page, '#input_clin_oncall', 96);
+  await set(page, '#input_clin_teaching', 86);
+  assert(await page.locator('#dossierClinicalEvidence').evaluate(node => getComputedStyle(node).display) !== 'none',
+    'Clinical evidence must appear for a clinical profile.');
+  const clinicalSummary = await page.locator('#dossierClinicalRows').textContent();
+  const clinicalEvidence = await page.locator('#dossierClinicalEvidence').textContent();
+  assert(clinicalEvidence.includes('SYNTHETIC/UNIT-ROSTER') && clinicalSummary.includes('91.0%'),
+    'Patient-care evidence is missing from the dossier.');
 
   await page.evaluate(() => window.saveAndReturnLater());
   assert(await page.evaluate(() => Boolean(localStorage.getItem('KMU_APPRAISAL_DRAFT_v4'))), 'Explicit save failed.');

@@ -1,6 +1,6 @@
 # KMU Faculty Appraisal Portal — Pilot Audit
 
-11 October 2026 · Controlled software pilot, not an approved KMU policy or official PER.
+Updated 12 October 2026 · Controlled software pilot, not an approved KMU policy or official PER.
 
 ## Authority and validity limits
 
@@ -42,4 +42,5 @@ For the Balanced profile (30% research), moving research attainment from 48 to 8
 - In the local in-app browser, professor reporting defaults displayed Head of Department/Director → Additional Director HR → Vice Chancellor; two course reviews of 80 and 90 averaged to 85, with 64 contact hours for a 1+1 plus 1+0 record. Three papers (20+8+20) plus 20 execution points yielded 68; a fourth lower-band paper did not increase it. A clinical designation advanced directly from Research to Patient Care. The final dossier showed both scales and course evidence; at a 442-pixel viewport it had no document-level horizontal overflow.
 - The full scripted Playwright suite is maintained in `tests/portal-qa.js` but could not launch the locally installed Chrome in this managed environment. It must be run in a suitable browser-test environment before a formal pilot release. This is a test limitation, not a pass.
 - For the final-report placement change, the local browser confirmed there is no questionnaire-wide score strip, exactly one comparison scale exists inside the report's final sign-off block, and that block follows the work-done and forward-target sections. The print stylesheet starts the sign-off block on a new last page. This is a structure and styling check; a full rendered-PDF inspection remains pending because the scripted browser cannot launch here.
+- The expanded draft work-done report now reproduces itemised course and paper entries, B2–B5 counts and references, grant title/agency/status/amount, institutional-service counts, and conditional aggregate clinical measures with a unit evidence reference. It retains both objective and Appraising Officer scores. In the local browser, four papers showed credited marks of 20, 8, 20 and 0; an awarded PKR 5 million grant appeared in the ledger and contributed a 5-point bonus within B3's 25-point cap. A clinical synthetic profile displayed all four entered measures and its source reference, with no patient-level data. Service entries are labelled reported, not independently verified. This is a screen/DOM check; rendered-PDF pagination remains unverified.
 - Before adoption, KMU should reconcile the calendar-year policy text, ratify reporting lines and scoring, pilot anonymized cross-disciplinary dossiers with independent reviewers, measure inter-rater agreement and score distribution, audit journal eligibility/retractions and duplicate work, and deploy an authenticated server-backed workflow for real records.

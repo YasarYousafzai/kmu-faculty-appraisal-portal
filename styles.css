@@ -1202,6 +1202,24 @@ select.form-control optgroup {
 }
 .dossier-course-table { font-size: 0.72rem; }
 .dossier-course-table th, .dossier-course-table td { overflow-wrap: anywhere; }
+.dossier-minor-heading {
+  margin: 0.85rem 0 0.35rem;
+  color: var(--slate-700);
+  font-size: 0.78rem;
+}
+.dossier-evidence-note {
+  margin: 0.15rem 0 0.45rem;
+  color: var(--slate-600);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+.dossier-evidence-table { table-layout: fixed; font-size: 0.72rem; }
+.dossier-evidence-table th, .dossier-evidence-table td {
+  padding: 0.35rem 0.45rem;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.dossier-evidence-table td:first-child { font-weight: 600; }
 .dossier-final-assessment { margin-top: 1.5rem; }
 .dossier-final-assessment .signature-grid { margin-top: 2rem; }
 
@@ -1464,6 +1482,9 @@ select.form-control optgroup {
   .official-dossier { border: none !important; padding: 0 !important; box-shadow: none !important; overflow: visible !important; }
   .comparison-panel { box-shadow: none !important; break-inside: avoid; margin: 0.8rem 0 !important; }
   .comparison-fill { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .dossier-meta-table thead, .dossier-scores-table thead { display: table-header-group; }
+  .dossier-meta-table tr, .dossier-scores-table tr { break-inside: avoid; page-break-inside: avoid; }
+  .dossier-subheading, .dossier-minor-heading { break-after: avoid; page-break-after: avoid; }
   .dossier-final-assessment { break-before: page; page-break-before: always; break-inside: avoid; page-break-inside: avoid; }
   .main-wrapper { margin: 0 !important; padding: 0 !important; max-width: 100% !important; }
 }

@@ -208,11 +208,84 @@ function createBlankState() {
 const appraisalState = window.appraisalState = createBlankState();
 function el(id) { return document.getElementById(id); }
 function updateElementText(id, value) { const node = el(id); if (node) node.textContent = String(value); }
+function updateDossierTableRows(bodyId, rows, emptyText, columnCount) {
+  const body = el(bodyId); if (!body) return;
+  body.replaceChildren();
+  const entries = rows.length ? rows : [[emptyText]];
+  entries.forEach(values => {
+    const row = document.createElement('tr');
+    values.forEach(value => {
+      const cell = document.createElement('td');
+      if (values.length === 1) cell.colSpan = columnCount;
+      cell.textContent = String(value);
+      row.appendChild(cell);
+    });
+    body.appendChild(row);
+  });
+}
 function getTextValue(id) { return el(id)?.value?.trim() || ''; }
 function getInputValue(id) { return Math.max(0, Number.parseFloat(el(id)?.value) || 0); }
 function getActivityCount(id) {
   const numeric = Number(getTextValue(id));
   return Number.isInteger(numeric) && numeric >= 0 ? numeric : 0;
+}
+
+function renderDossierEvidence(researchRubric, service, clinical, profile) {
+  const number = value => Number(value || 0).toFixed(1);
+  const reference = id => getTextValue(id) || 'Not entered';
+  const count = id => getActivityCount(id);
+  const papers = getPaperRecords().filter(record => Object.values(record).some(value => value !== ''));
+  const authorRole = { first: 'First author', corresponding: 'Corresponding author', co: 'Co-author' };
+  updateDossierTableRows('dossierResearchPaperRows', papers.map((paper, index) => [
+    `${paper.title || 'Untitled paper'} — ${paper.id || 'identifier not entered'}`,
+    paper.impactFactor === '' ? 'Not entered' : paper.impactFactor,
+    authorRole[paper.role] || 'Not entered',
+    paper.indexed === 'Y' ? 'Yes' : paper.indexed === 'N' ? 'No' : 'Not entered',
+    `${number(researchRubric.outputScores[index]?.score)} pts`
+  ]), 'No paper entered; zero publications are permitted.', 5);
+
+  const bookCounts = `International books ${count('input_book_int')}; national books ${count('input_book_nat')}; international chapters ${count('input_chapter_int')}; national chapters ${count('input_chapter_nat')}`;
+  const supervisionCounts = `PhD completed ${count('input_sup_phd')}; MPhil/MS completed ${count('input_sup_mphil')}; senior clinical trainees ${count('input_sup_clin_sr')}; junior clinical trainees ${count('input_sup_clin_jr')}`;
+  const innovationCounts = `International patents ${count('input_innov_patent_int')}; national patents ${count('input_innov_patent_nat')}; commercial projects/products ${count('input_innov_project')}; overhead-generating engagements ${count('input_innov_overhead')}`;
+  updateDossierTableRows('dossierResearchSummaryRows', [
+    ['B1 Papers', `${papers.length} papers listed; best three eligible papers count. See paper ledger above.`, `${number(researchRubric.outputQuality)} / 50`],
+    ['B2 Books / chapters', `${bookCounts}. Evidence reference: ${reference('input_books_ref')}.`, `${number(researchRubric.books)} / 5`],
+    ['B3 Research execution', `Milestone self-rating ${getTextValue('input_research_execution') || 'Not entered'} / 25; plan/progress reference: ${reference('input_research_execution_ref')}. ${appraisalState.grantsList.length} grant/proposal records; optional grant bonus ${number(researchRubric.funding)} included within the 25-point cap.`, `${number(researchRubric.execution)} / 25`],
+    ['B4 Supervision', `${supervisionCounts}. Evidence reference: ${reference('input_supervision_ref')}.`, `${number(researchRubric.supervision)} / 10`],
+    ['B5 Innovation', `${innovationCounts}. Evidence reference: ${reference('input_innovation_ref')}.`, `${number(researchRubric.innovation)} / 10`]
+  ], 'Research activity summary pending.', 3);
+  updateDossierTableRows('dossierGrantRows', appraisalState.grantsList.map(grant => [
+    `${grant.title} — ${grant.agency}`,
+    grant.status === 'Won' ? 'Won / Awarded' : 'Applied',
+    grant.role,
+    formatCurrencyPKR(grant.amount),
+    grant.band
+  ]), 'No grant or proposal entered; a grant is not required for full research credit.', 5);
+
+  const clinicalSection = el('dossierClinicalEvidence');
+  if (clinicalSection) clinicalSection.hidden = profile.clinical <= 0;
+  if (profile.clinical > 0) {
+    updateElementText('dossierClinicalMode', getTextValue('input_clin_service_mode') || 'Not entered');
+    updateElementText('dossierClinicalReference', reference('input_clin_evidence_ref'));
+    updateDossierTableRows('dossierClinicalRows', [
+      ['Clinical governance, patient safety and quality improvement', '25%', 'input_clin_admin', clinical.admin, 0.25],
+      ['Patient treatment / diagnostic service delivery', '35%', 'input_clin_volume', clinical.volume, 0.35],
+      ['On-call, emergency and continuity duty compliance', '20%', 'input_clin_oncall', clinical.onCall, 0.20],
+      ['Clinical teaching and supervision delivery', '20%', 'input_clin_teaching', clinical.teaching, 0.20]
+    ].map(([label, share, inputId, attainment, fraction]) => [
+      label, share,
+      getTextValue(inputId) === '' ? 'Not entered' : `${number(attainment)}%`,
+      getTextValue(inputId) === '' ? '—' : `${(attainment * fraction).toFixed(2)} / 100`
+    ]), 'Clinical evidence pending.', 4);
+  }
+
+  updateDossierTableRows('dossierServiceRows', [
+    ['Statutory / institutional committee membership', String(count('input_comm_member')), 'Official committee notification', `${number(service.member)} / 25`],
+    ['Committee chairmanship / convenorship', String(count('input_comm_chair')), 'Chair / convener appointment order', `${number(service.chair)} / 20`],
+    ['Curriculum or institutional policy document authored', String(count('input_policy_doc')), 'Approved curriculum / policy record', `${number(service.policy)} / 30`],
+    ['Laboratory, clinical unit or facility management charge', String(count('input_facility_charge')), 'Notified in-charge / section-head record', `${number(service.facility)} / 30`],
+    ['Additional Dean / Director / HoD appointment', service.additional ? 'Yes' : 'No', 'Formal additional-appointment notification', `${number(service.additional)} / 15`]
+  ], 'Institutional service entries pending.', 4);
 }
 function clamp(value, minimum, maximum) { return Math.min(maximum, Math.max(minimum, Number(value) || 0)); }
 function averageStudentReviews(scores) {
@@ -1144,6 +1217,11 @@ function calculateAll() {
   updateElementText('dossier_teaching_detail', teachingLoad.hasEntry && teachingLoad.valid
     ? `${teachingLoad.courseCount} courses; ${formatTeachingNumber(teachingLoad.theoryCredits)} theory + ${formatTeachingNumber(teachingLoad.practicalCredits)} practical credits = ${formatTeachingNumber(teachingLoad.contactHours)} contact hours. Certified course-review mean: ${attainmentA.toFixed(1)}%.`
     : 'Complete course-level credit hours and student reviews pending.');
+  renderDossierEvidence(researchRubric,
+    { member: serviceMember, chair: serviceChair, policy: servicePolicy,
+      facility: serviceFacility, additional: serviceAdditional },
+    { admin: clinicalAdmin, volume: clinicalVolume, onCall: clinicalOnCall, teaching: clinicalTeaching },
+    profile);
   updateElementText('dossier_raw_b', `${attainmentB.toFixed(1)} / 100 (papers ${researchRubric.outputQuality.toFixed(1)}, books ${researchRubric.books.toFixed(1)}, execution ${researchRubric.execution.toFixed(1)}, supervision ${researchRubric.supervision.toFixed(1)}, innovation ${researchRubric.innovation.toFixed(1)})`);
   updateElementText('dossier_raw_c', `${rawC.toFixed(1)} / 100`);
   updateElementText('dossier_raw_d', `${rawD.toFixed(1)} / 88`);
