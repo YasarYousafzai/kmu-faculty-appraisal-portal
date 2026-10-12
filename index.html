@@ -106,7 +106,7 @@
       </div>
       <span class="wizard-arrow">➔</span>
       <div class="wizard-step" data-wizard="tab-summary" onclick="switchTab('tab-summary')">
-        <span class="wizard-step-num">8</span> <span>Work Done Report</span>
+        <span class="wizard-step-num">8</span> <span>Draft Dossier &amp; Sign-Off</span>
       </div>
     </div>
   </nav>
@@ -154,7 +154,7 @@
             <span class="nav-pill" style="background:#fee2e2; color:#b91c1c;">Flag</span>
           </li>
           <li class="nav-item" data-tab="tab-summary">
-            <span>Work Done Report &amp; Sign-Off</span>
+            <span>Draft Dossier &amp; Sign-Off</span>
             <span class="nav-pill" style="background:var(--kmu-gold); color:#fff;">Final</span>
           </li>
         </ul>
@@ -1370,8 +1370,8 @@
               <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()">
                 <span>💾</span> Save & Return Later
               </button>
-              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-summary', 'Step 8: Draft Work Done Report')">
-                Review Work Done Report ➔
+              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-summary', 'Step 8: Draft Dossier & Sign-Off')">
+                Review Draft Dossier ➔
               </button>
             </div>
           </div>
@@ -1381,7 +1381,7 @@
         <div class="tab-content" id="tab-summary">
           <div class="section-title-wrap no-print">
             <div>
-              <h2 class="section-title" id="summarySectionTitle">Step 8: Draft Faculty Work Done Report &amp; Appraisal Summary</h2>
+              <h2 class="section-title" id="summarySectionTitle">Step 8: Draft Dossier &amp; Sign-Off</h2>
               <p class="section-desc">Consolidated appraisal evaluation separating Objective and Subjective performance dimensions.</p>
             </div>
             <div class="header-actions">
@@ -1645,17 +1645,21 @@
 
             <!-- Final report scoring scale and sign-off appear once, after the work-done record. -->
             <div class="dossier-final-assessment">
-              <section class="comparison-panel" aria-label="Objective and Appraising Officer scores on a 0 to 100 scale">
-                <p class="comparison-note">Each percentage is the earned share of its own weighted ceiling, shown on the same 0–100 scale. These are not KMU cohort percentiles.</p>
+              <section class="comparison-panel" aria-labelledby="dossierComparisonHeading">
+                <div class="comparison-intro">
+                  <h3 id="dossierComparisonHeading">Compare the two dimensions on the same 0–100% scale</h3>
+                  <span>Each percentage is the earned share of that dimension’s own ceiling. These are not KMU percentiles.</span>
+                </div>
                 <div class="comparison-row">
-                  <div class="comparison-label"><strong>Objective Score</strong><span id="objectiveScaleValue">Awaiting faculty completion</span></div>
+                  <div class="comparison-label"><strong>Faculty evidence / objective</strong><span id="objectiveScaleValue">Awaiting faculty completion</span></div>
                   <div class="comparison-track"><div class="comparison-fill comparison-objective" id="objectiveScaleFill"></div></div>
                 </div>
                 <div class="comparison-row">
-                  <div class="comparison-label"><strong>Appraising Officer Subjective Score</strong><span id="subjectiveScaleValue">Awaiting reviewer assessment</span></div>
+                  <div class="comparison-label"><strong>Appraising Officer / subjective</strong><span id="subjectiveScaleValue">Awaiting reviewer assessment</span></div>
                   <div class="comparison-track"><div class="comparison-fill comparison-subjective" id="subjectiveScaleFill"></div></div>
                 </div>
                 <div class="comparison-ticks"><span>0</span><span>25</span><span>50</span><span>75</span><span>100%</span></div>
+                <p class="comparison-note">Well-below, below, average, above and well-above-average labels will be added only after KMU validates percentiles for comparable faculty groups. No relative category is assigned in this pilot.</p>
               </section>
 
             <!-- Sign-Off & Verification Grid -->

@@ -300,7 +300,7 @@ body {
   font-size: 0.82rem;
   margin-bottom: 0.8rem;
 }
-.comparison-intro strong { color: var(--kmu-maroon); font-size: 0.91rem; }
+.comparison-intro h3 { color: var(--kmu-maroon); font-size: 0.91rem; line-height: 1.35; margin: 0; }
 .comparison-row { margin: 0.62rem 0; }
 .comparison-label {
   display: flex;

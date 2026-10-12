@@ -119,7 +119,10 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   await page.evaluate(() => window.switchTab('tab-summary'));
   assert(await page.locator('.comparison-panel').isVisible(), 'Scales must appear on final page.');
   const scaleText = await page.locator('.comparison-panel').innerText();
-  assert(scaleText.includes('Objective Score') && scaleText.includes('Appraising Officer Subjective Score') && !scaleText.includes('Compare'), 'Scale labels are incorrect.');
+  assert(scaleText.includes('Compare the two dimensions on the same 0–100% scale') &&
+    scaleText.includes('Faculty evidence / objective') &&
+    scaleText.includes('Appraising Officer / subjective') &&
+    scaleText.includes('No relative category is assigned in this pilot.'), 'Final dossier scale is missing the requested presentation.');
   assert((await page.locator('#dossierCourseRows').innerText()).includes('ANAT-301'), 'Course evidence missing from dossier.');
   await page.emulateMedia({ media: 'print' });
   assert(await page.locator('.comparison-panel').isVisible(), 'Scales must appear in PDF print view.');
