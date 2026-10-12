@@ -160,7 +160,7 @@
         </ul>
         <div style="padding:1rem; border-top:1px solid var(--slate-200); background:var(--slate-50);">
           <div style="font-size:0.75rem; color:#64748b; line-height:1.4;">
-            <strong>Portal cycle configuration:</strong> 01 January to 31 December at the user's request. Downloadable draft Section 10 still says July–June; the competent forum must reconcile this before approval. Appraisal Committee assessment opens only after the faculty evidence handoff.
+            <strong>Portal cycle configuration:</strong> 01 January to 31 December at the user's request. Downloadable draft Section 10 still says July–June; the competent forum must reconcile this before approval. The committee page follows the completed faculty sections directly.
           </div>
         </div>
       </aside>
@@ -424,126 +424,12 @@
           </div>
         </div>
 
-        <!-- TAB 2: PROFILE & WEIGHT MATRIX -->
-        <div class="tab-content" id="tab-profile" style="display:none !important;" aria-hidden="true">
-          <div class="section-title-wrap">
-            <div>
-              <h2 class="section-title">Reference: Draft Appraisal Weighting Profiles</h2>
-              <p class="section-desc">Select the draft profile corresponding to the approved annual work assignment.</p>
-            </div>
-            <span class="section-badge">Section 9.1 Matrix</span>
-          </div>
-
-          <div class="form-group" style="margin-bottom: 1.25rem; max-width: 540px; background: #fdf8eb; border: 1px solid #fde68a; padding: 1rem 1.25rem; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
-            <label for="profileDropdownSelect" style="font-weight:700; color:var(--kmu-maroon); margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem; font-size: 0.9rem;">
-              <span>⚖️</span> Select Weighting Profile (Dropdown):
-            </label>
-            <select id="profileDropdownSelect" class="form-control" onchange="window.selectProfile(this.value)">
-              <option value="Balanced Profile" selected>Balanced Profile (Teaching 30%, Research 30%, Service 20%, Peer 20%)</option>
-              <option value="Research-Focused Profile">Research-Focused Profile (Teaching 20%, Research 50%, Service 15%, Peer 15%)</option>
-              <option value="Teaching-Focused Profile (Regional IHS)">Teaching-Focused / Regional IHS (Teaching 50%, Research 15%, Service 20%, Peer 15%)</option>
-              <option value="Clinical-Focused Profile (Hospital Faculty)">Clinical-Focused / Hospital Faculty (Clinical 45%, Research 20%, Teaching 15%, Service 10%, Peer 10%)</option>
-              <option value="Research Cadres / Postdocs">Research Cadres / Postdocs (Research 65%, Peer 15%, Teaching 10%, Service 10%)</option>
-            </select>
-            <span class="field-hint" style="color:#78350f; margin-top: 4px; display: block;">
-              💡 You can change your appraisal profile using either this dropdown menu or the interactive cards below.
-            </span>
-          </div>
-
-          <p style="font-size:0.875rem; color:#475569; margin-bottom:1rem;">
-            Click on any card below to activate that profile. All domain weights, minimum teaching workload thresholds, and scoring ceilings will update in real time:
-          </p>
-
-          <div class="profile-cards" id="profileCardsContainer"></div>
-
-          <div class="data-table-wrap">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Draft Appraisal Profile</th>
-                  <th>Teaching (S_A)</th>
-                  <th>Research (S_B)</th>
-                  <th>Service (S_C)</th>
-                  <th>Officer Assessment (S_D)</th>
-                  <th>Clinical (S_E)</th>
-                  <th>Min Teaching WU</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><strong>Balanced Profile</strong></td>
-                  <td>30%</td>
-                  <td>30%</td>
-                  <td>20%</td>
-                  <td>20%</td>
-                  <td>0%</td>
-                  <td>30 WU</td>
-                  <td><strong>100%</strong></td>
-                </tr>
-                <tr>
-                  <td><strong>Research-Focused Profile</strong></td>
-                  <td>20%</td>
-                  <td>50%</td>
-                  <td>15%</td>
-                  <td>15%</td>
-                  <td>0%</td>
-                  <td>20 WU</td>
-                  <td><strong>100%</strong></td>
-                </tr>
-                <tr>
-                  <td><strong>Teaching-Focused (Regional IHS)</strong></td>
-                  <td>50%</td>
-                  <td>15%</td>
-                  <td>20%</td>
-                  <td>15%</td>
-                  <td>0%</td>
-                  <td>50 WU</td>
-                  <td><strong>100%</strong></td>
-                </tr>
-                <tr>
-                  <td><strong>Clinical-Focused (Hospital Faculty)</strong></td>
-                  <td>15%</td>
-                  <td>20%</td>
-                  <td>10%</td>
-                  <td>10%</td>
-                  <td>45%</td>
-                  <td>15 WU</td>
-                  <td><strong>100%</strong></td>
-                </tr>
-                <tr>
-                  <td><strong>Research Cadres / Postdocs</strong></td>
-                  <td>10%</td>
-                  <td>65%</td>
-                  <td>10%</td>
-                  <td>15%</td>
-                  <td>0%</td>
-                  <td>10 WU</td>
-                  <td><strong>100%</strong></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="step-footer-actions">
-            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-meta')">← Back to Step 1</button>
-            <div class="step-footer-actions-right">
-              <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()">
-                <span>💾</span> Save & Return Later
-              </button>
-              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-teaching', 'Step 3: Teaching Scoring')">
-                Continue ➔
-              </button>
-            </div>
-          </div>
-        </div>
-
         <!-- TAB 3: SECTION A - TEACHING -->
         <div class="tab-content" id="tab-teaching">
           <div class="section-title-wrap">
             <div>
               <h2 class="section-title" id="teachingSectionTitle">Step 2: Section A — Teaching & Curriculum Delivery (Objective)</h2>
-              <p class="section-desc">List each course taught and its certified student-review score. Add up to ten course entries.</p>
+              <p class="section-desc">List each course taught and its student-review score. Your entries count immediately in the pilot teaching calculation. Add up to ten courses.</p>
             </div>
             <div style="text-align:right;">
               <span class="section-badge">Weight: <strong id="disp_weight_a">30%</strong></span>
@@ -552,13 +438,20 @@
           </div>
 
           <div class="info-callout">
-            <strong>Proposed pilot teaching calculation:</strong> the teaching evaluation is the simple average of the entered, certified student-review percentages (one score per course/section). Credit hours document the teaching delivered; they do not prorate the review score. Enter theory and practical components separately: 1 theory credit = 16 contact hours; 1 practical credit = 32 contact hours. Thus a 1+1 course represents 48 contact hours. This course-average rule requires KMU approval before personnel use.
+            <strong>Proposed pilot teaching calculation:</strong> each faculty-entered course review contributes in proportion to the contact hours taught. Enter theory and practical credits separately: 1 theory credit = 16 contact hours; 1 practical credit = 32 contact hours, so a 1+1 course represents 48 contact hours and 2 taught credits. The resulting student-review mean is multiplied by a capped workload factor based on the provisional rank target below. Course entries calculate immediately without a separate KMU verification step. This rubric is not KMU-approved for personnel use.
           </div>
+          <details class="research-rubric-guide">
+            <summary>HEC credit-hour and designation workload guidance (context only)</summary>
+            <p>The portal uses the requested 16-week, 1-theory-credit = 16 and 1-practical-credit = 32 contact-period convention. The <a href="https://www.hec.gov.pk/english/services/universities/pqr/Pages/PQR-information.aspx" target="_blank" rel="noopener noreferrer">HEC Pakistan Qualification Register explanation</a> describes one theory period and two practical/lab hours weekly per credit; another <a href="https://www.hec.gov.pk/english/services/universities/Documents/Final%20Examination%20Policy%20Guidelines.pdf" target="_blank" rel="noopener noreferrer">HEC uniform-semester guideline</a> describes three practical hours. Confirm the applicable KMU programme scheme before adopting the conversion formally.</p>
+            <p>This pilot uses an <a href="https://www.hec.gov.pk/english/services/universities/RevisedCurricula/Documents/2007-2008/Maths%202008.pdf" target="_blank" rel="noopener noreferrer">HEC mathematics curriculum recommendation</a> as an illustrative, <strong>unapproved KMU</strong> teaching-volume target: Professor 3, Associate Professor 6, Assistant Professor 9, and Lecturer 12 taught credits per semester. Meritorious Professor is provisionally mapped to the Professor target; the HEC example does not name that designation. For the January–December pilot, two regular semesters are assumed, giving annual targets of 6, 12, 18, and 24 credits. The workload factor is credits taught ÷ annual target, capped at 100%; an approved exemption declaration waives this proration. Other designations have no invented automatic target. These figures are discipline-specific, not a universal KMU medical-faculty rule: the <a href="https://www.nbeac.org.pk/files/Policies%20and%20Documents/NBEAC%20Standards%202024%2030-Dec-2024.pdf" target="_blank" rel="noopener noreferrer">business-school accreditation standard</a> uses different maxima. KMU must approve or replace these pilot targets before formal use.</p>
+          </details>
           <div id="teachingCourses" class="teaching-courses" aria-live="polite"></div>
           <button type="button" class="btn btn-secondary no-print" id="addTeachingCourseButton" onclick="addTeachingCourse()">+ Add another course (maximum 10)</button>
           <div class="teaching-load-result" aria-live="polite">
-            <div><span>Courses with certified reviews</span><strong id="disp_course_count">0</strong><small>Each course contributes equally to the mean</small></div>
+            <div><span>Courses entered</span><strong id="disp_course_count">0</strong><small>Student reviews weighted by taught contact hours</small></div>
             <div><span>Documented contact time</span><strong id="disp_teaching_hours">—</strong><small id="disp_teaching_hours_detail">Theory + practical hours</small></div>
+            <div><span>Credit hours taught</span><strong id="disp_teaching_credits">—</strong><small>Theory + practical credits entered</small></div>
+            <div><span>Provisional rank workload target</span><strong id="disp_rank_target">—</strong><small id="disp_teaching_load_factor">Awaiting course entries</small></div>
           </div>
           <p id="legacyTeachingNote" class="teaching-legacy-note" hidden></p>
           <p class="field-hint">List only KMU teaching personally delivered in the selected calendar year. A repeated section needs its own documented course record and student review. Do not enter patient or student identifiers.</p>
@@ -568,7 +461,7 @@
               <option value="N" selected>No</option>
               <option value="Y">Yes — documented approved exemption</option>
             </select>
-            <span class="field-hint">Record this for review only. It does not change the average of certified course-level student feedback.</span>
+            <span class="field-hint">An approved exemption declaration removes rank-target proration but does not change the student-review mean. The Appraising Officer should check the approval before formal use.</span>
           </div>
 
           <div class="kpi-card" style="margin-bottom:1.5rem; background:#fff8f8; border-color:#fecaca;">
@@ -576,7 +469,7 @@
               <div>
               <span class="kpi-title" id="teachingScoreTitle">Teaching Evaluation Score (Objective)</span>
                 <div class="kpi-value" style="color:var(--kmu-maroon);" id="disp_effective_teaching">—</div>
-                <span class="kpi-desc">Arithmetic mean of certified course-level student-review scores.</span>
+                <span class="kpi-desc">Contact-hour-weighted student-review mean × capped rank workload factor.</span>
               </div>
               <div style="text-align:right;">
                 <span class="kpi-title" id="teachingContributionTitle">Weighted Contribution</span>
@@ -584,7 +477,7 @@
                 <span class="kpi-desc">Points added to Objective Score</span>
               </div>
             </div>
-            <p class="teaching-score-explanation" id="disp_teaching_formula" role="status">Enter at least one complete course and its certified student-review score.</p>
+            <p class="teaching-score-explanation" id="disp_teaching_formula" role="status">Enter at least one complete course and its student-review score.</p>
           </div>
 
           <div class="step-footer-actions">
@@ -605,7 +498,7 @@
           <div class="section-title-wrap">
             <div>
               <h2 class="section-title" id="researchSectionTitle">Step 3: Section B — Research, Grants, Supervision & Commercialization</h2>
-              <p class="section-desc">Record selected papers and the familiar B1–B5 activities. Category caps keep one unusual activity from dominating the year.</p>
+              <p class="section-desc">Enter simple activity counts for publications, books, grants, supervision and innovation.</p>
             </div>
             <div style="text-align:right;">
               <span class="section-badge">Weight: <strong id="disp_weight_b">30%</strong></span>
@@ -614,49 +507,46 @@
           </div>
 
           <div class="info-callout">
-            <strong>Proposed pilot rubric, not KMU-approved:</strong> B1 papers 50, B2 books/chapters 5, B3 research execution including optional grants 25, B4 supervision 10, and B5 innovation 10 (total 100). Two to three strong, verifiable papers can make a substantial difference, but repeated low-quality publications cannot exceed the three-paper cap. No book or grant is required in a given year. The Appraising Officer must inspect evidence; ORIC, ASRB and the competent forum must approve any personnel-use rubric.
+            <strong>Restored original draft scoring — not KMU-approved:</strong> B1 publications up to 50 raw points, B2 books/chapters up to 20, B3 grants/proposals up to 50, B4 supervision up to 40, and B5 innovation up to 40. The capped total is divided by 200 to produce the research percentage. For example, three high-impact lead-author papers give 30/200 = 15% research attainment. This is the original formula requested for this pilot; it will produce much lower scores than the recent recalibration. Enter only distinct eligible work from the appraisal year. Formal personnel use requires review and approval by the competent KMU bodies.
           </div>
           <details class="research-rubric-guide">
             <summary>How the proposed paper marks are calculated</summary>
-            <p>Enter each distinct indexed, peer-reviewed paper with its publication identifier, author role and journal impact factor for the publication year. First and corresponding authors use the same lead rate; being both is not scored twice. The three highest eligible papers count, capped at 50 points. Other papers may be listed but do not increase the score.</p>
+            <p>In each of the six rows below, enter the number of distinct eligible, peer-reviewed papers. Choose the impact-factor band for the publication year, then one authorship role: first/corresponding author together count as lead, or co-author. Never place one paper in two rows. All eligible counts contribute until the 50-point B1 cap.</p>
             <ul>
-              <li>Impact factor 5 or above: first/corresponding author 20; co-author 10.</li>
-              <li>Impact factor 1 to below 5: first/corresponding author 15; co-author 8.</li>
-              <li>Impact factor below 1: first/corresponding author 8; co-author 4.</li>
-              <li>These bands are a proposed, simple pilot convenience—not HEC journal categories or a measure of article quality. The reviewer must check indexing, article integrity, role and year; duplicate or retracted work receives no credit.</li>
+              <li>Impact factor 5 or above: first/corresponding author 10; co-author 5.</li>
+              <li>Impact factor 1 to below 5: first/corresponding author 6; co-author 3.</li>
+              <li>Impact factor below 1: first/corresponding author 4; co-author 2.</li>
+              <li>These bands are a proposed pilot convenience, not HEC journal categories or a measure of article quality. Duplicate, retracted or ineligible work receives no credit after review.</li>
             </ul>
           </details>
 
-          <h3 class="research-rubric-heading">B1: Publications &amp; Scholarly Papers <span class="cap-badge">Best three; maximum 50 pts</span></h3>
-          <p class="section-desc">Enter up to ten papers. Each entry is short: title, DOI or stable ID, author role, and the journal impact factor for its publication year. The best three eligible papers count, capped at 50. Additional papers remain on the evidence list.</p>
-          <div id="researchOutputCards"></div>
-          <button type="button" class="btn btn-secondary no-print" id="addResearchPaperButton" onclick="addResearchPaper()">+ Add another paper (maximum 10)</button>
-
-          <h3 class="research-rubric-heading">B3: Annual Research Execution <span class="cap-badge">Maximum 25 pts, including optional grant bonus</span></h3>
-          <div class="research-rubric-grid">
-            <div class="form-group">
-              <label for="input_research_execution">Research milestone progress (0–25)</label>
-              <input type="number" id="input_research_execution" class="form-control" min="0" max="25" step="1" placeholder="Example: 18">
-              <span class="field-hint">Enter 0 if no documented progress. Otherwise rate progress against an approved study plan, ethics, methods and data stewardship. A grant award is not required for full credit.</span>
-            </div>
-            <div class="form-group">
-              <label for="input_research_execution_ref">Research execution evidence reference</label>
-              <input type="text" id="input_research_execution_ref" class="form-control" maxlength="240" placeholder="Example: approved annual plan and ORIC progress record">
-            </div>
-            <div class="form-group research-rubric-wide">
-              <label class="research-complete-label" for="input_research_complete"><input type="checkbox" id="input_research_complete"> I have completed Section B; any research activity not entered here is zero for this appraisal year.</label>
-              <span class="field-hint">Select this even if your research score is zero. It distinguishes a completed no-activity declaration from an unfinished page.</span>
-            </div>
+          <h3 class="research-rubric-heading">B1: Publications &amp; Scholarly Papers <span class="cap-badge">Maximum 50 raw pts</span></h3>
+          <div class="data-table-wrap">
+            <table class="data-table" id="publicationsCountTable">
+              <thead><tr><th>Impact-factor band (publication year)</th><th>Authorship role</th><th>Original points each</th><th>Number of papers</th><th>Raw points</th></tr></thead>
+              <tbody>
+                <tr><td>5 or above</td><td>First / corresponding author</td><td>10</td><td><input type="number" id="input_pub_high_lead" class="input-num" min="0" step="1" placeholder="0" aria-label="Number of impact factor 5 or above first or corresponding author papers"></td><td><strong id="disp_input_pub_high_lead">0</strong></td></tr>
+                <tr><td>5 or above</td><td>Co-author</td><td>5</td><td><input type="number" id="input_pub_high_co" class="input-num" min="0" step="1" placeholder="0" aria-label="Number of impact factor 5 or above co-authored papers"></td><td><strong id="disp_input_pub_high_co">0</strong></td></tr>
+                <tr><td>1 to below 5</td><td>First / corresponding author</td><td>6</td><td><input type="number" id="input_pub_mod_lead" class="input-num" min="0" step="1" placeholder="0" aria-label="Number of impact factor 1 to below 5 first or corresponding author papers"></td><td><strong id="disp_input_pub_mod_lead">0</strong></td></tr>
+                <tr><td>1 to below 5</td><td>Co-author</td><td>3</td><td><input type="number" id="input_pub_mod_co" class="input-num" min="0" step="1" placeholder="0" aria-label="Number of impact factor 1 to below 5 co-authored papers"></td><td><strong id="disp_input_pub_mod_co">0</strong></td></tr>
+                <tr><td>Below 1</td><td>First / corresponding author</td><td>4</td><td><input type="number" id="input_pub_low_lead" class="input-num" min="0" step="1" placeholder="0" aria-label="Number of impact factor below 1 first or corresponding author papers"></td><td><strong id="disp_input_pub_low_lead">0</strong></td></tr>
+                <tr><td>Below 1</td><td>Co-author</td><td>2</td><td><input type="number" id="input_pub_low_co" class="input-num" min="0" step="1" placeholder="0" aria-label="Number of impact factor below 1 co-authored papers"></td><td><strong id="disp_input_pub_low_co">0</strong></td></tr>
+                <tr class="subtotal-row"><td colspan="4">B1 subtotal (all entries: <span id="disp_sub_b1_raw">0</span> raw pts; capped at 50)</td><td><span class="highlight-subtotal" id="disp_sub_b1">0.0</span> / 50</td></tr>
+              </tbody>
+            </table>
           </div>
+          <div class="form-group"><label for="input_publications_ref">Publication citations / evidence reference</label><input type="text" id="input_publications_ref" class="form-control" maxlength="240" placeholder="Example: DOI list or faculty publication register"><span class="field-hint">One short reference is enough for this pilot; enter each paper in only one count row.</span></div>
+
+          <label class="research-complete-label" for="input_research_complete"><input type="checkbox" id="input_research_complete"> I have completed Section B; any research activity not entered here is zero for this appraisal year.</label>
+          <span class="field-hint">Select this even if your research score is zero. It distinguishes a completed no-activity declaration from an unfinished page.</span>
               <p id="researchQualityWarning" class="provisional-note" role="status">Section B is a provisional self-assessment until the designated reviewer checks the publications and supporting evidence.</p>
 
-          <details class="research-audit-trace" open>
-            <summary>Research activity ledger — B2 to B5 contribute to the score</summary>
-            <p class="provisional-note">B2 books, the B3 grant ledger, B4 supervision and B5 innovation use the smaller pilot caps below. B1 papers are entered above and are not counted again here. Journal recognition for the publication year must be checked independently.</p>
+          <div class="research-audit-trace">
+            <p class="provisional-note">The B2–B5 count tables below contribute raw points to the original 200-point total. Blank counts mean zero after the faculty completion declaration.</p>
 
           <!-- B2: Books -->
           <h3 style="font-size:0.95rem; font-weight:700; color:var(--kmu-maroon); margin:1.25rem 0 0.75rem 0;">
-            B2: Books & Scholarly Monographs <span class="cap-badge">Pilot cap 5 pts</span>
+            B2: Books & Scholarly Monographs <span class="cap-badge">Original cap 20 raw pts</span>
           </h3>
           <div class="data-table-wrap">
             <table class="data-table">
@@ -672,19 +562,19 @@
                 <tr>
                   <td>International Book (Authored / Edited)</td>
                   <td>Reputable academic press with ISBN</td>
-                  <td>5</td>
+                  <td>8</td>
                   <td><input type="number" id="input_book_int" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
                 </tr>
                 <tr>
                   <td>National Book (Authored / Edited)</td>
                   <td>Publisher and ISBN verified by reviewer</td>
-                  <td>4</td>
+                  <td>5</td>
                   <td><input type="number" id="input_book_nat" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
                 </tr>
                 <tr>
                   <td>International Book Chapter</td>
                   <td>Chapter and publisher record verified by reviewer</td>
-                  <td>3</td>
+                  <td>4</td>
                   <td><input type="number" id="input_chapter_int" class="input-num" min="0" step="1" placeholder="Example: 0"></td>
                 </tr>
                 <tr>
@@ -695,96 +585,37 @@
                 </tr>
                 <tr class="subtotal-row">
                   <td colspan="3">B2 Subtotal (Raw: <span id="disp_sub_b2_raw">0</span> pts)</td>
-                  <td><span class="highlight-subtotal" id="disp_sub_b2">0.0</span> / 5</td>
+                  <td><span class="highlight-subtotal" id="disp_sub_b2">0.0</span> / 20</td>
                 </tr>
               </tbody>
             </table>
           </div>
           <div class="form-group"><label for="input_books_ref">B2 book/chapter evidence reference (required for positive counts)</label><input type="text" id="input_books_ref" class="form-control" maxlength="240" placeholder="Example: ISBN, publisher and publication record"></div>
 
-          <!-- B3: Research Grants Won & Applied (LEDGER WITH FUNDING AGENCY & AMOUNT) -->
+          <!-- B3: Original grant and proposal count table -->
           <h3 style="font-size:0.95rem; font-weight:700; color:var(--kmu-maroon); margin:1.25rem 0 0.75rem 0;">
-            B3: Competitive Grants and Proposals <span class="cap-badge">Optional 0–5 bonus within the 25-point execution cap</span>
+            B3: Competitive Grants and Proposals <span class="cap-badge">Original cap 50 raw pts; applications max 20</span>
           </h3>
-          <p class="provisional-note"><strong>Pilot scoring:</strong> one or more documented awarded grants add 5 points; if none is awarded, one or more documented competitive applications add 2. This bonus sits inside the 25-point research-execution cap. The detailed funding-band marks in the ledger are historical draft reference only and do not add to the pilot score.</p>
-          
-          <div class="grant-input-card">
-            <div style="font-weight:700; color:var(--kmu-maroon); font-size:0.875rem; margin-bottom:0.75rem;">
-              + Add Competitive Grant to Ledger
-            </div>
-            <div class="grant-grid-form">
-              <div class="form-group" style="grid-column:span 2;">
-                <label for="input_new_grant_title">Project / Research Grant Title *</label>
-                <input type="text" id="input_new_grant_title" class="form-control" placeholder="Example: title exactly as shown on award/application">
-              </div>
-              <div class="form-group">
-                <label for="input_new_grant_agency">Funding Agency *</label>
-                <input type="text" id="input_new_grant_agency" class="form-control" placeholder="Example: funding agency exactly as recorded">
-              </div>
-              <div class="form-group">
-                <label for="input_new_grant_amount">Total Grant Amount (in PKR) *</label>
-                <input type="number" id="input_new_grant_amount" class="form-control" min="1" step="1" placeholder="Example: 8500000 (PKR; digits only)">
-                <span class="field-hint">Enter the amount for verification; the approved funding band is selected separately.</span>
-              </div>
-              <div class="form-group">
-                <label for="input_new_grant_band">Funding Band *</label>
-                <select id="input_new_grant_band" class="form-control">
-                  <option value="International >10M" selected>International / major &gt; PKR 10M</option>
-                  <option value="National 1–10M">National PKR 1–10M</option>
-                  <option value="Small <1M">Small competitive grant &lt; PKR 1M</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="input_new_grant_role">Your Investigator Role *</label>
-                <select id="input_new_grant_role" class="form-control">
-                  <option value="PI" selected>Principal Investigator (PI)</option>
-                  <option value="Co-PI">Co-Principal Investigator (Co-PI)</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="input_new_grant_status">Grant Status *</label>
-                <select id="input_new_grant_status" class="form-control">
-                  <option value="Won" selected>Won / Awarded (Funding Secured)</option>
-                  <option value="Applied">Competitive Application Submitted (2 pts)</option>
-                </select>
-              </div>
-              <div>
-                <button type="button" class="btn btn-primary" style="width:100%; height:40px;" onclick="addGrantRecord()">
-                  + Add Grant
-                </button>
-              </div>
-            </div>
-
-            <!-- Real-Time Grants Ledger Table -->
-            <div class="data-table-wrap" style="margin-bottom:0.75rem; background:#fff;">
-              <table class="data-table" id="grantsTable">
-                <thead>
-                  <tr>
-                    <th>Project / Grant Title</th>
-                    <th>Funding Agency</th>
-                    <th>Funding Band</th>
-                    <th>Grant Amount (PKR)</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Historical draft marks (reference only)</th>
-                    <th style="width:60px;">Action</th>
-                  </tr>
-                </thead>
-                <tbody id="grantsTableBody">
-                  <!-- Injected via JavaScript -->
-                </tbody>
-              </table>
-            </div>
-
-            <div style="display:flex; justify-content:space-between; font-size:0.85rem; font-weight:700; padding:0.5rem; background:#fff; border:1px solid #fde68a; border-radius:4px;">
-              <span>Historical draft marks: awards <strong id="disp_sub_b3_won" style="color:var(--emerald-600);">0.0</strong> | applications <strong id="disp_sub_b3_applied" style="color:var(--blue-600);">0.0</strong> (not pilot points)</span>
-              <span>B3 Pilot Bonus: <span class="highlight-subtotal" id="disp_sub_b3">0.0</span> / 5 pts</span>
-            </div>
+          <p class="provisional-note">Enter the number of distinct grant awards or competitive submissions in each original funding-band/role row. An application and its resulting award must not be counted as separate achievements unless they are distinct records in the appraisal year.</p>
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Grant band / activity</th><th>Investigator role</th><th>Original points each</th><th>Number</th><th>Raw points</th></tr></thead>
+              <tbody>
+                <tr><td>International grant &gt; PKR 10 million</td><td>PI</td><td>15</td><td><input type="number" id="input_grant_int_pi" class="input-num" min="0" step="1" placeholder="0" aria-label="Number of international grant awards over PKR 10 million as PI"></td><td><strong id="disp_input_grant_int_pi">0</strong></td></tr>
+                <tr><td>International grant &gt; PKR 10 million</td><td>Co-PI</td><td>4.5</td><td><input type="number" id="input_grant_int_copi" class="input-num" min="0" step="1" placeholder="0" aria-label="Number of international grant awards over PKR 10 million as Co-PI"></td><td><strong id="disp_input_grant_int_copi">0</strong></td></tr>
+                <tr><td>National grant PKR 1–10 million</td><td>PI</td><td>8</td><td><input type="number" id="input_grant_nat_pi" class="input-num" min="0" step="1" placeholder="0" aria-label="Number of national grant awards PKR 1 to 10 million as PI"></td><td><strong id="disp_input_grant_nat_pi">0</strong></td></tr>
+                <tr><td>National grant PKR 1–10 million</td><td>Co-PI</td><td>4</td><td><input type="number" id="input_grant_nat_copi" class="input-num" min="0" step="1" placeholder="0" aria-label="Number of national grant awards PKR 1 to 10 million as Co-PI"></td><td><strong id="disp_input_grant_nat_copi">0</strong></td></tr>
+                <tr><td>Small competitive grant &lt; PKR 1 million</td><td>PI</td><td>4</td><td><input type="number" id="input_grant_small_pi" class="input-num" min="0" step="1" placeholder="0" aria-label="Number of small competitive grant awards as PI"></td><td><strong id="disp_input_grant_small_pi">0</strong></td></tr>
+                <tr><td>Competitive applications submitted</td><td>Applicant / co-applicant</td><td>2 (max 20)</td><td><input type="number" id="input_grant_applied" class="input-num" min="0" step="1" placeholder="0" aria-label="Number of competitive grant applications submitted"></td><td><strong id="disp_input_grant_applied">0</strong></td></tr>
+                <tr class="subtotal-row"><td colspan="4">B3 subtotal (all entries: <span id="disp_sub_b3_raw">0</span> raw pts; capped at 50)</td><td><span class="highlight-subtotal" id="disp_sub_b3">0.0</span> / 50</td></tr>
+              </tbody>
+            </table>
           </div>
+          <div class="form-group"><label for="input_grants_ref">Grant/proposal evidence reference</label><input type="text" id="input_grants_ref" class="form-control" maxlength="240" placeholder="Example: award letter or proposal receipt reference"></div>
 
           <!-- B4: Postgraduate Supervision -->
           <h3 style="font-size:0.95rem; font-weight:700; color:var(--kmu-maroon); margin:1.25rem 0 0.75rem 0;">
-            B4: Postgraduate Scholar Supervision <span class="cap-badge">Pilot cap 10 pts</span>
+            B4: Postgraduate Scholar Supervision <span class="cap-badge">Original cap 40 raw pts</span>
           </h3>
           <div class="data-table-wrap">
             <table class="data-table">
@@ -823,7 +654,7 @@
                 </tr>
                 <tr class="subtotal-row">
                   <td colspan="3">B4 Subtotal (Raw: <span id="disp_sub_b4_raw">0</span> pts)</td>
-                  <td><span class="highlight-subtotal" id="disp_sub_b4">0.0</span> / 10</td>
+                  <td><span class="highlight-subtotal" id="disp_sub_b4">0.0</span> / 40</td>
                 </tr>
               </tbody>
             </table>
@@ -832,7 +663,7 @@
 
           <!-- B5: Innovation & Commercialization -->
           <h3 style="font-size:0.95rem; font-weight:700; color:var(--kmu-maroon); margin:1.25rem 0 0.75rem 0;">
-            B5: Patents, Spin-Offs & Commercial Innovation <span class="cap-badge">Pilot cap 10 pts</span>
+            B5: Patents, Spin-Offs & Commercial Innovation <span class="cap-badge">Original cap 40 raw pts</span>
           </h3>
           <div class="data-table-wrap">
             <table class="data-table">
@@ -871,22 +702,22 @@
                 </tr>
                 <tr class="subtotal-row">
                   <td colspan="3">B5 Subtotal (Raw: <span id="disp_sub_b5_raw">0</span> pts)</td>
-                  <td><span class="highlight-subtotal" id="disp_sub_b5">0.0</span> / 10</td>
+                  <td><span class="highlight-subtotal" id="disp_sub_b5">0.0</span> / 40</td>
                 </tr>
               </tbody>
             </table>
           </div>
           <div class="form-group"><label for="input_innovation_ref">B5 innovation evidence reference (required for positive counts)</label><input type="text" id="input_innovation_ref" class="form-control" maxlength="240" placeholder="Example: patent grant or ORIC adoption record"></div>
 
-          </details>
+          </div>
 
           <!-- Section B Aggregate Box -->
           <div class="kpi-card" style="margin-top:1.25rem; background:#fffdf5; border-color:#fde68a;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
-                <span class="kpi-title" id="researchScoreTitle">Pilot Research Score (0–100)</span>
+                <span class="kpi-title" id="researchScoreTitle">Original Draft Research Score</span>
                 <div class="kpi-value" style="color:var(--kmu-gold);" id="disp_raw_b">0.0</div>
-                <span class="kpi-desc"><strong id="disp_research_quality_summary">0.0 / 50 papers</strong> + <strong id="disp_research_books_summary">0.0 / 5 books</strong> + <strong id="disp_research_execution_summary">0.0 / 25 execution</strong> (<span id="disp_research_execution_detail">milestones 0 + optional grant bonus 0, capped at 25</span>) + <strong id="disp_research_supervision_summary">0.0 / 10 supervision</strong> + <strong id="disp_research_innovation_summary">0.0 / 10 innovation</strong>. <span id="disp_research_verification_state">Provisional; complete evidence and independent review.</span></span>
+                <span class="kpi-desc"><strong id="disp_research_quality_summary">0.0 / 50 papers</strong> + <strong id="disp_research_books_summary">0.0 / 20 books</strong> + <strong id="disp_research_grants_summary">0.0 / 50 grants</strong> + <strong id="disp_research_supervision_summary">0.0 / 40 supervision</strong> + <strong id="disp_research_innovation_summary">0.0 / 40 innovation</strong>, divided by 200. <span id="disp_research_verification_state">Provisional; complete evidence and independent review.</span></span>
               </div>
               <div style="text-align:right;">
                 <span class="kpi-title" id="researchContributionTitle">Weighted Contribution</span>
@@ -1011,8 +842,8 @@
               <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()">
                 <span>💾</span> Save & Return Later
               </button>
-              <button type="button" class="btn btn-primary btn-lg" onclick="submitObjectiveForReview()">
-                Submit faculty evidence for committee review ➔
+              <button type="button" class="btn btn-primary btn-lg" onclick="continueToPeerReview()">
+                Continue to Peer Review ➔
               </button>
             </div>
           </div>
@@ -1037,7 +868,7 @@
             <strong>Subjective evaluation:</strong> the Appraisal Committee assessment records professional conduct, collegiality and development, subject to review and moderation.
           </div>
 
-          <div class="review-handoff-card" id="reviewHandoffStatus" role="status">This section opens after the faculty member submits a complete objective evidence draft.</div>
+          <div class="review-handoff-card" id="reviewHandoffStatus" role="status">Complete the faculty sections, then continue directly from Service to Peer Review.</div>
           <div class="form-grid reviewer-identity-grid">
             <div class="form-group">
               <label for="input_reviewer_role">Notified reviewer capacity *</label>
@@ -1054,10 +885,10 @@
             <div class="form-group research-rubric-wide">
               <label for="input_research_review_ref">Research evidence-review reference *</label>
               <input type="text" id="input_research_review_ref" class="form-control" maxlength="240" placeholder="Example: output review record and date">
-              <label class="research-complete-label" for="input_research_review_confirm"><input type="checkbox" id="input_research_review_confirm"> I checked paper identity, indexing, publication year, retraction/ethical status, impact-factor year, authorship, grant status and supporting research evidence. Any disputed item was returned for correction before this confirmation.</label>
+              <label class="research-complete-label" for="input_research_review_confirm"><input type="checkbox" id="input_research_review_confirm"> I reviewed the declared publication counts, eligibility, publication-year impact-factor bands, author roles, grant status and supporting research evidence. Any disputed count was returned for correction before this confirmation.</label>
             </div>
           </div>
-          <p class="provisional-note">Same-browser handoff only: this public static pilot cannot authenticate a Dean, supervisor or committee, transfer a confidential record securely, or provide a tamper-proof audit trail. Do not use it for real personnel decisions.</p>
+          <p class="provisional-note">This public static pilot cannot authenticate a Dean, supervisor or committee, transfer a confidential record securely, or provide a tamper-proof audit trail. The faculty-to-reviewer transition here is a page sequence, not an official submission. Do not use it for real personnel decisions.</p>
 
           <h3 style="font-size:0.95rem; font-weight:700; color:var(--kmu-maroon); margin-bottom:0.75rem;">
             Part I: 13 Core Behavioral & Professional Parameters (Scored 1 = Unsatisfactory to 6 = Outstanding | Max 78)
@@ -1508,10 +1339,10 @@
             </table>
 
             <h4 class="dossier-subheading">Section B — Research and grants evidence</h4>
-            <p class="dossier-evidence-note">Faculty-entered records are provisional until the designated reviewer checks publication identity, authorship, indexing, year, integrity and supporting documents. The proposed pilot counts the best three eligible papers, capped at 50 points; other listed papers remain visible.</p>
+            <p class="dossier-evidence-note">Faculty-declared publication counts are shown by impact-factor band and author role. All eligible papers contribute under the restored original formula until the B1 cap of 50 raw points. Each paper must appear in only one row; supporting citations are recorded in the B1 summary.</p>
             <table class="dossier-meta-table dossier-evidence-table">
-              <thead><tr><th>Paper / publication identifier</th><th>Impact factor (publication year)</th><th>Author role</th><th>Indexed / recognised</th><th>Credited pilot points</th></tr></thead>
-              <tbody id="dossierResearchPaperRows"><tr><td colspan="5">No paper entered</td></tr></tbody>
+              <thead><tr><th>Publication band and role</th><th>Declared count</th><th>Pilot points each</th><th>Credited pilot points</th></tr></thead>
+              <tbody id="dossierResearchPaperRows"><tr><td colspan="4">No publication count entered</td></tr></tbody>
             </table>
 
             <h5 class="dossier-minor-heading">Research rubric, activity counts and evidence references</h5>
@@ -1520,11 +1351,11 @@
               <tbody id="dossierResearchSummaryRows"><tr><td colspan="3">Research entries pending</td></tr></tbody>
             </table>
 
-            <h5 class="dossier-minor-heading">Competitive grant and proposal ledger</h5>
-            <p class="dossier-evidence-note">The grant bonus is included within B3 research execution; historical draft ledger marks are not added to this pilot score.</p>
+            <h5 class="dossier-minor-heading">Competitive grant and proposal counts</h5>
+            <p class="dossier-evidence-note">The original B3 grant counts are capped at 50 raw points, with application points capped at 20. The grant evidence reference appears in the B3 summary above.</p>
             <table class="dossier-meta-table dossier-evidence-table">
-              <thead><tr><th>Project / funding agency</th><th>Status</th><th>Investigator role</th><th>Amount</th><th>Funding band</th></tr></thead>
-              <tbody id="dossierGrantRows"><tr><td colspan="5">No grant or proposal entered</td></tr></tbody>
+              <thead><tr><th>Grant band and role</th><th>Declared count</th><th>Original points each</th><th>Row points</th></tr></thead>
+              <tbody id="dossierGrantRows"><tr><td colspan="4">No grant or proposal entered</td></tr></tbody>
             </table>
 
             <section id="dossierClinicalEvidence" hidden>
@@ -1570,10 +1401,10 @@
                   <td colspan="5" class="dossier-teaching-detail" id="dossier_teaching_detail">Complete course-level credit hours and student reviews pending.</td>
                 </tr>
                 <tr>
-                  <td>Section B: Research, Grants &amp; Innovation (proposed B1–B5 pilot; reviewer-verified)</td>
+                  <td>Section B: Research, Grants &amp; Innovation (restored original draft B1–B5 formula)</td>
                   <td id="dossier_weight_b">30%</td>
                   <td id="dossier_raw_b">Pilot B1–B5 research score pending</td>
-                  <td>100 pilot points</td>
+                  <td>200 raw points → 100%</td>
                   <td id="dossier_weighted_b">0.00</td>
                 </tr>
                 <tr id="dossier_row_clinical" style="display:none;">
@@ -1801,11 +1632,11 @@
         
         <h4 style="color:var(--kmu-maroon); font-weight:700; margin-bottom:0.5rem;">Objective vs Subjective Structure</h4>
         <ul style="margin:0.5rem 0 1rem 1.25rem;">
-          <li><strong>Faculty evidence domains:</strong> A teaching (mean of certified course reviews); B research; C patient care when applicable; D institutional service. Course credits document delivery but do not prorate the teaching review score.</li>
+          <li><strong>Faculty evidence domains:</strong> A teaching (contact-hour-weighted mean of faculty-entered course reviews); B research; C patient care when applicable; D institutional service. Theory and practical credits determine each course's contribution.</li>
           <li><strong>Appraisal Committee assessment:</strong> Proposed qualitative evaluation by the designated Appraising Officer or committee across 13 professional criteria and 5 CPD goals.</li>
-          <li><strong>Research pilot calibration:</strong> B1 best three eligible papers (50), B2 books/chapters (5), B3 execution including optional grant bonus (25), B4 supervision (10), B5 innovation (10). The historic impact-factor count table is reference only; the individual paper entries determine B1. ORIC/ASRB and the competent forum must approve operational use.</li>
+          <li><strong>Research pilot calibration:</strong> the original draft B1–B5 count tables and scoring have been restored: publications (50), books/chapters (20), grants/proposals (50), supervision (40), innovation (40), divided by 200. The old W/X/Y-to-impact-factor equivalence is not repeated because it is not established. The resulting research percentage will be low for ordinary annual output; KMU must validate this before personnel use.</li>
           <li><strong>80% display benchmark:</strong> Green means a dimension reached at least 80% of its available weighted-point ceiling; red means it is below 80%. This visual aid does not replace the overall rating bands.</li>
-          <li><strong>Open items:</strong> The paper impact-factor bands, grant sub-rules, course-average teaching rule, service rubric, committee/CPD rubric and clinical/patient-care rubric remain proposed pending ratification. Comparable-faculty percentile categories are deferred until KMU has suitable cohort data.</li>
+          <li><strong>Open items:</strong> The paper impact-factor bands, grant sub-rules, contact-hour-weighted teaching rule, service rubric, committee/CPD rubric and clinical/patient-care rubric remain proposed pending ratification. Comparable-faculty percentile categories are deferred until KMU has suitable cohort data.</li>
           <li><strong>Precedence:</strong> Current law, statutes, appointment orders and valid notifications prevail over this calculator and over any unnotified future-state organogram.</li>
         </ul>
 
@@ -1845,7 +1676,6 @@
 
   <div style="display:none;">
     <span id="top_pip_status"></span>
-    <span id="disp_sub_b3_raw"></span>
   </div>
 
 </body>

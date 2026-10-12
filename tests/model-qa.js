@@ -12,7 +12,8 @@ const sandbox = {
 vm.createContext(sandbox);
 vm.runInContext(source, sandbox, { filename: 'app.js' });
 const { PROFILES, calculatePilotScenario, classifyScore, benchmarkState,
-  averageStudentReviews, paperPilotPoints, allocateSelectedPaperPoints, scoreResearchPilot } = sandbox.window.KMUCalculator;
+  weightedStudentReviews, calculateTeachingAttainment, paperPilotPoints, scorePublicationCounts,
+  scoreGrantCounts, scoreResearchOriginal } = sandbox.window.KMUCalculator;
 
 for (const profile of Object.values(PROFILES)) {
   assert.equal(profile.teachingWeight + profile.researchWeight + profile.serviceWeight
@@ -23,29 +24,54 @@ assert.equal(classifyScore(84.96).rating, 'Outstanding');
 assert.equal(benchmarkState(79.9, true), 'low');
 assert.equal(benchmarkState(80, true), 'high');
 assert.equal(benchmarkState(100, false), 'pending');
-assert.equal(averageStudentReviews([80, 90]), 85, 'Course reviews should be an unweighted arithmetic mean.');
-assert.equal(averageStudentReviews([80, 90, 100]), 90);
-assert.equal(averageStudentReviews([]), 0);
-assert.equal(paperPilotPoints(6, 'first', 'Y'), 20);
-assert.equal(paperPilotPoints(6, 'corresponding', 'Y'), 20, 'First and corresponding authors share the lead rate.');
-assert.equal(paperPilotPoints(3, 'co', 'Y'), 8);
-assert.equal(paperPilotPoints(0.5, 'first', 'Y'), 8);
+assert.equal(weightedStudentReviews([
+  { theory: 1, practical: 0, review: 90 },
+  { theory: 1, practical: 1, review: 70 }
+]), 75, 'A 1+1 course must carry three times the contact-hour weight of a 1+0 course.');
+assert.equal(weightedStudentReviews([
+  { theory: 2, practical: 0, review: 80 },
+  { theory: 0, practical: 1, review: 100 }
+]), 90, 'One practical credit represents 32 hours, equivalent to two theory credits.');
+assert.equal(weightedStudentReviews([]), 0, 'No courses must not divide by zero.');
+assert.equal(weightedStudentReviews([{ theory: 0, practical: 0, review: 90 }]), 0,
+  'A zero-credit course must not contribute a score or divide by zero.');
+const professorTeaching = calculateTeachingAttainment(82.5, 3, 'Professor');
+assert.equal(professorTeaching.perSemesterTarget, 3);
+assert.equal(professorTeaching.annualTarget, 6);
+assert.equal(professorTeaching.loadFactor, 0.5);
+assert.equal(professorTeaching.score, 41.25, 'Half the annual pilot credit load halves the teaching review mean.');
+assert.equal(calculateTeachingAttainment(82.5, 6, 'Professor').score, 82.5);
+assert.equal(calculateTeachingAttainment(82.5, 12, 'Professor').score, 82.5,
+  'Teaching above the annual pilot target must not exceed a 100% workload factor.');
+assert.equal(calculateTeachingAttainment(82.5, 3, 'Professor', true).score, 82.5,
+  'A declared approved exemption waives provisional workload proration.');
+assert.equal(calculateTeachingAttainment(82.5, 3, 'Lecturer').annualTarget, 24);
+assert.equal(calculateTeachingAttainment(82.5, 3, 'Meritorious Professor').annualTarget, 6);
+assert.equal(calculateTeachingAttainment(82.5, 3, 'Senior Registrar').annualTarget, null,
+  'Do not invent an HEC rank target for clinical designations.');
+assert.equal(paperPilotPoints(6, 'first', 'Y'), 10);
+assert.equal(paperPilotPoints(6, 'corresponding', 'Y'), 10, 'First and corresponding authors share the lead rate.');
+assert.equal(paperPilotPoints(3, 'co', 'Y'), 3);
+assert.equal(paperPilotPoints(0.5, 'first', 'Y'), 4);
 assert.equal(paperPilotPoints(6, 'first', 'N'), 0, 'Unverified indexing must not score.');
-assert.equal(allocateSelectedPaperPoints([20, 20, 20]).total, 50, 'Three strong papers reach the publication cap.');
-assert.equal(allocateSelectedPaperPoints(Array(10).fill(8)).total, 24,
-  'Ten low-band papers must not overwhelm the three-paper cap.');
-assert.equal(allocateSelectedPaperPoints([20, 8, 20, 8]).total, 48,
-  'A fourth lower-scoring paper must not inflate the selected-paper score.');
-const researchCase = (paperScores, booksRaw = 0, milestone = 0, grantStatuses = [], supervisionRaw = 0, innovationRaw = 0) =>
-  scoreResearchPilot({ paperScores, booksRaw, milestone, grantStatuses, supervisionRaw, innovationRaw });
-assert.equal(researchCase([20, 20, 20], 0, 25, [], 10, 10).score, 95,
-  'No annual book or grant should be required for a strong research score.');
-assert.equal(researchCase([20, 8, 20], 0, 20, [], 4, 0).score, 72);
-assert.equal(researchCase([20, 8, 20], 5, 20, ['Won'], 4, 0).score, 82);
-assert.equal(researchCase([20, 8, 20], 0, 25, ['Won'], 0, 0).score, 73,
-  'A grant bonus must remain inside the 25-point execution ceiling.');
-assert.equal(researchCase([20, 20, 20], 100, 25, ['Won'], 100, 100).score, 100,
-  'Each research category must cap at its stated maximum.');
+const threeHighLead = scorePublicationCounts({ input_pub_high_lead: 3 });
+assert.equal(threeHighLead.raw, 30);
+assert.equal(threeHighLead.total, 30);
+assert.equal(scoreResearchOriginal({ publicationsRaw: threeHighLead.raw }).score, 15,
+  'Original /200 denominator means three high-IF lead papers earn 15% research attainment.');
+assert.equal(scorePublicationCounts({ input_pub_high_lead: 6 }).total, 50,
+  'Six high-IF lead papers reach the original B1 cap.');
+assert.equal(scorePublicationCounts({ input_pub_mod_co: 10 }).total, 30,
+  'All declared eligible papers count until the original B1 cap, not just the best three.');
+const applications = scoreGrantCounts({ input_grant_applied: 11 });
+assert.equal(applications.applicationsRaw, 20, 'Competitive applications have a 20-point subcap.');
+assert.equal(scoreGrantCounts({ input_grant_int_pi: 4 }).total, 50,
+  'Original B3 total is capped at 50.');
+assert.equal(scoreResearchOriginal({ publicationsRaw: 60, booksRaw: 24, grantsRaw: 60,
+  supervisionRaw: 48, innovationRaw: 50 }).score, 100,
+  'The original B1–B5 caps total 200 raw points.');
+assert.equal(scoreResearchOriginal({ publicationsRaw: 30, grantsRaw: 8 }).score, 19,
+  'One national PI grant adds eight raw points or four research percentage points.');
 
 const scenario = (profile, teaching, research, service, officer, clinical = 0) =>
   calculatePilotScenario(profile, { teaching, research, service, officer, clinical });
@@ -69,4 +95,4 @@ const researcher = scenario('Research Cadres / Postdocs', 75, 90, 65, 85);
 assert(clinical.score >= 80 && researcher.score >= 85,
   'Main-duty strengths should contribute under clinical and research-cadre mixes');
 
-console.log('PASS: profile totals, course means, paper bands/caps, grant/book limits and synthetic discrimination.');
+console.log('PASS: profile totals, credit-weighted reviews, provisional rank targets, original B1–B5 scoring and synthetic discrimination.');
