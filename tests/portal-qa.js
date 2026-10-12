@@ -56,7 +56,10 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
 
   assert(await page.locator('.teaching-course-card').count() === 3, 'Three starter courses required.');
   assert(await page.locator('.research-output-card').count() === 4, 'Four starter papers required.');
+  assert(await page.locator('.quick-status-bar').count() === 0, 'A score/rating strip must not repeat above every form page.');
   assert(await page.locator('#tab-summary .comparison-panel').count() === 1, 'Scales belong in final dossier.');
+  assert(await page.locator('#officialDossierPrintable > .dossier-final-assessment .comparison-panel').count() === 1,
+    'The single scoring scale must be in the final sign-off portion of the work-done report.');
   assert(!await page.locator('.comparison-panel').isVisible(), 'Scales must not appear on first page.');
   assert(await page.locator('#input_reporting_ref, #input_approved_teaching_wu').count() === 0, 'Unwanted reference/target fields remain.');
   assert(await page.locator('#input_wu_exempted').count() === 1, 'Exemption field must remain.');
@@ -120,6 +123,8 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   assert((await page.locator('#dossierCourseRows').innerText()).includes('ANAT-301'), 'Course evidence missing from dossier.');
   await page.emulateMedia({ media: 'print' });
   assert(await page.locator('.comparison-panel').isVisible(), 'Scales must appear in PDF print view.');
+  assert(await page.locator('.dossier-final-assessment').evaluate(node => getComputedStyle(node).breakBefore) === 'page',
+    'Final scoring and sign-off must start on the last PDF page.');
   await page.emulateMedia({ media: 'screen' });
 
   await fillCard(page, 'course', 1, { review: '81' });

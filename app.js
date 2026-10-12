@@ -158,11 +158,6 @@ const FIELD_HELP = Object.freeze({
 });
 
 const CONTEXT_HELP = Object.freeze({
-  statusProfileTitle: 'The appraisal mix is assigned from substantive designation and KMU institute/unit. BPS, TTS and Fixed Pay never change it.',
-  statusScoreTitle: 'The consolidated score is the sum of weighted objective and Appraising Officer scores, less any valid due-process deduction.',
-  statusSplitTitle: 'Both dimensions are displayed as percentages of their own ceilings. The faculty evidence score is provisional until the designated reviewer verifies the research quality entries; officer assessment is completed later.',
-  statusRatingTitle: 'The unapproved draft uses fixed absolute score bands only after all required fields pass. This is not a KMU cohort percentile or an official PER; relative above/average/below labels remain deferred.',
-  statusCycleTitle: 'Each record covers one calendar year, from 1 January through 31 December.',
   metaSectionTitle: 'Use the substantive appointment and current posting order. Acting or additional leadership roles are recorded separately.',
   profileAssignmentTitle: 'The default mix comes from designation and institute/unit. It changes only for a clinical, regional IHS, dedicated research, or documented special assignment.',
   teachingSectionTitle: 'Enter each course, its taught theory and practical credits, and its certified student review. The arithmetic average of course reviews is the proposed teaching score; credit hours are evidence, not a proration factor.',
@@ -1104,16 +1099,13 @@ function calculateAll() {
     && getResearchRubric({ requireReview: true }).issues.length === 0
     && PEER_PARAMETERS.every(item => Number.isInteger(appraisalState.sectionD.peerScores[item.id]))
     && CPD_TARGETS.every(item => Number.isInteger(appraisalState.sectionD.cpdScores[item.id]));
-  let rating = 'Incomplete draft'; let ratingClass = 'rating-incomplete';
+  let rating = 'Incomplete draft';
   let pipStatus = 'Not assessed';
   let pipDescription = `Complete the required fields before a rating or PIP status is calculated: ${readiness.missing.join(', ')}.`;
   if (readiness.ready) {
-    ({ rating, ratingClass, pipStatus, pipDescription } = classification);
+    ({ rating, pipStatus, pipDescription } = classification);
   }
 
-  updateElementText('liveScore', readiness.ready ? displayedScore.toFixed(1) : '—');
-  updateElementText('liveProfileName', appraisalState.profilePending ? 'Profile pending' : profile.name);
-  const badge = el('liveRatingBadge'); if (badge) { badge.textContent = rating; badge.className = `rating-badge ${ratingClass}`; }
   updateElementText('top_pip_status', pipStatus); updateElementText('kpi_final_score', readiness.ready ? `${displayedScore.toFixed(1)}%` : 'Not assessed');
   updateElementText('kpi_rating_band', rating); updateElementText('kpi_pip_status', pipStatus);
   updateElementText('kpi_pip_desc', pipDescription); updateElementText('kpi_penalty_applied', penalty.value ? `-${penalty.value} pts` : 'None');
@@ -1687,7 +1679,7 @@ window.switchTab = function (tabId) {
 window.printDossier = function () {
   calculateAll(); const readiness = getAssessmentReadiness(); window.switchTab('tab-summary');
   if (!readiness.ready) {
-    alert(`The draft dossier cannot be printed until these required items are complete: ${readiness.missing.join(', ')}.`);
+    alert(`The draft work done report cannot be printed until these required items are complete: ${readiness.missing.join(', ')}.`);
     return;
   }
   setTimeout(() => window.print(), 150);

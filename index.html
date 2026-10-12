@@ -11,8 +11,8 @@
 </head>
 <body>
   <div id="printBlockedNotice" class="print-blocked-notice" role="alert">
-    <h1>Incomplete Draft — Dossier Not Printable</h1>
-    <p>Complete all required identity, workload, evidence and Appraising Officer fields before printing the draft appraisal dossier.</p>
+    <h1>Incomplete Draft — Work Done Report Not Printable</h1>
+    <p>Complete all required identity, workload, evidence and Appraising Officer fields before printing the draft work done report.</p>
   </div>
 
   <!-- Top Official Header -->
@@ -37,7 +37,7 @@
           <span>📄</span> Download Draft Policy
         </a>
         <button type="button" class="btn btn-primary" onclick="printDossier()">
-          <span>🖨️</span> Print Draft Dossier
+          <span>🖨️</span> Print Draft Work Done Report
         </button>
       </div>
     </div>
@@ -106,39 +106,10 @@
       </div>
       <span class="wizard-arrow">➔</span>
       <div class="wizard-step" data-wizard="tab-summary" onclick="switchTab('tab-summary')">
-        <span class="wizard-step-num">8</span> <span>Draft Dossier</span>
+        <span class="wizard-step-num">8</span> <span>Work Done Report</span>
       </div>
     </div>
   </nav>
-
-  <!-- Live Metric / Quick Status Bar -->
-  <section class="quick-status-bar no-print">
-    <div class="status-bar-container">
-      <div class="status-item">
-        <span class="status-label" id="statusProfileTitle">Active Appraisal Mix</span>
-        <span class="status-val" id="liveProfileName">Profile pending</span>
-      </div>
-      <div class="status-item">
-        <span class="status-label" id="statusScoreTitle">Consolidated Score</span>
-        <span class="status-val">
-          <span id="liveScore" style="color:var(--kmu-maroon); font-size:1.4rem;">—</span>
-          <span style="font-size:0.85rem; color:#64748b;">/ 100</span>
-        </span>
-      </div>
-      <div class="status-item">
-        <span class="status-label" id="statusRatingTitle">Draft Absolute Rating Band</span>
-        <span class="status-val">
-          <span id="liveRatingBadge" class="rating-badge rating-incomplete">Incomplete draft</span>
-        </span>
-      </div>
-      <div class="status-item">
-        <span class="status-label" id="statusCycleTitle">Appraisal Cycle</span>
-        <span class="status-val" style="font-size:0.85rem; color:var(--slate-700);">
-          01 Jan – 31 Dec
-        </span>
-      </div>
-    </div>
-  </section>
 
   <!-- Main App Body -->
   <main class="main-wrapper">
@@ -183,7 +154,7 @@
             <span class="nav-pill" style="background:#fee2e2; color:#b91c1c;">Flag</span>
           </li>
           <li class="nav-item" data-tab="tab-summary">
-            <span>Draft Dossier & Sign-Off</span>
+            <span>Work Done Report &amp; Sign-Off</span>
             <span class="nav-pill" style="background:var(--kmu-gold); color:#fff;">Final</span>
           </li>
         </ul>
@@ -1399,8 +1370,8 @@
               <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()">
                 <span>💾</span> Save & Return Later
               </button>
-              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-summary', 'Step 8: Draft Appraisal Dossier')">
-                Review Draft Dossier ➔
+              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-summary', 'Step 8: Draft Work Done Report')">
+                Review Work Done Report ➔
               </button>
             </div>
           </div>
@@ -1410,12 +1381,12 @@
         <div class="tab-content" id="tab-summary">
           <div class="section-title-wrap no-print">
             <div>
-              <h2 class="section-title" id="summarySectionTitle">Step 8: Consolidated Draft Performance Evaluation Report (PER Form A)</h2>
+              <h2 class="section-title" id="summarySectionTitle">Step 8: Draft Faculty Work Done Report &amp; Appraisal Summary</h2>
               <p class="section-desc">Consolidated appraisal evaluation separating Objective and Subjective performance dimensions.</p>
             </div>
             <div class="header-actions">
               <button type="button" class="btn btn-secondary" onclick="exportCSV()"><span>📊</span> Export CSV</button>
-              <button type="button" class="btn btn-primary" onclick="printDossier()"><span>🖨️</span> Print Draft Dossier</button>
+              <button type="button" class="btn btn-primary" onclick="printDossier()"><span>🖨️</span> Print Draft Work Done Report</button>
             </div>
           </div>
 
@@ -1475,7 +1446,7 @@
             <div class="dossier-header">
               <img src="kmu_logo.png" alt="KMU Crest" class="dossier-logo">
               <div class="dossier-title">Khyber Medical University, Peshawar</div>
-              <div class="dossier-sub">Performance Evaluation Report (PER) & Annual Faculty Appraisal Dossier</div>
+              <div class="dossier-sub">Annual Faculty Work Done Report &amp; Draft Appraisal Dossier</div>
               <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">
                 Controlled Pilot • Policy reference KMU/REG/POL/2026/01-REV — Not an Official PER
               </div>
@@ -1529,19 +1500,6 @@
                 </td>
               </tr>
             </table>
-
-            <section class="comparison-panel" aria-label="Objective and Appraising Officer scores on a 0 to 100 scale">
-              <p class="comparison-note">Each percentage is the earned share of its own weighted ceiling, shown on the same 0–100 scale. These are not KMU cohort percentiles.</p>
-              <div class="comparison-row">
-                <div class="comparison-label"><strong>Objective Score</strong><span id="objectiveScaleValue">Awaiting faculty completion</span></div>
-                <div class="comparison-track"><div class="comparison-fill comparison-objective" id="objectiveScaleFill"></div></div>
-              </div>
-              <div class="comparison-row">
-                <div class="comparison-label"><strong>Appraising Officer Subjective Score</strong><span id="subjectiveScaleValue">Awaiting reviewer assessment</span></div>
-                <div class="comparison-track"><div class="comparison-fill comparison-subjective" id="subjectiveScaleFill"></div></div>
-              </div>
-              <div class="comparison-ticks"><span>0</span><span>25</span><span>50</span><span>75</span><span>100%</span></div>
-            </section>
 
             <h4 class="dossier-subheading">Course-level teaching evidence</h4>
             <table class="dossier-meta-table dossier-course-table">
@@ -1685,6 +1643,21 @@
               </table>
             </div>
 
+            <!-- Final report scoring scale and sign-off appear once, after the work-done record. -->
+            <div class="dossier-final-assessment">
+              <section class="comparison-panel" aria-label="Objective and Appraising Officer scores on a 0 to 100 scale">
+                <p class="comparison-note">Each percentage is the earned share of its own weighted ceiling, shown on the same 0–100 scale. These are not KMU cohort percentiles.</p>
+                <div class="comparison-row">
+                  <div class="comparison-label"><strong>Objective Score</strong><span id="objectiveScaleValue">Awaiting faculty completion</span></div>
+                  <div class="comparison-track"><div class="comparison-fill comparison-objective" id="objectiveScaleFill"></div></div>
+                </div>
+                <div class="comparison-row">
+                  <div class="comparison-label"><strong>Appraising Officer Subjective Score</strong><span id="subjectiveScaleValue">Awaiting reviewer assessment</span></div>
+                  <div class="comparison-track"><div class="comparison-fill comparison-subjective" id="subjectiveScaleFill"></div></div>
+                </div>
+                <div class="comparison-ticks"><span>0</span><span>25</span><span>50</span><span>75</span><span>100%</span></div>
+              </section>
+
             <!-- Sign-Off & Verification Grid -->
             <div class="signature-grid">
               <div>
@@ -1724,6 +1697,7 @@
 
             <div style="margin-top:2.5rem; border-top:1px dashed var(--slate-300); padding-top:0.75rem; font-size:0.72rem; color:#64748b; text-align:center;">
               Draft-use notice: this calculation is not an official PER and has no operative force until the policy and implementation instruments are approved and notified. Any review or appeal right arises only under the approved procedure and the employee's applicable service rules.
+            </div>
             </div>
           </article>
         </div>
