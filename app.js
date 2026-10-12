@@ -6,7 +6,7 @@
  */
 'use strict';
 
-const CONFIG_VERSION = 'KMU-CONTROLLED-PILOT-2026-10-12-ORIGINAL-RESEARCH-RANK-LOAD';
+const CONFIG_VERSION = 'KMU-CONTROLLED-PILOT-2026-10-12-SECTION-E-OBJECTIVE';
 const STORAGE_KEY = 'KMU_APPRAISAL_DRAFT_v5';
 const LEGACY_STORAGE_KEYS = Object.freeze(['KMU_APPRAISAL_DRAFT_v4', 'KMU_APPRAISAL_DRAFT_v3_3', 'KMU_APPRAISAL_DRAFT_v3_2', 'KMU_APPRAISAL_DRAFT_v3_1', 'KMU_APPRAISAL_DRAFT_v3']);
 const SCHEMA_VERSION = 5;
@@ -98,8 +98,7 @@ const CPD_TARGETS = [
 ].map(([id, label, desc]) => ({ id, label, desc }));
 
 const RESEARCH_RUBRIC_TEXT_IDS = Object.freeze([
-  'input_publications_ref', 'input_grants_ref', 'input_research_review_ref',
-  'input_books_ref', 'input_supervision_ref', 'input_innovation_ref'
+  'input_publications_ref', 'input_research_review_ref'
 ]);
 
 const NUMERIC_INPUT_IDS = [
@@ -155,8 +154,7 @@ const FIELD_HELP = Object.freeze({
   input_reviewer_role: 'Choose the capacity specified by the current reporting or committee notification; this static pilot cannot authenticate that capacity.',
   input_reviewer_name: 'Enter the designated officer name or exact committee identifier from the current notification.',
   input_research_review_confirm: 'The reviewer confirms that the self-reported publication counts, publication-year impact-factor bands, authorship, grants and supporting evidence were checked.',
-  input_publications_ref: 'For positive paper counts, give a short citation, DOI list or evidence-folder reference. Enter each distinct paper once.',
-  input_grants_ref: 'Cite the award letter or competitive application record if a grant/proposal count is positive.',
+  input_publications_ref: 'For positive paper counts, provide a Google Scholar link or short publication-list reference. Enter each distinct paper once.',
   input_additional_appoint: 'Select Yes only for a formally notified additional Dean, Director, or Head of Department appointment.',
   input_red_flag: 'Select a deduction only where every due-process control below is supported by the formal record.',
   input_red_flag_ref: 'Enter the formal inquiry or penalty notification reference issued by the competent authority.',
@@ -183,6 +181,8 @@ const CONTEXT_HELP = Object.freeze({
   serviceSectionTitle: 'Section D institutional service includes verified committee, policy, leadership and facility responsibilities. Section C patient care is scored separately where applicable.',
   serviceScoreTitle: 'This is the 0–100 institutional-service attainment before the profile weight is applied.',
   serviceContributionTitle: 'Institutional-service attainment multiplied by the service weight contributes this many points to the 100-point total.',
+  provisionalSectionTitle: 'Section E summarizes faculty-entered teaching, research, service and any applicable patient-care scores. It appears before the separate committee assessment.',
+  provisionalObjectiveTitle: 'Add the weighted objective domain points. Divide by the objective ceiling to see objective attainment; this is not yet the final score out of 100.',
   officerSectionTitle: 'The designated Appraisal Committee or Appraising Officer records all 13 professional criteria and five CPD results. This is the subjective component and remains reviewable.',
   officerScoreTitle: 'This percentage is the attained share of the Appraisal Committee assessment ceiling; the profile weight determines its contribution to the final score.',
   officerContributionTitle: 'Committee assessment attainment multiplied by its profile weight contributes this many points to the 100-point total.',
@@ -251,10 +251,10 @@ function renderDossierEvidence(researchRubric, service, clinical, profile) {
   const innovationCounts = `International patents ${count('input_innov_patent_int')}; national patents ${count('input_innov_patent_nat')}; commercial projects/products ${count('input_innov_project')}; overhead-generating engagements ${count('input_innov_overhead')}`;
   updateDossierTableRows('dossierResearchSummaryRows', [
     ['B1 Papers', `${researchRubric.publicationCount} distinct papers declared; all eligible counts contribute until the 50-point cap. Faculty citation/reference: ${reference('input_publications_ref')}.`, `${number(researchRubric.outputQuality)} / 50`],
-    ['B2 Books / chapters', `${bookCounts}. Evidence reference: ${reference('input_books_ref')}.`, `${number(researchRubric.books)} / 20`],
-    ['B3 Competitive grants', `${researchRubric.grantCount} grant/proposal activities declared; applications capped at 20 raw points. Evidence reference: ${reference('input_grants_ref')}.`, `${number(researchRubric.grants)} / 50`],
-    ['B4 Supervision', `${supervisionCounts}. Evidence reference: ${reference('input_supervision_ref')}.`, `${number(researchRubric.supervision)} / 40`],
-    ['B5 Innovation', `${innovationCounts}. Evidence reference: ${reference('input_innovation_ref')}.`, `${number(researchRubric.innovation)} / 40`]
+    ['B2 Books / chapters', bookCounts, `${number(researchRubric.books)} / 20`],
+    ['B3 Competitive grants', `${researchRubric.grantCount} grant/proposal activities declared; applications capped at 20 raw points.`, `${number(researchRubric.grants)} / 50`],
+    ['B4 Supervision', supervisionCounts, `${number(researchRubric.supervision)} / 40`],
+    ['B5 Innovation', innovationCounts, `${number(researchRubric.innovation)} / 40`]
   ], 'Research activity summary pending.', 3);
   updateDossierTableRows('dossierGrantRows', GRANT_ROWS.map(row => [
     row.label, String(count(row.id)), String(row.points),
@@ -320,13 +320,23 @@ function calculateTeachingAttainment(reviewAverage, creditsTaught, designation, 
   return { perSemesterTarget, annualTarget, loadFactor,
     score: clamp(reviewAverage, 0, 100) * loadFactor };
 }
+function isEnteredTeachingCourse(record) {
+  return Object.entries(record).some(([key, value]) => {
+    const input = String(value ?? '').trim();
+    if (!input) return false;
+    // A new course has both credit fields prefilled with zero. That alone is not an entry.
+    return key === 'theory' || key === 'practical' ? Number(input) !== 0 : true;
+  });
+}
 function getTeachingLoad() {
   const records = Array.from(document.querySelectorAll('.teaching-course-card')).map(card =>
     Object.fromEntries(Array.from(card.querySelectorAll('[data-course-field]'))
       .map(node => [node.dataset.courseField, node.value.trim()])));
-  const entered = records.filter(record => Object.values(record).some(value => value !== ''));
+  const enteredWithIndex = records.flatMap((record, index) =>
+    isEnteredTeachingCourse(record) ? [{ record, index }] : []);
+  const entered = enteredWithIndex.map(({ record }) => record);
   const issues = [];
-  entered.forEach((record, index) => {
+  enteredWithIndex.forEach(({ record, index }) => {
     const theory = Number(record.theory);
     const practical = Number(record.practical);
     const review = Number(record.review);
@@ -379,7 +389,10 @@ function renderTeachingCourses(records = [{}, {}, {}]) {
       const label = document.createElement('label'); label.textContent = labelText;
       const input = document.createElement('input'); input.type = type; input.className = 'form-control';
       input.id = `course-${index + 1}-${key}`; label.htmlFor = input.id;
-      input.dataset.courseField = key; input.value = safeString(record[key] ?? '', 240);
+      input.dataset.courseField = key;
+      const initialValue = (key === 'theory' || key === 'practical') && (record[key] === undefined || record[key] === '')
+        ? '0' : record[key] ?? '';
+      input.value = safeString(initialValue, 240);
       input.placeholder = placeholder; if (type === 'text') input.maxLength = 240;
       if (type === 'number') { input.min = '0'; input.max = '100'; input.step = 'any'; }
       input.addEventListener('input', calculateAll);
@@ -451,13 +464,9 @@ function getResearchRubric({ requireReview = false } = {}) {
   const grantCount = Object.values(grantCounts).reduce((sum, count) => sum + count, 0);
   const grantScore = scoreGrantCounts(grantCounts);
   const { applicationsRaw: grantApplicationsRaw, awardsRaw: grantAwardsRaw, raw: grantsRaw } = grantScore;
-  if (grantCount > 0 && !getTextValue('input_grants_ref')) issues.push('cite grant/proposal evidence');
   const original = scoreResearchOriginal({ publicationsRaw: publication.raw, booksRaw,
     grantsRaw, supervisionRaw, innovationRaw });
   const { publications: outputQuality, books, grants, supervision, innovation } = original;
-  if (books > 0 && !getTextValue('input_books_ref')) issues.push('cite B2 book/chapter evidence');
-  if (supervision > 0 && !getTextValue('input_supervision_ref')) issues.push('cite B4 supervision evidence');
-  if (innovation > 0 && !getTextValue('input_innovation_ref')) issues.push('cite B5 innovation evidence');
   if (!el('input_research_complete')?.checked) issues.push('confirm Section B is complete, including zero activity');
   if (requireReview) {
     if (!el('input_research_review_confirm')?.checked) issues.push('Appraising Officer research-evidence confirmation');
@@ -754,10 +763,10 @@ function updateReviewStageDisplay() {
   updateElementText('stageBannerTitle', open ? 'Stage 2 — Designated reviewer assessment' : 'Stage 1 — Faculty evidence');
   updateElementText('stageBannerText', open
     ? 'The faculty sections are complete. The designated Appraising Officer or notified Appraisal Committee may now review the declared evidence and complete the subjective assessment. This page sequence is not authenticated access control.'
-    : 'Complete the profile, teaching, research, patient care where applicable, and institutional service. Continue directly from Service to Peer Review.');
+    : 'Complete the profile, teaching, research, patient care where applicable, and service. Review Section E provisional objective scores before committee assessment.');
   updateElementText('reviewHandoffStatus', open
     ? `Faculty sections completed at ${appraisalState.objectiveSubmittedAt || 'the current session'}. Review the declared research evidence before entering Appraisal Committee scores.`
-    : 'Complete the faculty sections, then continue directly from Service to Peer Review.');
+    : 'Review Section E provisional objective scores before continuing to committee assessment.');
   document.querySelectorAll('[data-tab], [data-wizard]').forEach(node => {
     const tab = node.dataset.tab || node.dataset.wizard;
     if (!REVIEW_STAGE_TABS.has(tab)) return;
@@ -778,8 +787,8 @@ function invalidateHandoffIfObjectiveChanged() {
   initPeerControls();
   updateReviewStageDisplay();
   const activeTab = document.querySelector('.tab-content.active')?.id;
-  if (REVIEW_STAGE_TABS.has(activeTab)) window.switchTab('tab-service');
-  showToast('Faculty evidence changed. Peer Review will reopen after the faculty sections are complete again.');
+  if (REVIEW_STAGE_TABS.has(activeTab)) window.switchTab('tab-provisional');
+  showToast('Faculty evidence changed. Review Section E again before committee assessment.');
 }
 
 function getObjectiveReadiness() {
@@ -1050,7 +1059,35 @@ function calculateAll() {
   const classification = classifyScore(provisionalScore);
   const displayedScore = classification.score;
   const readiness = getAssessmentReadiness(penalty);
-  const objectiveReady = getObjectiveReadiness().ready;
+  const objectiveReadiness = getObjectiveReadiness();
+  const objectiveReady = objectiveReadiness.ready;
+  const provisionalDomain = (key, attainment, weight, weighted, ready) => {
+    updateElementText(`provisional_${key}_attainment`, ready ? `${attainment.toFixed(1)}%` : 'Pending');
+    updateElementText(`provisional_${key}_weight`, appraisalState.profilePending ? '—' : `${weight} points`);
+    updateElementText(`provisional_${key}_points`, ready ? `${weighted.toFixed(2)} / ${weight}` : 'Pending');
+  };
+  const profileReady = !appraisalState.profilePending;
+  provisionalDomain('teaching', attainmentA, profile.teaching, weightedA, teachingReady);
+  provisionalDomain('research', attainmentB, profile.research, weightedB,
+    profileReady && researchRubric.issues.length === 0);
+  provisionalDomain('service', attainmentC, profile.service, weightedC,
+    profileReady && Boolean(el('input_service_complete')?.checked));
+  const clinicalProvisionalRow = el('provisional_clinical_row');
+  if (clinicalProvisionalRow) clinicalProvisionalRow.hidden = profile.clinical <= 0;
+  if (profile.clinical > 0) provisionalDomain('clinical', attainmentE, profile.clinical, weightedE,
+    profileReady && ['input_clin_admin', 'input_clin_volume', 'input_clin_oncall', 'input_clin_teaching']
+      .every(id => getTextValue(id) !== '')
+      && Boolean(getTextValue('input_clin_service_mode')) && Boolean(getTextValue('input_clin_evidence_ref')));
+  updateElementText('provisional_objective_total', profileReady
+    ? objectiveReady ? `${objectiveScore.toFixed(2)} / ${objectiveMaximum} points`
+      : 'Pending complete faculty evidence'
+    : 'Choose designation and institute');
+  updateElementText('provisional_objective_percent', objectiveReady
+    ? `${objectivePercent.toFixed(1)}% of the objective ceiling. The committee portion is not included.`
+    : 'The objective total will appear after all required faculty entries are complete.');
+  updateElementText('provisional_readiness', objectiveReady
+    ? 'Faculty objective entries are complete for this pilot. Save this browser draft before continuing to committee assessment.'
+    : `Still needed: ${objectiveReadiness.missing.join('; ')}.`);
   const subjectiveReady = appraisalState.objectiveSubmitted
     && Boolean(getTextValue('input_reviewer_role')) && Boolean(getTextValue('input_reviewer_name'))
     && getResearchRubric({ requireReview: true }).issues.length === 0
@@ -1279,7 +1316,7 @@ window.continueFromResearch = function () {
 window.continueToPeerReview = function () {
   const readiness = getObjectiveReadiness();
   if (!readiness.ready) {
-    alert(`Complete the faculty sections before Peer Review: ${readiness.missing.join(', ')}.`);
+    alert(`Complete the faculty sections before committee assessment: ${readiness.missing.join(', ')}.`);
     return false;
   }
   appraisalState.objectiveSnapshot = getObjectiveFingerprint();
@@ -1288,7 +1325,7 @@ window.continueToPeerReview = function () {
   updateReviewStageDisplay();
   calculateAll();
   window.switchTab('tab-peer');
-  showToast('Faculty sections complete. Peer Review is now open.');
+  showToast('Faculty objective sections complete. Committee assessment is now open.');
   return true;
 };
 window.submitObjectiveForReview = window.continueToPeerReview; // Earlier pilot drafts may still call this.
@@ -1432,7 +1469,6 @@ function restoreDraftObject(rawDraft) {
       if (id) convertedGrants[id] += 1;
     });
     Object.entries(convertedGrants).forEach(([id, value]) => setVal(id, value));
-    if (draft.grantsList.length) setVal('input_grants_ref', safeString(draft.grantsList.map(grant => grant.title).join('; '), 240));
   }
   setVal('input_wu_exempted', draft.wuExempted === 'Y' ? 'Y' : 'N');
   if (el('input_service_complete')) el('input_service_complete').checked = draft.serviceComplete === true;
@@ -1585,7 +1621,6 @@ window.exportCSV = function () {
         ? result.researchRubric.grantApplicationsRaw
         : getActivityCount(row.id) * row.points]),
     ['Grants and proposals B3, capped at 50', result.researchRubric.grants.toFixed(1)],
-    ['Grant/proposal evidence reference', getTextValue('input_grants_ref')],
     ['Supervision B4, capped at 40', result.researchRubric.supervision.toFixed(1)],
     ['Innovation B5, capped at 40', result.researchRubric.innovation.toFixed(1)],
     ['Research original raw total', `${result.researchRubric.raw.toFixed(1)} / 200`],
@@ -1634,9 +1669,6 @@ window.loadSampleData = function () {
   renderTeachingCourses([{ title: 'Fictional course', code: 'EX-301', specialty: 'Example science', theory: '1', practical: '1', review: '86', term: 'Semester 3', level: 'Undergraduate' }]);
   setVal('input_pub_mod_lead', 1); setVal('input_pub_high_lead', 2);
   setVal('input_publications_ref', 'EXAMPLE/DOI/001; EXAMPLE/DOI/002; EXAMPLE/DOI/003');
-  setVal('input_books_ref', 'EXAMPLE/BOOK/001');
-  setVal('input_supervision_ref', 'EXAMPLE/ASRB/001');
-  setVal('input_innovation_ref', 'EXAMPLE/ORIC/PRODUCT/001');
   if (el('input_research_complete')) el('input_research_complete').checked = true;
   if (el('input_service_complete')) el('input_service_complete').checked = true;
   setVal('input_reviewer_role', 'Designated Appraising Officer');
@@ -1647,7 +1679,6 @@ window.loadSampleData = function () {
   setVal('input_innov_project', 1); setVal('input_comm_member', 3); setVal('input_comm_chair', 1);
   setVal('input_policy_doc', 1); setVal('input_facility_charge', 1);
   setVal('input_grant_nat_pi', 1); setVal('input_grant_applied', 2);
-  setVal('input_grants_ref', 'EXAMPLE/GRANT/LEDGER/001');
   PEER_PARAMETERS.forEach(item => { appraisalState.sectionD.peerScores[item.id] = 5; });
   CPD_TARGETS.forEach(item => { appraisalState.sectionD.cpdScores[item.id] = 1; });
   setVal('input_target_teaching', 'Deliver the assigned teaching workload and maintain verified course records.');
@@ -1663,11 +1694,12 @@ window.loadSampleData = function () {
 
 window.switchTab = function (tabId) {
   if (REVIEW_STAGE_TABS.has(tabId) && !appraisalState.objectiveSubmitted) {
-    if (tabId === 'tab-peer' && getObjectiveReadiness().ready) {
-      window.continueToPeerReview();
+    if (tabId === 'tab-peer') {
+      window.switchTab('tab-provisional');
+      showToast('Review Section E before continuing to committee assessment.');
       return;
     }
-    showToast('Complete the faculty sections before opening Peer Review.');
+    showToast('Complete Section E before opening committee assessment.');
     return;
   }
   document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));

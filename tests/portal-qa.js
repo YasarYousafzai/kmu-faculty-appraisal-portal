@@ -52,13 +52,24 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   await page.goto(`http://127.0.0.1:${server.address().port}/`, { waitUntil: 'networkidle' });
 
   assert(await page.locator('.teaching-course-card').count() === 3, 'Three starter courses required.');
+  assert(await page.locator('.teaching-course-card [data-course-field="theory"]').evaluateAll(nodes => nodes.every(node => node.value === '0')) &&
+    await page.locator('.teaching-course-card [data-course-field="practical"]').evaluateAll(nodes => nodes.every(node => node.value === '0')),
+  'Theory and practical credits should default to zero in every starter course.');
+  assert((await result(page)).teachingLoad.entered.length === 0,
+    'Untouched zero-credit starter courses should not be treated as incomplete entries.');
   assert(await page.locator('[id^="input_pub_"]').count() === 6, 'Six publication-count rows required.');
-  assert(await page.locator('[id^="input_grant_"]:not(#input_grants_ref)').count() === 6,
+  assert(await page.locator('[id^="input_grant_"]').count() === 6,
     'Six original grant and submitted-proposal count rows required.');
+  assert(await page.locator('#input_publications_ref').getAttribute('placeholder') === 'Example: Google Scholar link',
+    'The publication-reference example should use a Google Scholar link.');
+  assert(await page.locator('#input_books_ref, #input_grants_ref, #input_supervision_ref, #input_innovation_ref').count() === 0,
+    'B2–B5 evidence-reference fields should not remain.');
   assert(await page.locator('.research-output-card, #input_new_grant_title').count() === 0,
     'The old per-paper and per-grant entry cards must not remain.');
   assert(await page.locator('.quick-status-bar').count() === 0, 'A score/rating strip must not repeat above every form page.');
   assert(await page.locator('#tab-summary .comparison-panel').count() === 1, 'Scales belong in final dossier.');
+  assert(await page.locator('#tab-provisional .comparison-panel').count() === 0,
+    'Section E should show objective totals without duplicating the final-page scoring scale.');
   assert(await page.locator('#officialDossierPrintable > .dossier-final-assessment .comparison-panel').count() === 1,
     'The single scoring scale must be in the final sign-off portion of the work-done report.');
   assert(!await page.locator('.comparison-panel').isVisible(), 'Scales must not appear on first page.');
@@ -96,29 +107,27 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
 
   await set(page, '#input_pub_high_lead', 2);
   await set(page, '#input_pub_mod_co', 1);
-  await set(page, '#input_publications_ref', 'SYNTHETIC/DOI/001-003');
+  await set(page, '#input_publications_ref', 'SYNTHETIC/GOOGLE-SCHOLAR');
   await check(page, '#input_research_complete', true);
   current = await result(page);
   assert(current.researchRubric.publicationCount === 3, 'Publication count rows were not read.');
   await set(page, '#input_pub_low_lead', 1);
   assert((await result(page)).researchRubric.publicationCount === 4, 'Additional publication count was not read.');
-  await set(page, '#input_book_nat', 1); await set(page, '#input_books_ref', 'SYNTHETIC/ISBN');
+  await set(page, '#input_book_nat', 1);
   await set(page, '#input_book_nat', 0);
-  await set(page, '#input_sup_mphil', 1); await set(page, '#input_supervision_ref', 'SYNTHETIC/ASRB');
+  await set(page, '#input_sup_mphil', 1);
 
   // The printable work-done report must carry the evidence behind its totals,
   // not just the Section B/D aggregate scores.
   await set(page, '#input_book_nat', 1);
   await set(page, '#input_chapter_nat', 1);
-  await set(page, '#input_books_ref', 'SYNTHETIC/ISBN');
   await set(page, '#input_innov_patent_nat', 1);
-  await set(page, '#input_innovation_ref', 'SYNTHETIC/PATENT');
   await set(page, '#input_comm_member', 2);
   await set(page, '#input_facility_charge', 1);
   await set(page, '#input_grant_nat_pi', 1);
   await set(page, '#input_grant_applied', 2);
-  await set(page, '#input_grants_ref', 'SYNTHETIC/GRANT/LEDGER');
-  assert((await result(page)).researchRubric.issues.length === 0, 'Complete count-based research entries should be valid.');
+  assert((await result(page)).researchRubric.issues.length === 0,
+    'Positive B2–B5 counts should score without removed evidence-reference fields.');
   near((await result(page)).researchRubric.raw, 56);
   near((await result(page)).attainmentB, 28);
 
@@ -126,11 +135,23 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   assert(await page.evaluate(() => window.KMUCalculator.getObjectiveReadiness().ready), 'Faculty evidence should be ready.');
   await page.evaluate(() => window.continueFromResearch());
   assert(await page.locator('#tab-service').evaluate(node => node.classList.contains('active')), 'Nonclinical research should lead to service.');
-  assert((await page.locator('#tab-service button[onclick="continueToPeerReview()"]').innerText()).includes('Continue to Peer Review'),
-    'Service should continue directly to Peer Review without a separate submission step.');
-  assert(await page.evaluate(() => window.continueToPeerReview()), 'Direct Service-to-Peer transition failed.');
+  await page.locator('#tab-service button[onclick="switchTab(\'tab-provisional\')"]').click();
+  assert(await page.locator('#tab-provisional').evaluate(node => node.classList.contains('active')),
+    'Section E provisional dossier must follow Service.');
+  const sectionEScore = await page.locator('#provisional_objective_total').innerText();
+  assert(sectionEScore.includes('/ 80 points') && (await page.locator('#provisional_objective_percent').innerText()).includes('% of the objective ceiling'),
+    'Section E must show the weighted faculty objective score against its profile ceiling.');
+  current = await result(page);
+  assert(parseFloat(sectionEScore).toFixed(2) ===
+    (current.weightedA + current.weightedB + current.weightedC + current.weightedE).toFixed(2),
+  'Section E objective total must equal the sum of teaching, research, service and any patient-care weighted points.');
+  await page.locator('#tab-provisional button[onclick="saveAndReturnLater()"]').click();
+  assert(await page.evaluate(() => Boolean(localStorage.getItem('KMU_APPRAISAL_DRAFT_v5'))),
+    'Faculty must be able to save the provisional dossier locally.');
+  await page.locator('#saveReturnModal .modal-close').click();
+  assert(await page.evaluate(() => window.continueToPeerReview()), 'Section E-to-committee transition failed.');
   assert(await page.locator('#tab-peer').evaluate(node => node.classList.contains('active')),
-    'Completed faculty sections must open Peer Review directly.');
+    'Completed provisional dossier must open committee assessment.');
   await set(page, '#input_reviewer_role', 'Designated Appraising Officer');
   await set(page, '#input_reviewer_name', 'Synthetic Reviewer');
   await set(page, '#input_research_review_ref', 'SYNTHETIC/REVIEW');
@@ -154,10 +175,12 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   assert(grantRows.includes('National grant PKR 1–10 million — PI') &&
     grantRows.includes('Competitive applications submitted'), 'Grant-count research evidence missing from dossier.');
   const researchSummary = await page.locator('#dossierResearchSummaryRows').innerText();
-  assert(researchSummary.includes('SYNTHETIC/ISBN') && researchSummary.includes('SYNTHETIC/ASRB') &&
-    researchSummary.includes('SYNTHETIC/PATENT') && researchSummary.includes('SYNTHETIC/DOI/001-003') &&
-    researchSummary.includes('SYNTHETIC/GRANT/LEDGER'),
-    'Book, supervision or innovation evidence missing from dossier.');
+  assert(researchSummary.includes('International books 0; national books 1') &&
+    researchSummary.includes('MPhil/MS completed 1') &&
+    researchSummary.includes('National patents 1') &&
+    researchSummary.includes('SYNTHETIC/GOOGLE-SCHOLAR') &&
+    !researchSummary.includes('Evidence reference: Not entered'),
+    'The dossier should list B2–B5 activity counts without deleted reference requirements.');
   assert(await page.locator('#dossierServiceRows tr:nth-child(1) td:nth-child(2)').innerText() === '2' &&
     await page.locator('#dossierServiceRows tr:nth-child(4) td:nth-child(2)').innerText() === '1',
     'Institutional-service activity counts missing from dossier.');
@@ -181,6 +204,8 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   await fillCourse(page, 1, { review: '81' });
   current = await result(page);
   assert(!current.ready && !current.subjectiveReady, 'Faculty edit must invalidate committee result.');
+  assert(await page.locator('#tab-provisional').evaluate(node => node.classList.contains('active')),
+    'A changed objective dossier must return the reviewer to Section E.');
   assert(await page.locator('[data-wizard="tab-peer"]').getAttribute('aria-disabled') === 'true', 'Committee stage must relock.');
   await set(page, '#input_emp_desig', 'Senior Registrar');
   assert((await result(page)).missing.includes('all four clinical service scores'), 'Clinical evidence must be required.');
@@ -192,6 +217,11 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   await set(page, '#input_clin_volume', 91);
   await set(page, '#input_clin_oncall', 96);
   await set(page, '#input_clin_teaching', 86);
+  await page.evaluate(() => window.switchTab('tab-provisional'));
+  assert(await page.locator('#provisional_clinical_row').isVisible(),
+    'Clinical profiles must include patient care in the Section E objective dossier.');
+  assert((await page.locator('#provisional_objective_total').innerText()).includes('/ 90 points'),
+    'A clinical profile must use its 90-point objective ceiling.');
   assert(await page.locator('#dossierClinicalEvidence').evaluate(node => getComputedStyle(node).display) !== 'none',
     'Clinical evidence must appear for a clinical profile.');
   const clinicalSummary = await page.locator('#dossierClinicalRows').textContent();

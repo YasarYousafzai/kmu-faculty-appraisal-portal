@@ -13,7 +13,37 @@ vm.createContext(sandbox);
 vm.runInContext(source, sandbox, { filename: 'app.js' });
 const { PROFILES, calculatePilotScenario, classifyScore, benchmarkState,
   weightedStudentReviews, calculateTeachingAttainment, paperPilotPoints, scorePublicationCounts,
-  scoreGrantCounts, scoreResearchOriginal } = sandbox.window.KMUCalculator;
+  scoreGrantCounts, scoreResearchOriginal, getTeachingLoad } = sandbox.window.KMUCalculator;
+
+function mockTeachingCards(records) {
+  sandbox.document.querySelectorAll = selector => {
+    assert.equal(selector, '.teaching-course-card');
+    return records.map(record => ({
+      querySelectorAll: () => Object.entries(record).map(([courseField, value]) => ({
+        dataset: { courseField }, value: String(value)
+      }))
+    }));
+  };
+}
+const blankCourse = { title: '', code: '', specialty: '', theory: '0', practical: '0',
+  review: '', term: '', level: '' };
+mockTeachingCards([blankCourse, blankCourse, blankCourse]);
+let teachingLoad = getTeachingLoad();
+assert.equal(teachingLoad.entered.length, 0, 'Default zero-credit course cards are not actual entries.');
+assert.equal(teachingLoad.issues.length, 0, 'Untouched course cards must not show completion errors.');
+assert.equal(teachingLoad.hasEntry, false, 'Untouched course cards cannot satisfy teaching evidence.');
+mockTeachingCards([blankCourse, { ...blankCourse, title: 'Anatomy' }, blankCourse]);
+teachingLoad = getTeachingLoad();
+assert.equal(teachingLoad.issues.length, 1, 'A partially entered course must still be flagged.');
+assert.match(teachingLoad.issues[0], /course 2/, 'The error should identify the actual course card.');
+mockTeachingCards([{ ...blankCourse, title: 'Anatomy', code: 'ANAT-301',
+  specialty: 'Anatomy', theory: '1', review: '80', term: 'Semester 3',
+  level: 'Undergraduate' }, blankCourse, blankCourse]);
+teachingLoad = getTeachingLoad();
+assert.equal(teachingLoad.issues.length, 0, 'Blank starter cards should not invalidate a completed course.');
+assert.equal(teachingLoad.courseCount, 1);
+assert.equal(teachingLoad.creditsTaught, 1);
+assert.equal(teachingLoad.reviewAverage, 80);
 
 for (const profile of Object.values(PROFILES)) {
   assert.equal(profile.teachingWeight + profile.researchWeight + profile.serviceWeight

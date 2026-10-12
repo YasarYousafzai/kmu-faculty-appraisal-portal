@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>KMU Faculty Appraisal Portal — Controlled Pilot</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=20261012-section-e-objective">
   <link rel="icon" type="image/png" href="kmu_logo.png">
 </head>
 <body>
@@ -54,7 +54,7 @@
 
   <section class="stage-banner no-print" aria-live="polite">
     <strong id="stageBannerTitle">Stage 1 — Faculty evidence</strong>
-    <span id="stageBannerText">Complete the profile, teaching, research, institutional service and, if applicable, clinical sections. Then hand this same-browser pilot draft to the designated reviewer.</span>
+    <span id="stageBannerText">Complete the faculty sections, review and save Section E provisional objective scores, then continue to committee assessment in this same-browser pilot.</span>
   </section>
 
   <!-- In-Progress Draft Recovery Banner -->
@@ -93,20 +93,24 @@
         <span class="wizard-step-num">D</span> <span>Service</span>
       </div>
       <span class="wizard-arrow">➔</span>
+      <div class="wizard-step" data-wizard="tab-provisional" onclick="switchTab('tab-provisional')">
+        <span class="wizard-step-num">E</span> <span>Provisional Dossier</span>
+      </div>
+      <span class="wizard-arrow">➔</span>
       <div class="wizard-step" data-wizard="tab-peer" onclick="switchTab('tab-peer')">
-        <span class="wizard-step-num">5</span> <span>Committee Review</span>
+        <span class="wizard-step-num">6</span> <span>Committee Review</span>
       </div>
       <span class="wizard-arrow">➔</span>
       <div class="wizard-step" data-wizard="tab-targets" onclick="switchTab('tab-targets')">
-        <span class="wizard-step-num">6</span> <span>Perf & Dev Targets</span>
+        <span class="wizard-step-num">7</span> <span>Perf & Dev Targets</span>
       </div>
       <span class="wizard-arrow">➔</span>
       <div class="wizard-step" data-wizard="tab-redflag" onclick="switchTab('tab-redflag')">
-        <span class="wizard-step-num">7</span> <span>Due Process</span>
+        <span class="wizard-step-num">8</span> <span>Due Process</span>
       </div>
       <span class="wizard-arrow">➔</span>
       <div class="wizard-step" data-wizard="tab-summary" onclick="switchTab('tab-summary')">
-        <span class="wizard-step-num">8</span> <span>Draft Dossier &amp; Sign-Off</span>
+        <span class="wizard-step-num">9</span> <span>Draft Dossier &amp; Sign-Off</span>
       </div>
     </div>
   </nav>
@@ -141,6 +145,10 @@
             <span>Section D: Service</span>
             <span class="nav-pill" id="navPillService">20%</span>
           </li>
+          <li class="nav-item" data-tab="tab-provisional">
+            <span>Section E: Provisional Dossier</span>
+            <span class="nav-pill">Objective</span>
+          </li>
           <li class="nav-item reviewer-nav" data-tab="tab-peer">
             <span>Appraisal Committee Assessment</span>
             <span class="nav-pill" id="navPillPeer">Locked</span>
@@ -160,7 +168,7 @@
         </ul>
         <div style="padding:1rem; border-top:1px solid var(--slate-200); background:var(--slate-50);">
           <div style="font-size:0.75rem; color:#64748b; line-height:1.4;">
-            <strong>Portal cycle configuration:</strong> 01 January to 31 December at the user's request. Downloadable draft Section 10 still says July–June; the competent forum must reconcile this before approval. The committee page follows the completed faculty sections directly.
+            <strong>Portal cycle configuration:</strong> 01 January to 31 December at the user's request. Downloadable draft Section 10 still says July–June; the competent forum must reconcile this before approval. Section E summarizes faculty-entered objective scores before committee assessment.
           </div>
         </div>
       </aside>
@@ -411,7 +419,7 @@
 
           <div class="step-footer-actions">
             <div style="font-size:0.825rem; color:#64748b;">
-              Step 1 of 8: Faculty Identity & Substantive Post
+              Step 1 of 9: Faculty Identity & Substantive Post
             </div>
             <div class="step-footer-actions-right">
               <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()">
@@ -535,7 +543,7 @@
               </tbody>
             </table>
           </div>
-          <div class="form-group"><label for="input_publications_ref">Publication citations / evidence reference</label><input type="text" id="input_publications_ref" class="form-control" maxlength="240" placeholder="Example: DOI list or faculty publication register"><span class="field-hint">One short reference is enough for this pilot; enter each paper in only one count row.</span></div>
+          <div class="form-group"><label for="input_publications_ref">Publication citations / evidence reference</label><input type="text" id="input_publications_ref" class="form-control" maxlength="240" placeholder="Example: Google Scholar link"><span class="field-hint">One short reference is enough for this pilot; enter each paper in only one count row.</span></div>
 
           <label class="research-complete-label" for="input_research_complete"><input type="checkbox" id="input_research_complete"> I have completed Section B; any research activity not entered here is zero for this appraisal year.</label>
           <span class="field-hint">Select this even if your research score is zero. It distinguishes a completed no-activity declaration from an unfinished page.</span>
@@ -590,7 +598,6 @@
               </tbody>
             </table>
           </div>
-          <div class="form-group"><label for="input_books_ref">B2 book/chapter evidence reference (required for positive counts)</label><input type="text" id="input_books_ref" class="form-control" maxlength="240" placeholder="Example: ISBN, publisher and publication record"></div>
 
           <!-- B3: Original grant and proposal count table -->
           <h3 style="font-size:0.95rem; font-weight:700; color:var(--kmu-maroon); margin:1.25rem 0 0.75rem 0;">
@@ -611,7 +618,6 @@
               </tbody>
             </table>
           </div>
-          <div class="form-group"><label for="input_grants_ref">Grant/proposal evidence reference</label><input type="text" id="input_grants_ref" class="form-control" maxlength="240" placeholder="Example: award letter or proposal receipt reference"></div>
 
           <!-- B4: Postgraduate Supervision -->
           <h3 style="font-size:0.95rem; font-weight:700; color:var(--kmu-maroon); margin:1.25rem 0 0.75rem 0;">
@@ -659,7 +665,6 @@
               </tbody>
             </table>
           </div>
-          <div class="form-group"><label for="input_supervision_ref">B4 supervision evidence reference (required for positive counts)</label><input type="text" id="input_supervision_ref" class="form-control" maxlength="240" placeholder="Example: ASRB award or rotation completion notice"></div>
 
           <!-- B5: Innovation & Commercialization -->
           <h3 style="font-size:0.95rem; font-weight:700; color:var(--kmu-maroon); margin:1.25rem 0 0.75rem 0;">
@@ -707,7 +712,6 @@
               </tbody>
             </table>
           </div>
-          <div class="form-group"><label for="input_innovation_ref">B5 innovation evidence reference (required for positive counts)</label><input type="text" id="input_innovation_ref" class="form-control" maxlength="240" placeholder="Example: patent grant or ORIC adoption record"></div>
 
           </div>
 
@@ -842,18 +846,58 @@
               <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()">
                 <span>💾</span> Save & Return Later
               </button>
-              <button type="button" class="btn btn-primary btn-lg" onclick="continueToPeerReview()">
-                Continue to Peer Review ➔
+              <button type="button" class="btn btn-primary btn-lg" onclick="switchTab('tab-provisional')">
+                Review Provisional Objective Scores ➔
               </button>
             </div>
           </div>
         </div>
 
-        <!-- TAB 6: SECTION D - PEER & CPD (SUBJECTIVE - EVALUATED BY CONCERNED DEAN) -->
+        <!-- SECTION E: FACULTY-ENTERED PROVISIONAL OBJECTIVE DOSSIER -->
+        <div class="tab-content" id="tab-provisional">
+          <div class="section-title-wrap">
+            <div>
+              <h2 class="section-title" id="provisionalSectionTitle">Section E — Provisional Objective Dossier</h2>
+              <p class="section-desc">Review the faculty-entered objective points before the Appraising Officer or Appraisal Committee completes the separate subjective assessment.</p>
+            </div>
+            <span class="section-badge">Faculty stage</span>
+          </div>
+
+          <div class="info-callout">
+            These are pilot calculations from this form, not a final KMU appraisal or a verified personnel record. The objective maximum depends on the assigned profile; the remaining points belong to committee assessment.
+          </div>
+          <div class="data-table-wrap">
+            <table class="data-table provisional-score-table">
+              <thead><tr><th>Objective domain</th><th>Attainment</th><th>Profile weight / maximum</th><th>Weighted points earned</th></tr></thead>
+              <tbody>
+                <tr><td>Section A — Teaching</td><td id="provisional_teaching_attainment">Pending</td><td id="provisional_teaching_weight">—</td><td id="provisional_teaching_points">—</td></tr>
+                <tr><td>Section B — Research, grants, supervision and innovation</td><td id="provisional_research_attainment">Pending</td><td id="provisional_research_weight">—</td><td id="provisional_research_points">—</td></tr>
+                <tr id="provisional_clinical_row" hidden><td>Section C — Patient care</td><td id="provisional_clinical_attainment">Pending</td><td id="provisional_clinical_weight">—</td><td id="provisional_clinical_points">—</td></tr>
+                <tr><td>Section D — Institutional service</td><td id="provisional_service_attainment">Pending</td><td id="provisional_service_weight">—</td><td id="provisional_service_points">—</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="kpi-card provisional-total-card" aria-live="polite">
+            <span class="kpi-title" id="provisionalObjectiveTitle">Total provisional objective score</span>
+            <div class="kpi-value" id="provisional_objective_total">Pending faculty evidence</div>
+            <span class="kpi-desc" id="provisional_objective_percent">This is the objective portion only, not a score out of the full 100.</span>
+          </div>
+          <p class="provisional-readiness" id="provisional_readiness" role="status">Complete the faculty sections to finalize this provisional objective calculation.</p>
+          <p class="provisional-note">Saving here keeps the entire draft only in this browser. It does not create an account, submit the dossier, or make it available to an assessor. Use fictional or non-confidential pilot data until secure accounts are configured.</p>
+          <div class="step-footer-actions">
+            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-service')">← Back to Section D</button>
+            <div class="step-footer-actions-right">
+              <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()"><span>💾</span> Save Provisional Dossier on This Browser</button>
+              <button type="button" class="btn btn-primary btn-lg" onclick="continueToPeerReview()">Continue to Committee Assessment ➔</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- COMMITTEE ASSESSMENT: SUBJECTIVE -->
         <div class="tab-content" id="tab-peer">
           <div class="section-title-wrap">
             <div>
-              <h2 class="section-title" id="officerSectionTitle">Step 5: Appraisal Committee Assessment — Professional Conduct & CPD</h2>
+              <h2 class="section-title" id="officerSectionTitle">Step 6: Appraisal Committee Assessment — Professional Conduct & CPD</h2>
               <p class="section-desc">Completed by the designated Appraising Officer or notified Appraisal Committee under the applicable reporting line.</p>
             </div>
             <div style="text-align:right;">
@@ -868,7 +912,7 @@
             <strong>Subjective evaluation:</strong> the Appraisal Committee assessment records professional conduct, collegiality and development, subject to review and moderation.
           </div>
 
-          <div class="review-handoff-card" id="reviewHandoffStatus" role="status">Complete the faculty sections, then continue directly from Service to Peer Review.</div>
+          <div class="review-handoff-card" id="reviewHandoffStatus" role="status">Review Section E provisional objective scores before continuing to committee assessment.</div>
           <div class="form-grid reviewer-identity-grid">
             <div class="form-group">
               <label for="input_reviewer_role">Notified reviewer capacity *</label>
@@ -922,7 +966,7 @@
           </div>
 
           <div class="step-footer-actions">
-            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-service')">← Review faculty evidence</button>
+            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-provisional')">← Review provisional dossier</button>
             <div class="step-footer-actions-right">
               <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()">
                 <span>💾</span> Save & Return Later
@@ -934,7 +978,7 @@
           </div>
         </div>
 
-        <!-- TAB 7: SECTION E - CLINICAL (DYNAMIC) -->
+        <!-- SECTION C: CLINICAL / PATIENT CARE (DYNAMIC) -->
         <div class="tab-content" id="tab-clinical">
           <div class="section-title-wrap">
             <div>
@@ -1044,7 +1088,7 @@
         <div class="tab-content" id="tab-targets">
           <div class="section-title-wrap">
             <div>
-              <h2 class="section-title" id="targetsSectionTitle">Step 6: Agreed Performance & Personal Development Targets for the Next Reporting Period</h2>
+              <h2 class="section-title" id="targetsSectionTitle">Step 7: Agreed Performance & Personal Development Targets for the Next Reporting Period</h2>
               <p class="section-desc">Measurable academic deliverables and development milestones agreed between the faculty member and the designated Appraising Officer under the applicable reporting line.</p>
             </div>
             <span class="section-badge" style="background:#fef3c7; color:#b45309;">Forward Planning & Career Growth</span>
@@ -1125,12 +1169,12 @@
           </div>
 
           <div class="step-footer-actions">
-            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-peer')">← Back to Step 5</button>
+            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-peer')">← Back to Step 6</button>
             <div class="step-footer-actions-right">
               <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()">
                 <span>💾</span> Save & Return Later
               </button>
-              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-redflag', 'Step 7: Due Process')">
+              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-redflag', 'Step 8: Due Process')">
                 Continue ➔
               </button>
             </div>
@@ -1141,7 +1185,7 @@
         <div class="tab-content" id="tab-redflag">
           <div class="section-title-wrap">
             <div>
-              <h2 class="section-title" id="dueProcessSectionTitle">Step 7: Disciplinary Red Flag &amp; Due Process Safeguard</h2>
+              <h2 class="section-title" id="dueProcessSectionTitle">Step 8: Disciplinary Red Flag &amp; Due Process Safeguard</h2>
               <p class="section-desc">Draft Section 9.4 safeguards governing any disciplinary deduction.</p>
             </div>
             <span class="section-badge" style="background:#fee2e2; color:#b91c1c;">Due-Process Check</span>
@@ -1196,23 +1240,23 @@
           <div style="display:none;" id="disp_red_flag_penalty">-0 pts</div>
 
           <div class="step-footer-actions">
-            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-targets')">← Back to Step 6</button>
+            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-targets')">← Back to Step 7</button>
             <div class="step-footer-actions-right">
               <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()">
                 <span>💾</span> Save & Return Later
               </button>
-              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-summary', 'Step 8: Draft Dossier & Sign-Off')">
+              <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-summary', 'Step 9: Draft Dossier & Sign-Off')">
                 Review Draft Dossier ➔
               </button>
             </div>
           </div>
         </div>
 
-        <!-- TAB 9: FINAL DOSSIER & SUMMARY -->
+        <!-- FINAL DOSSIER & SUMMARY -->
         <div class="tab-content" id="tab-summary">
           <div class="section-title-wrap no-print">
             <div>
-              <h2 class="section-title" id="summarySectionTitle">Step 8: Draft Dossier &amp; Sign-Off</h2>
+              <h2 class="section-title" id="summarySectionTitle">Step 9: Draft Dossier &amp; Sign-Off</h2>
               <p class="section-desc">Consolidated appraisal evaluation separating Objective and Subjective performance dimensions.</p>
             </div>
             <div class="header-actions">
@@ -1345,14 +1389,14 @@
               <tbody id="dossierResearchPaperRows"><tr><td colspan="4">No publication count entered</td></tr></tbody>
             </table>
 
-            <h5 class="dossier-minor-heading">Research rubric, activity counts and evidence references</h5>
+            <h5 class="dossier-minor-heading">Research rubric and activity counts</h5>
             <table class="dossier-meta-table dossier-evidence-table">
-              <thead><tr><th>Component</th><th>Entered activity and evidence reference</th><th>Credited pilot points</th></tr></thead>
+              <thead><tr><th>Component</th><th>Entered activity</th><th>Credited pilot points</th></tr></thead>
               <tbody id="dossierResearchSummaryRows"><tr><td colspan="3">Research entries pending</td></tr></tbody>
             </table>
 
             <h5 class="dossier-minor-heading">Competitive grant and proposal counts</h5>
-            <p class="dossier-evidence-note">The original B3 grant counts are capped at 50 raw points, with application points capped at 20. The grant evidence reference appears in the B3 summary above.</p>
+            <p class="dossier-evidence-note">The original B3 grant counts are capped at 50 raw points, with application points capped at 20.</p>
             <table class="dossier-meta-table dossier-evidence-table">
               <thead><tr><th>Grant band and role</th><th>Declared count</th><th>Original points each</th><th>Row points</th></tr></thead>
               <tbody id="dossierGrantRows"><tr><td colspan="4">No grant or proposal entered</td></tr></tbody>
@@ -1672,7 +1716,7 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20261012-original-research-rank-load"></script>
+  <script src="app.js?v=20261012-section-e-objective"></script>
 
   <div style="display:none;">
     <span id="top_pip_status"></span>
