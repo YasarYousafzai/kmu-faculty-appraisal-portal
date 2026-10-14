@@ -11,7 +11,7 @@ from urllib.parse import urlsplit
 
 PROJECT_DIR = Path(__file__).resolve().parent
 PUBLIC_PATHS = {
-    "/", "/index.html", "/styles.css", "/app.js", "/kmu_logo.png",
+    "/", "/index.html", "/styles.css", "/app.js", "/account.js", "/kmu_logo.png",
     "/KMU_Unified_Policy_Draft.docx",
 }
 
@@ -47,7 +47,8 @@ class PortalHandler(http.server.SimpleHTTPRequestHandler):
             "Content-Security-Policy",
             "default-src 'self'; script-src 'self' 'unsafe-inline'; "
             "style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
-            "connect-src 'none'; object-src 'none'; base-uri 'none'; "
+            "connect-src 'self' https://wiglqhoihnlmalfzqepk.supabase.co; "
+            "object-src 'none'; base-uri 'none'; "
             "form-action 'none'; frame-ancestors 'none'",
         )
         super().end_headers()

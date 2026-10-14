@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://wiglqhoihnlmalfzqepk.supabase.co; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>KMU Faculty Appraisal Portal — Controlled Pilot</title>
-  <link rel="stylesheet" href="styles.css?v=20261012-section-e-objective">
+  <link rel="stylesheet" href="styles.css?v=20261014-accounts">
   <link rel="icon" type="image/png" href="kmu_logo.png">
 </head>
 <body>
@@ -27,7 +27,7 @@
       </div>
       <div class="header-actions">
         <span id="lastSavedIndicator" aria-live="polite" style="font-size:0.75rem; color:#f1d5a5; margin-right:4px; font-weight:600;">Not stored on this browser</span>
-        <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()">
+        <button type="button" class="btn btn-secondary" id="headerSaveButton" onclick="saveAndReturnLater()">
           <span>💾</span> Save & Return Later
         </button>
         <button type="button" class="btn btn-gold" onclick="openModal('policyModal')">
@@ -48,13 +48,91 @@
       <strong>Controlled pilot only.</strong> This appraisal configuration is pending re-vetting, approval and notification. It has no operative statutory force yet. Proposed scoring rules are identified throughout the portal. The portal's January–December cycle conflicts with Section 10 of the downloadable draft policy (July–June) and requires formal reconciliation before approval.
     </div>
     <div>
-      <strong>Privacy:</strong> this static site has no secure KMU login or server database. Do not enter live disciplinary or confidential personnel data. Browser storage is used only when you explicitly choose “Save & Return Later.”
+      <strong>Privacy:</strong> this remains a controlled pilot, not an approved KMU personnel system. In demo mode, drafts stay only in this browser. Signed-in case access is enforced by the project database; do not use real confidential personnel or disciplinary data until KMU approves hosting and security.
     </div>
   </section>
 
   <section class="stage-banner no-print" aria-live="polite">
     <strong id="stageBannerTitle">Stage 1 — Faculty evidence</strong>
     <span id="stageBannerText">Complete the faculty sections, review and save Section E provisional objective scores, then continue to committee assessment in this same-browser pilot.</span>
+  </section>
+
+  <section class="account-shell no-print" aria-labelledby="accountTitle">
+    <div class="account-heading">
+      <div>
+        <h2 id="accountTitle">Portal account</h2>
+        <p id="accountStatus" role="status">Local demo mode — no shared case or assessor access.</p>
+      </div>
+      <span id="accountModeBadge" class="account-badge">Local demo</span>
+    </div>
+    <div id="accountGuest" class="account-guest">
+      <p class="account-warning">Use an email address as your username. Registration creates a faculty (assessee) account only; assessor and administrator access must be assigned by an administrator. Do not reuse a KMU password.</p>
+      <form id="accountForm" class="account-form" autocomplete="on">
+        <label for="accountEmail">Email / username
+          <input id="accountEmail" type="email" autocomplete="username" required placeholder="name@example.edu.pk">
+        </label>
+        <label for="accountPassword">Password
+          <input id="accountPassword" type="password" autocomplete="current-password" minlength="8" required placeholder="At least 8 characters">
+        </label>
+        <label for="accountDisplayName">Name (registration only)
+          <input id="accountDisplayName" type="text" autocomplete="name" maxlength="160" placeholder="Name as used in faculty profile">
+        </label>
+        <div class="account-actions">
+          <button type="submit" class="btn btn-primary" id="accountSignIn">Sign in</button>
+          <button type="button" class="btn btn-secondary" id="accountSignUp">Register faculty account</button>
+        </div>
+      </form>
+      <p class="account-note">Email confirmation may be required. Passwords are sent directly to the authentication service and are not stored in the website files or browser draft.</p>
+    </div>
+    <div id="accountSignedIn" class="account-signed-in" hidden>
+      <div class="account-actions">
+        <button type="button" class="btn btn-secondary" id="accountAssesseeMode">My faculty case</button>
+        <button type="button" class="btn btn-secondary" id="accountAssessorMode" hidden>Assigned assessments</button>
+        <button type="button" class="btn btn-secondary" id="accountAdminMode" hidden>Administrator</button>
+        <button type="button" class="btn btn-secondary" id="accountSignOut">Sign out</button>
+      </div>
+      <div id="accountCasePanel" class="account-workspace">
+        <p>Cloud drafts are saved only when you select <strong>Save cloud draft</strong>. Local browser drafts are never uploaded automatically.</p>
+        <div id="myCaseList" class="account-list" aria-live="polite"></div>
+        <div class="account-actions">
+          <button type="button" class="btn btn-secondary" id="accountNewCase">Start new faculty case</button>
+          <button type="button" class="btn btn-secondary" id="accountRefreshCases">Refresh my cases</button>
+        </div>
+      </div>
+      <div id="accountQueuePanel" class="account-workspace" hidden>
+        <p>Only cases assigned to your authenticated assessor account appear here. Open a case to review its faculty-entered evidence. Reviewer entries remain in this tab until submitted.</p>
+        <div id="assessorQueue" class="account-list" aria-live="polite"></div>
+        <div class="account-actions"><button type="button" class="btn btn-secondary" id="accountRefreshQueue">Refresh assigned cases</button></div>
+        <button type="button" class="btn btn-primary" id="accountSubmitReview" hidden>Submit assessment for selected case</button>
+      </div>
+      <div id="accountAdminPanel" class="account-workspace" hidden>
+        <p>Administrator privileges come only from the database. Choose an account and assign an existing submitted case; this does not alter a faculty score.</p>
+        <div id="accountAdminUsers" class="account-list" aria-live="polite"></div>
+        <div class="account-actions"><button type="button" class="btn btn-secondary" id="accountRefreshAdmin">Refresh administration lists</button></div>
+        <div class="account-form">
+          <label for="adminAssessorId">Faculty account to grant assessor access
+            <select id="adminAssessorId"></select>
+          </label>
+          <button type="button" class="btn btn-secondary" id="adminGrantAssessor">Grant assessor role</button>
+          <label for="adminRevokeAssessorId">Assessor role to revoke
+            <select id="adminRevokeAssessorId"></select>
+          </label>
+          <button type="button" class="btn btn-secondary" id="adminRevokeAssessor">Revoke assessor role</button>
+          <label for="adminCaseId">Submitted case to assign
+            <select id="adminCaseId"></select>
+          </label>
+          <label for="adminAssignAssessorId">Assessor to receive the case
+            <select id="adminAssignAssessorId"></select>
+          </label>
+          <button type="button" class="btn btn-primary" id="adminAssignCase">Assign case</button>
+          <label for="adminUnassignId">Active assignment to revoke
+            <select id="adminUnassignId"></select>
+          </label>
+          <button type="button" class="btn btn-secondary" id="adminUnassignCase">Revoke assignment</button>
+        </div>
+      </div>
+    </div>
+    <p id="accountMessage" class="account-message" role="status" aria-live="polite"></p>
   </section>
 
   <!-- In-Progress Draft Recovery Banner -->
@@ -883,12 +961,12 @@
             <span class="kpi-desc" id="provisional_objective_percent">This is the objective portion only, not a score out of the full 100.</span>
           </div>
           <p class="provisional-readiness" id="provisional_readiness" role="status">Complete the faculty sections to finalize this provisional objective calculation.</p>
-          <p class="provisional-note">Saving here keeps the entire draft only in this browser. It does not create an account, submit the dossier, or make it available to an assessor. Use fictional or non-confidential pilot data until secure accounts are configured.</p>
+          <p class="provisional-note" id="provisionalStorageNote">In local demo mode, saving keeps the draft only in this browser and does not submit it to an assessor. Sign in for pilot cloud case storage. Use fictional or non-confidential data until KMU approves hosting and security.</p>
           <div class="step-footer-actions">
             <button type="button" class="btn btn-secondary" onclick="switchTab('tab-service')">← Back to Section D</button>
             <div class="step-footer-actions-right">
-              <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()"><span>💾</span> Save Provisional Dossier on This Browser</button>
-              <button type="button" class="btn btn-primary btn-lg" onclick="continueToPeerReview()">Continue to Committee Assessment ➔</button>
+              <button type="button" class="btn btn-secondary" id="objectiveSaveButton" onclick="saveAndReturnLater()"><span>💾</span> Save Provisional Dossier on This Browser</button>
+              <button type="button" class="btn btn-primary btn-lg" id="objectiveSubmitButton" onclick="continueToPeerReview()">Continue to Committee Assessment ➔</button>
             </div>
           </div>
         </div>
@@ -932,7 +1010,7 @@
               <label class="research-complete-label" for="input_research_review_confirm"><input type="checkbox" id="input_research_review_confirm"> I reviewed the declared publication counts, eligibility, publication-year impact-factor bands, author roles, grant status and supporting research evidence. Any disputed count was returned for correction before this confirmation.</label>
             </div>
           </div>
-          <p class="provisional-note">This public static pilot cannot authenticate a Dean, supervisor or committee, transfer a confidential record securely, or provide a tamper-proof audit trail. The faculty-to-reviewer transition here is a page sequence, not an official submission. Do not use it for real personnel decisions.</p>
+          <p class="provisional-note" id="reviewAccessNote">Local demo mode has no assessor authentication: the faculty-to-reviewer transition is only a page sequence. In signed-in mode, only an assigned assessor can open and submit this section. Neither mode is approved for real personnel decisions.</p>
 
           <h3 style="font-size:0.95rem; font-weight:700; color:var(--kmu-maroon); margin-bottom:0.75rem;">
             Part I: 13 Core Behavioral & Professional Parameters (Scored 1 = Unsatisfactory to 6 = Outstanding | Max 78)
@@ -968,7 +1046,7 @@
           <div class="step-footer-actions">
             <button type="button" class="btn btn-secondary" onclick="switchTab('tab-provisional')">← Review provisional dossier</button>
             <div class="step-footer-actions-right">
-              <button type="button" class="btn btn-secondary" onclick="saveAndReturnLater()">
+              <button type="button" class="btn btn-secondary reviewer-save-button" onclick="saveAndReturnLater()">
                 <span>💾</span> Save & Return Later
               </button>
               <button type="button" class="btn btn-primary btn-lg" onclick="saveAndContinue('tab-targets', 'Next Reporting Period Targets')">
@@ -1557,17 +1635,16 @@
 
             <!-- Final report scoring scale and sign-off appear once, after the work-done record. -->
             <div class="dossier-final-assessment">
-              <section class="comparison-panel" aria-labelledby="dossierComparisonHeading">
+              <section class="comparison-panel" aria-label="Objective and subjective scores">
                 <div class="comparison-intro">
-                  <h3 id="dossierComparisonHeading">Compare the two dimensions on the same 0–100% scale</h3>
                   <span>Each percentage is the earned share of that dimension’s own ceiling. These are not KMU percentiles.</span>
                 </div>
                 <div class="comparison-row">
-                  <div class="comparison-label"><strong>Faculty evidence / objective</strong><span id="objectiveScaleValue">Awaiting faculty completion</span></div>
+                  <div class="comparison-label"><strong>Objective score</strong><span id="objectiveScaleValue">Awaiting faculty completion</span></div>
                   <div class="comparison-track"><div class="comparison-fill comparison-objective" id="objectiveScaleFill"></div></div>
                 </div>
                 <div class="comparison-row">
-                  <div class="comparison-label"><strong>Appraising Officer / subjective</strong><span id="subjectiveScaleValue">Awaiting reviewer assessment</span></div>
+                  <div class="comparison-label"><strong>Appraising Officer subjective score</strong><span id="subjectiveScaleValue">Awaiting reviewer assessment</span></div>
                   <div class="comparison-track"><div class="comparison-fill comparison-subjective" id="subjectiveScaleFill"></div></div>
                 </div>
                 <div class="comparison-ticks"><span>0</span><span>25</span><span>50</span><span>75</span><span>100%</span></div>
@@ -1706,7 +1783,7 @@
       <div>
         <strong>Khyber Medical University, Peshawar</strong> &copy; 2026. Controlled pilot calculator.
         <div style="font-size:0.75rem; color:#94a3b8; margin-top:2px;">
-          Prototype for internal review &bull; No data is submitted to KMU by this static site
+          Prototype for internal review &bull; Demo mode is browser-only; signed-in pilot cases use the project database
         </div>
       </div>
       <div style="text-align:right; font-size:0.75rem;">
@@ -1716,7 +1793,8 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20261012-section-e-objective"></script>
+  <script src="app.js?v=20261014-accounts"></script>
+  <script src="account.js?v=20261014-accounts"></script>
 
   <div style="display:none;">
     <span id="top_pip_status"></span>

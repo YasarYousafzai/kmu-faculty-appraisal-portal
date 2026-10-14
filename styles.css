@@ -45,6 +45,7 @@
   margin: 0;
   padding: 0;
 }
+[hidden] { display: none !important; }
 
 body {
   font-family: var(--font-family);
@@ -178,6 +179,7 @@ body {
 .btn-gold:hover {
   background-color: #b08920;
 }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
 .policy-status-banner {
   background: #fff7ed;
@@ -189,6 +191,98 @@ body {
   gap: 1rem;
   font-size: 0.8rem;
   line-height: 1.45;
+}
+
+.account-shell {
+  width: min(1400px, calc(100% - 2rem));
+  margin: 1rem auto 0;
+  padding: 1rem 1.2rem;
+  background: #fff;
+  border: 1px solid var(--slate-200);
+  border-top: 4px solid var(--kmu-gold);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.account-heading, .account-actions, .account-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+.account-heading h2 { color: var(--kmu-maroon); font-size: 1rem; }
+.account-heading p, .account-note, .account-workspace p {
+  color: var(--slate-600);
+  font-size: 0.82rem;
+}
+.account-badge {
+  background: var(--slate-100);
+  border: 1px solid var(--slate-300);
+  border-radius: 999px;
+  color: var(--slate-700);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.65rem;
+}
+.account-guest, .account-signed-in { margin-top: 0.8rem; }
+.account-warning {
+  padding: 0.55rem 0.75rem;
+  background: var(--amber-50);
+  border-left: 3px solid var(--amber-600);
+  color: #78350f;
+  font-size: 0.82rem;
+  margin-bottom: 0.7rem;
+}
+.account-form {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-bottom: 0.6rem;
+}
+.account-form label { display: grid; gap: 0.25rem; min-width: min(100%, 12rem); font-size: 0.78rem; font-weight: 700; color: var(--slate-700); }
+.account-form input, .account-form select {
+  border: 1px solid var(--slate-300);
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.6rem;
+  min-height: 2.3rem;
+  font: inherit;
+  max-width: 100%;
+}
+.account-form input:focus, .account-form select:focus { outline: 2px solid var(--kmu-gold); outline-offset: 1px; }
+.account-actions { justify-content: flex-start; }
+.account-actions .btn { white-space: normal; }
+.account-note { margin-top: 0.4rem; }
+.account-workspace {
+  margin-top: 0.85rem;
+  padding: 0.75rem;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-sm);
+  background: var(--slate-50);
+}
+.account-workspace p { margin-bottom: 0.65rem; }
+.account-list { display: grid; gap: 0.5rem; margin-bottom: 0.7rem; }
+.account-list-row {
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  font-size: 0.82rem;
+}
+.account-list-row small { display: block; color: var(--slate-600); }
+.account-message { min-height: 1.15rem; font-size: 0.8rem; font-weight: 600; margin-top: 0.4rem; color: var(--kmu-maroon); }
+.account-message.error { color: #b91c1c; }
+.account-message.success { color: #047857; }
+.account-readonly input:disabled, .account-readonly select:disabled, .account-readonly textarea:disabled { opacity: 0.8; background: var(--slate-100); }
+.account-readonly .teaching-course-card button:disabled { display: none; }
+body[data-account-mode="assessor"] .reviewer-save-button,
+body[data-account-mode="assessor"] #tab-targets button[onclick="saveAndReturnLater()"],
+body[data-account-mode="assessor"] #tab-redflag button[onclick="saveAndReturnLater()"],
+body[data-account-mode="administrator"] .reviewer-save-button { display: none; }
+@media (max-width: 720px) {
+  .account-shell { width: calc(100% - 1rem); padding: 0.8rem; }
+  .account-form { display: grid; }
+  .account-form label { min-width: 0; }
 }
 
 .provisional-note {
