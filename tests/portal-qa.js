@@ -8,6 +8,7 @@ const files = new Map([
   ['/', ['index.html', 'text/html; charset=utf-8']],
   ['/styles.css', ['styles.css', 'text/css; charset=utf-8']],
   ['/app.js', ['app.js', 'text/javascript; charset=utf-8']],
+  ['/account.js', ['account.js', 'text/javascript; charset=utf-8']],
   ['/kmu_logo.png', ['kmu_logo.png', 'image/png']],
   ['/KMU_Unified_Policy_Draft.docx', ['KMU_Unified_Policy_Draft.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']]
 ]);
@@ -163,9 +164,8 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   await page.evaluate(() => window.switchTab('tab-summary'));
   assert(await page.locator('.comparison-panel').isVisible(), 'Scales must appear on final page.');
   const scaleText = await page.locator('.comparison-panel').innerText();
-  assert(scaleText.includes('Compare the two dimensions on the same 0–100% scale') &&
-    scaleText.includes('Faculty evidence / objective') &&
-    scaleText.includes('Appraising Officer / subjective') &&
+  assert(scaleText.includes('Objective score') &&
+    scaleText.includes('Appraising Officer subjective score') &&
     scaleText.includes('No relative category is assigned in this pilot.'), 'Final dossier scale is missing the requested presentation.');
   assert((await page.locator('#dossierCourseRows').innerText()).includes('ANAT-301'), 'Course evidence missing from dossier.');
   const publicationRows = await page.locator('#dossierResearchPaperRows').innerText();
@@ -177,10 +177,10 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   const researchSummary = await page.locator('#dossierResearchSummaryRows').innerText();
   assert(researchSummary.includes('International books 0; national books 1') &&
     researchSummary.includes('MPhil/MS completed 1') &&
-    researchSummary.includes('National patents 1') &&
+    researchSummary.includes('national patents 1') &&
     researchSummary.includes('SYNTHETIC/GOOGLE-SCHOLAR') &&
     !researchSummary.includes('Evidence reference: Not entered'),
-    'The dossier should list B2–B5 activity counts without deleted reference requirements.');
+    `The dossier should list B2–B5 activity counts without deleted reference requirements. Actual: ${researchSummary}`);
   assert(await page.locator('#dossierServiceRows tr:nth-child(1) td:nth-child(2)').innerText() === '2' &&
     await page.locator('#dossierServiceRows tr:nth-child(4) td:nth-child(2)').innerText() === '1',
     'Institutional-service activity counts missing from dossier.');

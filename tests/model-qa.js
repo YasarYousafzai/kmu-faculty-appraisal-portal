@@ -11,6 +11,61 @@ const sandbox = {
 };
 vm.createContext(sandbox);
 vm.runInContext(source, sandbox, { filename: 'app.js' });
+
+// Completed reviews must stay immutable in the displayed dossier even if a
+// chip is rebuilt or a caller invokes its setter directly.
+const scoreState = sandbox.window.appraisalState;
+scoreState.objectiveSubmitted = true;
+scoreState.sectionD.peerScores.peer_1 = 4;
+scoreState.sectionD.cpdScores.cpd_1 = 1;
+sandbox.window.KMUAccount = { mode: 'assessor', assessor: true,
+  selectedCaseId: 'fictional-case', selectedCaseStatus: 'reviewed' };
+assert.equal(sandbox.window.KMUCalculator.canEditReviewerScores(), false);
+sandbox.window.setPeerScore('peer_1', 6);
+sandbox.window.setCpdScore('cpd_1', 2);
+assert.equal(scoreState.sectionD.peerScores.peer_1, 4, 'Reviewed assessor score cannot be changed by a chip setter.');
+assert.equal(scoreState.sectionD.cpdScores.cpd_1, 1, 'Reviewed CPD score cannot be changed by a chip setter.');
+sandbox.window.KMUAccount.mode = 'assessee';
+sandbox.window.setPeerScore('peer_1', 6);
+assert.equal(scoreState.sectionD.peerScores.peer_1, 4, 'Faculty owner cannot change a reviewed assessor score.');
+const fakeElement = () => ({ children: [], style: {}, dataset: {}, disabled: false,
+  append(...nodes) { this.children.push(...nodes); },
+  appendChild(node) { this.children.push(node); },
+  replaceChildren(...nodes) { this.children = [...nodes]; },
+  setAttribute() {}, addEventListener() {} });
+const peerContainer = fakeElement();
+const cpdContainer = fakeElement();
+sandbox.document.createElement = () => fakeElement();
+sandbox.document.getElementById = id => id === 'peerParametersList' ? peerContainer
+  : id === 'cpdTargetsList' ? cpdContainer : null;
+sandbox.window.KMUCalculator.rebuildReviewerScoreChips();
+assert(peerContainer.children.length === 13 && cpdContainer.children.length === 5,
+  'Reviewer score rows should rebuild for a completed dossier.');
+assert(peerContainer.children.every(row => row.children[1].children.every(chip => chip.disabled))
+  && cpdContainer.children.every(row => row.children[1].children.every(chip => chip.disabled)),
+  'All rebuilt peer and CPD score chips must remain disabled for a reviewed case.');
+sandbox.window.KMUAccount.mode = 'assessor';
+sandbox.window.KMUAccount.selectedCaseStatus = 'submitted';
+assert.equal(sandbox.window.KMUCalculator.canEditReviewerScores(), true,
+  'An active assigned assessor can score a submitted case.');
+assert.equal(sandbox.window.KMUCalculator.canPrintDossierForAccount(), false,
+  'An unsubmitted assessor assessment cannot be printed as the final report.');
+sandbox.window.KMUCalculator.rebuildReviewerScoreChips();
+assert(peerContainer.children[0].children[1].children.every(chip => !chip.disabled),
+  'Score chips should be enabled for an active submitted assessment.');
+sandbox.window.KMUAccount.selectedCaseStatus = 'reviewed';
+sandbox.window.KMUAccount.reviewLoaded = true;
+assert.equal(sandbox.window.KMUCalculator.canPrintDossierForAccount(), true,
+  'An RLS-loaded completed assessor report can be printed.');
+sandbox.window.KMUAccount.mode = 'assessee';
+assert.equal(sandbox.window.KMUCalculator.canPrintDossierForAccount(), true,
+  'The faculty owner can print an RLS-loaded reviewed report.');
+sandbox.window.KMUAccount.reviewLoaded = false;
+assert.equal(sandbox.window.KMUCalculator.canPrintDossierForAccount(), false,
+  'Faculty cannot print a final report before the review payload is loaded.');
+delete sandbox.window.KMUAccount;
+scoreState.objectiveSubmitted = false;
+
 const { PROFILES, calculatePilotScenario, classifyScore, benchmarkState,
   weightedStudentReviews, calculateTeachingAttainment, paperPilotPoints, scorePublicationCounts,
   scoreGrantCounts, scoreResearchOriginal, getTeachingLoad } = sandbox.window.KMUCalculator;
