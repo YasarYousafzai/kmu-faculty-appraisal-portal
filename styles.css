@@ -224,7 +224,7 @@ body {
   font-weight: 700;
   padding: 0.2rem 0.65rem;
 }
-.account-guest, .account-signed-in { margin-top: 0.8rem; }
+.account-guest, .account-signed-in, .account-password-setup { margin-top: 0.8rem; }
 .account-warning {
   padding: 0.55rem 0.75rem;
   background: var(--amber-50);
@@ -252,6 +252,19 @@ body {
 .account-form input:focus, .account-form select:focus { outline: 2px solid var(--kmu-gold); outline-offset: 1px; }
 .account-actions { justify-content: flex-start; }
 .account-actions .btn { white-space: normal; }
+.account-text-button {
+  display: inline-block;
+  border: 0;
+  background: none;
+  color: var(--kmu-maroon);
+  padding: 0.15rem 0;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.account-text-button:focus-visible { outline: 2px solid var(--kmu-gold); outline-offset: 2px; }
 .account-note { margin-top: 0.4rem; }
 .account-workspace {
   margin-top: 0.85rem;

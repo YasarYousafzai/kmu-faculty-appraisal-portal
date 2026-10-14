@@ -14,6 +14,32 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
 
 (function () {
   const $ = id => document.getElementById(id);
+  const AUTH_LINK_TYPES = new Set(['invite', 'recovery', 'signup']);
+  // Capture only in memory and strip credentials from the address bar before any
+  // asynchronous work. Never place callback tokens in drafts or browser storage.
+  function consumeAuthFragment() {
+    const location = window.location;
+    const hash = location?.hash;
+    if (!hash || hash === '#') return null;
+    const params = new URLSearchParams(hash.slice(1));
+    if (!['access_token', 'refresh_token', 'type', 'error', 'error_code'].some(key => params.has(key))) return null;
+    try {
+      window.history.replaceState(window.history.state, '', `${location.pathname}${location.search}`);
+    } catch {
+      // Even if History API is unavailable, do not leave a credential fragment visible.
+      location.hash = '';
+    }
+    if (hash.length > 16384 || params.has('error')) return { error: true };
+    const type = params.get('type');
+    const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+    const tokenType = params.get('token_type');
+    if (!AUTH_LINK_TYPES.has(type) || !accessToken || !refreshToken
+      || (tokenType && tokenType.toLowerCase() !== 'bearer')) return { error: true };
+    return { type, accessToken, refreshToken };
+  }
+  let pendingAuthRedirect = consumeAuthFragment();
+  let pendingPasswordSetup = null;
   const ACCOUNT_REVIEW_TABS = new Set(['tab-peer', 'tab-targets', 'tab-redflag', 'tab-summary']);
   const OBJECTIVE_TABS = ['tab-meta', 'tab-teaching', 'tab-research', 'tab-clinical', 'tab-service'];
   const MAX_PAYLOAD_BYTES = 180000;
@@ -121,9 +147,12 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     });
   }
   function render() {
-    const signed = Boolean(account.user && account.session);
+    const authLinkOpen = Boolean(pendingAuthRedirect || pendingPasswordSetup);
+    const signed = Boolean(account.user && account.session && !authLinkOpen);
     document.body.dataset.accountMode = account.mode;
-    show('accountGuest', !signed); show('accountSignedIn', signed);
+    show('accountGuest', !signed && !authLinkOpen);
+    show('accountPasswordSetup', Boolean(pendingPasswordSetup));
+    show('accountSignedIn', signed);
     show('accountAssessorMode', signed && account.assessor);
     show('accountAdminMode', signed && account.administrator);
     show('accountCasePanel', signed && account.mode === 'assessee');
@@ -132,8 +161,9 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     show('accountSubmitReview', account.mode === 'assessor'
       && Boolean(account.selectedCaseId && account.selectedCaseStatus === 'submitted'));
     setText('accountModeBadge', signed ? ({ assessee: 'Faculty', assessor: 'Assessor', administrator: 'Administrator' }[account.mode] || 'Account') : 'Local demo');
-    setText('accountStatus', signed
-      ? `Signed in as ${account.user.email}. ${account.mode === 'assessor'
+    setText('accountStatus', authLinkOpen
+      ? pendingPasswordSetup ? `Complete password setup for ${pendingPasswordSetup.email}.` : 'Checking the account link…'
+      : signed ? `Signed in as ${account.user.email}. ${account.mode === 'assessor'
         ? 'Assigned assessor workspace.' : account.mode === 'administrator' ? 'Administrator workspace.' : 'Faculty (assessee) workspace.'}`
       : 'Local demo mode — no shared case or assessor access.');
     setText('provisionalStorageNote', account.mode === 'assessee'
@@ -159,10 +189,7 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     window.KMUCalculator.calculate();
   }
   function clearLocalRecoveryNotice() { show('draftRecoveryBanner', false); }
-  async function authenticate(email, password) {
-    const data = await request('/auth/v1/token?grant_type=password', {
-      method: 'POST', body: { email, password }, authenticated: false
-    });
+  async function activateSession(data) {
     if (!data?.access_token || !data?.user?.id) throw new Error('Sign-in did not return a valid account session.');
     account.session = data; account.user = data.user;
     try {
@@ -184,12 +211,87 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
       throw new Error(`Account access is not ready: ${error.message}`);
     }
   }
+  async function authenticate(email, password) {
+    const data = await request('/auth/v1/token?grant_type=password', {
+      method: 'POST', body: { email, password }, authenticated: false
+    });
+    await activateSession(data);
+  }
+  async function processAuthRedirect() {
+    const callback = pendingAuthRedirect;
+    if (!callback) return;
+    if (callback.error) {
+      pendingAuthRedirect = null; render();
+      setMessage('This account link is invalid, expired, or already used. Request a fresh invitation or password-reset link.', 'error');
+      return;
+    }
+    try {
+      assertBackend();
+      account.session = { access_token: callback.accessToken, refresh_token: callback.refreshToken };
+      const user = await request('/auth/v1/user');
+      if (!user?.id || !user?.email) throw new Error('The account link did not identify a user.');
+      account.user = user;
+      pendingAuthRedirect = null;
+      if (callback.type === 'signup') {
+        await activateSession({ ...account.session, user });
+        setMessage('Email confirmed. Your faculty account is ready. Local drafts were not uploaded.', 'success');
+        return;
+      }
+      pendingPasswordSetup = { type: callback.type, email: user.email, userId: user.id };
+      setText('accountPasswordSetupIntro', callback.type === 'invite'
+        ? `Invitation verified for ${user.email}. Choose a password to activate your account.`
+        : `Password-reset link verified for ${user.email}. Choose a new password.`);
+      render();
+      setMessage('Account link verified. Enter and confirm your new password below.', 'success');
+    } catch {
+      account.session = null; account.user = null; pendingPasswordSetup = null; pendingAuthRedirect = null;
+      render();
+      setMessage('This account link could not be verified. It may have expired or already been used. Request a new link.', 'error');
+    }
+  }
+  async function finishPasswordSetup() {
+    if (!pendingPasswordSetup || !account.session?.access_token) throw new Error('Open a fresh invitation or reset link first.');
+    const passwordInput = $('accountNewPassword');
+    const confirmationInput = $('accountConfirmPassword');
+    const password = passwordInput.value;
+    const confirmation = confirmationInput.value;
+    try {
+      if (password.length < 8) throw new Error('Use at least 8 characters for the new password.');
+      if (password !== confirmation) throw new Error('The two passwords do not match.');
+      const email = pendingPasswordSetup.email;
+      await request('/auth/v1/user', { method: 'PUT', body: { password } });
+      // A password change may revoke the callback session. Drop it and establish
+      // a fresh session with the user-entered password before loading any roles.
+      pendingPasswordSetup = null; account.session = null; account.user = null; render();
+      try {
+        await authenticate(email, password);
+        setMessage('Password set and signed in. Your available roles are now loaded.', 'success');
+      } catch {
+        account.session = null; account.user = null; account.mode = 'demo'; render();
+        setMessage('Password set. Please sign in with your new password. If access is not ready, contact the portal administrator.', 'success');
+      }
+    } finally {
+      passwordInput.value = '';
+      confirmationInput.value = '';
+    }
+  }
+  async function requestPasswordRecovery(email) {
+    if (!email) throw new Error('Enter your email / username first.');
+    const redirectTo = 'https://yasaryousafzai.github.io/kmu-faculty-appraisal-portal/';
+    await request(`/auth/v1/recover?redirect_to=${encode(redirectTo)}`, {
+      method: 'POST', body: { email }, authenticated: false
+    });
+    setMessage('If that account exists and email delivery is available, a password-reset link will arrive. Check your inbox and spam folder.', 'success');
+  }
   async function register(email, password, displayName) {
     if (!displayName.trim()) throw new Error('Enter your name for the faculty account.');
-    const result = await request('/auth/v1/signup', {
+    const redirectTo = 'https://yasaryousafzai.github.io/kmu-faculty-appraisal-portal/';
+    const result = await request(`/auth/v1/signup?redirect_to=${encode(redirectTo)}`, {
       method: 'POST', body: { email, password, data: { display_name: displayName.trim() } }, authenticated: false
     });
-    if (!result?.user?.id) throw new Error('Registration did not return an account.');
+    // Raw GoTrue REST returns a top-level user for confirmation-required signups,
+    // and a session-shaped response when email confirmation is not required.
+    if (!result?.id && !result?.user?.id) throw new Error('Registration did not return an account.');
     if (result.access_token) {
       await authenticate(email, password);
     } else {
@@ -508,6 +610,11 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
         await register(email, password, name);
       } finally { $('accountPassword').value = ''; }
     }));
+    $('accountRecover')?.addEventListener('click', safeAction(async () => {
+      $('accountPassword').value = '';
+      await requestPasswordRecovery($('accountEmail').value.trim().toLowerCase());
+    }));
+    $('accountPasswordSetupForm')?.addEventListener('submit', safeAction(() => finishPasswordSetup()));
     $('accountSignOut')?.addEventListener('click', safeAction(async () => {
       if (account.session?.access_token) await request('/auth/v1/logout', { method: 'POST' }).catch(() => null);
       account.session = null; account.user = null; account.assessor = false; account.administrator = false;
@@ -561,9 +668,12 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
   }
   document.addEventListener('DOMContentLoaded', () => {
     bind(); render();
+    if (pendingAuthRedirect) {
+      void processAuthRedirect();
+    }
     if (!KMU_ACCOUNT_CONFIG.backendVerified) {
-      ['accountSignIn', 'accountSignUp'].forEach(id => { if ($(id)) $(id).disabled = true; });
-      setMessage('Account sign-in will open after the database security checks pass. The calculator remains available as a local demo.');
+      ['accountSignIn', 'accountSignUp', 'accountRecover'].forEach(id => { if ($(id)) $(id).disabled = true; });
+      if (!pendingAuthRedirect) setMessage('Account sign-in will open after the database security checks pass. The calculator remains available as a local demo.');
     }
   });
 })();
