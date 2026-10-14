@@ -13,8 +13,11 @@ independently recompute the KMU appraisal formula or verify evidence.
 2. Review and run `migrations/202610140001_kmu_pilot_accounts.sql` **once** in
    Supabase SQL Editor. It creates no users or administrator. Keep project
    secrets and service-role keys out of the public website.
-3. Create your personal email/password Auth account through the portal, confirm
-   its email, then find its Auth UID in **Authentication → Users**. In SQL Editor,
+3. Create your personal Auth account through the portal **or** send an invitation
+   from **Authentication → Users**. The invited person must open the email link
+   and choose their own password on the portal; the administrator must not enter
+   or handle that password. Confirm the email, then find its Auth UID in
+   **Authentication → Users**. In SQL Editor,
    verify the intended email and `email_confirmed_at`, then manually bootstrap
    that **exact UID**:
 
@@ -44,6 +47,10 @@ independently recompute the KMU appraisal formula or verify evidence.
    pilot project; a subsequent query confirmed zero synthetic Auth users,
    profiles, cases, assignments, reviews, or events remained. All nine created
    public tables had RLS enabled. This does not replace a KMU production audit.
+
+The Supabase default email service is limited to project-team recipients and is
+not suitable for broader faculty invitations. Configure and review a dedicated
+SMTP service before expanding registration; keep email confirmation enabled.
 
 The public RPC contract is `save_appraisal_draft(p_case_id, p_cycle_year,
 p_designation, p_institute, p_objective_payload)`,
