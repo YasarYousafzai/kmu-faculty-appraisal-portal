@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://wiglqhoihnlmalfzqepk.supabase.co; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>KMU Faculty Appraisal Portal — Controlled Pilot</title>
-  <link rel="stylesheet" href="styles.css?v=20261014-accounts">
+  <link rel="stylesheet" href="styles.css?v=20261014-password-setup">
   <link rel="icon" type="image/png" href="kmu_logo.png">
 </head>
 <body>
@@ -82,7 +82,22 @@
           <button type="button" class="btn btn-secondary" id="accountSignUp">Register faculty account</button>
         </div>
       </form>
+      <button type="button" class="account-text-button" id="accountRecover">Forgot password? Email me a reset link</button>
       <p class="account-note">Email confirmation may be required. Passwords are sent directly to the authentication service and are not stored in the website files or browser draft.</p>
+      <p class="account-note">Pilot email delivery is limited by the default mail service. Wider faculty invitations and confirmation emails need an approved SMTP service before rollout.</p>
+    </div>
+    <div id="accountPasswordSetup" class="account-password-setup" hidden>
+      <p id="accountPasswordSetupIntro" class="account-warning">Your account link was verified. Choose a new password to finish setup.</p>
+      <form id="accountPasswordSetupForm" class="account-form" autocomplete="on">
+        <label for="accountNewPassword">New password
+          <input id="accountNewPassword" type="password" autocomplete="new-password" minlength="8" required placeholder="At least 8 characters">
+        </label>
+        <label for="accountConfirmPassword">Confirm new password
+          <input id="accountConfirmPassword" type="password" autocomplete="new-password" minlength="8" required placeholder="Enter the same password again">
+        </label>
+        <button type="submit" class="btn btn-primary" id="accountSetPassword">Set password and sign in</button>
+      </form>
+      <p class="account-note">Keep this tab open until setup finishes. The email-link tokens are removed from the address bar and are not saved in a browser draft.</p>
     </div>
     <div id="accountSignedIn" class="account-signed-in" hidden>
       <div class="account-actions">
@@ -1794,7 +1809,7 @@
   </footer>
 
   <script src="app.js?v=20261014-accounts"></script>
-  <script src="account.js?v=20261014-accounts"></script>
+  <script src="account.js?v=20261014-password-setup"></script>
 
   <div style="display:none;">
     <span id="top_pip_status"></span>
