@@ -661,6 +661,7 @@ function buildScoreControl(item, scale, stateKey, setter) {
     button.textContent = String(score);
     button.setAttribute('aria-label', `${item.label}: score ${score}`);
     button.setAttribute('aria-pressed', String(hasSelection && current === score));
+    button.disabled = !canEditReviewerScores();
     button.addEventListener('click', () => setter(item.id, score)); controls.appendChild(button);
   });
   row.append(info, controls); return row;
@@ -679,12 +680,20 @@ function initPeerControls() {
   }
 }
 
+function canEditReviewerScores() {
+  if (!appraisalState.objectiveSubmitted) return false;
+  const account = window.KMUAccount;
+  if (!account || account.mode === 'demo') return true;
+  return account.mode === 'assessor' && account.assessor === true
+    && Boolean(account.selectedCaseId) && account.selectedCaseStatus === 'submitted';
+}
+
 window.setPeerScore = function (id, score) {
-  if (!appraisalState.objectiveSubmitted) return;
+  if (!canEditReviewerScores()) return;
   appraisalState.sectionD.peerScores[id] = clamp(score, 1, 6); initPeerControls(); calculateAll();
 };
 window.setCpdScore = function (id, score) {
-  if (!appraisalState.objectiveSubmitted) return;
+  if (!canEditReviewerScores()) return;
   appraisalState.sectionD.cpdScores[id] = clamp(score, 0, 2); initPeerControls(); calculateAll();
 };
 
@@ -759,14 +768,21 @@ function getObjectiveFingerprint() {
 }
 
 function updateReviewStageDisplay() {
-  const open = appraisalState.objectiveSubmitted;
-  updateElementText('stageBannerTitle', open ? 'Stage 2 — Designated reviewer assessment' : 'Stage 1 — Faculty evidence');
-  updateElementText('stageBannerText', open
-    ? 'The faculty sections are complete. The designated Appraising Officer or notified Appraisal Committee may now review the declared evidence and complete the subjective assessment. This page sequence is not authenticated access control.'
-    : 'Complete the profile, teaching, research, patient care where applicable, and service. Review Section E provisional objective scores before committee assessment.');
-  updateElementText('reviewHandoffStatus', open
-    ? `Faculty sections completed at ${appraisalState.objectiveSubmittedAt || 'the current session'}. Review the declared research evidence before entering Appraisal Committee scores.`
-    : 'Review Section E provisional objective scores before continuing to committee assessment.');
+  const account = window.KMUAccount;
+  const open = appraisalState.objectiveSubmitted && (!account || account.mode === 'demo' || account.mode === 'assessor');
+  updateElementText('stageBannerTitle', account?.mode === 'assessor'
+    ? 'Assigned assessor — committee assessment' : account?.mode === 'assessee'
+      ? 'Faculty account — objective evidence' : open ? 'Stage 2 — local demo reviewer assessment' : 'Stage 1 — faculty evidence');
+  updateElementText('stageBannerText', account?.mode === 'assessee'
+    ? 'Complete Section E, save the cloud draft, then submit the objective case for an assigned assessor. Submission does not grant you reviewer access.'
+    : account?.mode === 'assessor'
+      ? 'Only a case actively assigned to this designated assessor can be reviewed. The pilot uses one assessor per case, not multi-assessor averaging. Scores remain provisional pending KMU approval.'
+      : open ? 'Local demo page sequence only: committee assessment here is not authenticated access.'
+        : 'Complete the profile, teaching, research, patient care where applicable, and service. Review Section E provisional objective scores before committee assessment.');
+  updateElementText('reviewHandoffStatus', account?.mode === 'assessor'
+    ? `Assigned faculty case opened for review. Objective entries are read-only; complete the separate assessment.`
+    : open ? `Faculty sections completed at ${appraisalState.objectiveSubmittedAt || 'the current session'}. Review the declared research evidence before entering Appraisal Committee scores.`
+      : 'Review Section E provisional objective scores before continuing to committee assessment.');
   document.querySelectorAll('[data-tab], [data-wizard]').forEach(node => {
     const tab = node.dataset.tab || node.dataset.wizard;
     if (!REVIEW_STAGE_TABS.has(tab)) return;
@@ -1202,12 +1218,24 @@ function syncTargetsToDossier() {
   pairs.forEach(([inputId, outputId]) => updateElementText(outputId, getTextValue(inputId) || '—'));
 }
 
+function canPrintDossierForAccount() {
+  const account = window.KMUAccount;
+  if (!account || account.mode === 'demo') return true;
+  return ['assessee', 'assessor'].includes(account.mode)
+    && Boolean(account.selectedCaseId) && account.selectedCaseStatus === 'reviewed'
+    && account.reviewLoaded === true;
+}
+
 function updateDossierCompleteness(readiness = getAssessmentReadiness()) {
   const missing = readiness.missing;
   const node = el('dossier_completeness'); if (!node) return;
-  document.body?.classList.toggle('dossier-print-ready', missing.length === 0);
+  const accountPrintReady = canPrintDossierForAccount();
+  document.body?.classList.toggle('dossier-print-ready', missing.length === 0 && accountPrintReady);
   if (missing.length) {
     node.textContent = `Incomplete draft — missing ${missing.join(', ')}`;
+    node.className = 'dossier-completeness dossier-incomplete';
+  } else if (!accountPrintReady) {
+    node.textContent = 'Assessment is not yet submitted and available as a reviewed cloud report. PDF printing is locked.';
     node.className = 'dossier-completeness dossier-incomplete';
   } else {
     node.textContent = 'Draft fields complete — faculty-entered teaching has been counted; research and service records remain reviewable';
@@ -1314,6 +1342,10 @@ window.continueFromResearch = function () {
 };
 
 window.continueToPeerReview = function () {
+  if (window.KMUAccount?.mode === 'assessee') return window.KMUAccount.submitObjective();
+  if (window.KMUAccount?.mode === 'assessor') {
+    showToast('Open an assigned case from your assessor queue.'); return false;
+  }
   const readiness = getObjectiveReadiness();
   if (!readiness.ready) {
     alert(`Complete the faculty sections before committee assessment: ${readiness.missing.join(', ')}.`);
@@ -1322,7 +1354,7 @@ window.continueToPeerReview = function () {
   appraisalState.objectiveSnapshot = getObjectiveFingerprint();
   appraisalState.objectiveSubmitted = true;
   appraisalState.objectiveSubmittedAt = new Date().toLocaleString('en-PK');
-  updateReviewStageDisplay();
+  updateReviewStageDisplay(); initPeerControls();
   calculateAll();
   window.switchTab('tab-peer');
   showToast('Faculty objective sections complete. Committee assessment is now open.');
@@ -1331,6 +1363,7 @@ window.continueToPeerReview = function () {
 window.submitObjectiveForReview = window.continueToPeerReview; // Earlier pilot drafts may still call this.
 
 window.saveAndReturnLater = function () {
+  if (window.KMUAccount?.mode && window.KMUAccount.mode !== 'demo') return window.KMUAccount.saveCurrent();
   try {
     const currentTab = document.querySelector('.tab-content.active')?.id || 'tab-meta';
     const draft = saveAllData(currentTab, true);
@@ -1491,6 +1524,12 @@ function restoreDraftObject(rawDraft) {
   setVal('input_red_flag_inquiry', draft.redFlag?.inquiryConcluded === 'Y' ? 'Y' : 'N');
   setVal('input_red_flag_appeal', draft.redFlag?.appealResolved === 'Y' ? 'Y' : 'N');
   updateReportingLine();
+  // Preserve the faculty-declared pilot reporting labels shown in the saved
+  // dossier. They are display evidence, not authenticated role assignments.
+  [['input_emp_appraiser', meta.appraiser], ['input_emp_reviewer', meta.reviewer],
+    ['input_emp_final', meta.finalAuthority]].forEach(([id, value]) => {
+    if (typeof value === 'string' && value.trim()) setVal(id, safeString(value, 160));
+  });
   appraisalState.manualProfileOverride = Boolean(draft.manualProfileOverride && PROFILES[draft.profile] && getTextValue('input_profile_assignment_ref'));
   if (appraisalState.manualProfileOverride) applyProfile(draft.profile, `Documented assignment reference: ${getTextValue('input_profile_assignment_ref')}`);
   else autoSelectProfileAndWeights();
@@ -1693,6 +1732,9 @@ window.loadSampleData = function () {
 };
 
 window.switchTab = function (tabId) {
+  if (window.KMUAccount?.canOpenTab && !window.KMUAccount.canOpenTab(tabId)) {
+    showToast('That section is available only to the assigned assessor.'); return;
+  }
   if (REVIEW_STAGE_TABS.has(tabId) && !appraisalState.objectiveSubmitted) {
     if (tabId === 'tab-peer') {
       window.switchTab('tab-provisional');
@@ -1711,7 +1753,16 @@ window.switchTab = function (tabId) {
   window.scrollTo?.({ top: 0, behavior: 'smooth' });
 };
 
-window.printDossier = function () {
+window.printDossier = async function () {
+  if (!canPrintDossierForAccount()) {
+    alert('The final PDF becomes available only after the assigned assessor submits the review.');
+    return;
+  }
+  if (window.KMUAccount?.mode === 'assessor'
+    && !await window.KMUAccount.verifyActiveSelection()) {
+    alert('The current assessor assignment could not be verified. Refresh your queue before printing.');
+    return;
+  }
   calculateAll(); const readiness = getAssessmentReadiness(); window.switchTab('tab-summary');
   if (!readiness.ready) {
     alert(`The draft work done report cannot be printed until these required items are complete: ${readiness.missing.join(', ')}.`);
@@ -1830,7 +1881,56 @@ window.KMUCalculator = {
   calculate: calculateAll, collectDraft, cycleDateRange, benchmarkState,
   calculatePilotScenario, weightedStudentReviews, calculateTeachingAttainment, paperPilotPoints,
   scorePublicationCounts, scoreGrantCounts, scoreResearchOriginal, getTeachingLoad, getResearchRubric,
-  getObjectiveReadiness, getAssessmentReadiness, lastResult: null
+  getObjectiveReadiness, getAssessmentReadiness, lastResult: null,
+  restoreDraft: restoreDraftObject, loadBlank: loadBlankData,
+  getObjectiveFingerprint, canEditReviewerScores, canPrintDossierForAccount,
+  rebuildReviewerScoreChips: initPeerControls,
+  applySubmittedReview(review) {
+    const account = window.KMUAccount;
+    if (!account?.selectedCaseId || account.selectedCaseStatus !== 'reviewed'
+      || !['assessor', 'assessee'].includes(account.mode)) return false;
+    const payload = review && typeof review === 'object' ? review : {};
+    setVal('input_reviewer_role', safeString(payload.reviewerRole, 80));
+    setVal('input_reviewer_name', safeString(payload.reviewerName, 160));
+    setVal('input_research_review_ref', safeString(payload.researchReviewReference, 240));
+    if (el('input_research_review_confirm')) el('input_research_review_confirm').checked = payload.researchReviewConfirmed === true;
+    PEER_PARAMETERS.forEach(item => {
+      const score = Number(payload.peerScores?.[item.id]);
+      appraisalState.sectionD.peerScores[item.id] = Number.isInteger(score) && score >= 1 && score <= 6 ? score : null;
+    });
+    CPD_TARGETS.forEach(item => {
+      const score = Number(payload.cpdScores?.[item.id]);
+      appraisalState.sectionD.cpdScores[item.id] = payload.cpdScores?.[item.id] !== null
+        && Number.isInteger(score) && score >= 0 && score <= 2 ? score : null;
+    });
+    TARGET_IDS.forEach(id => setVal(id, safeString(payload.nextCycleTargets?.[id], 2000)));
+    const flag = payload.disciplinaryDeclaration || {};
+    setVal('input_red_flag', ['0', '25', '50'].includes(String(flag.penalty)) ? String(flag.penalty) : '0');
+    setVal('input_red_flag_ref', safeString(flag.reference, 200));
+    setVal('input_red_flag_date', safeString(flag.date, 10));
+    setVal('input_red_flag_inquiry', flag.inquiryConcluded === 'Y' ? 'Y' : 'N');
+    setVal('input_red_flag_appeal', flag.appealResolved === 'Y' ? 'Y' : 'N');
+    initPeerControls(); calculateAll();
+    return true;
+  },
+  openCompletedCaseReport() {
+    const account = window.KMUAccount;
+    if (!account?.selectedCaseId || account.selectedCaseStatus !== 'reviewed'
+      || !['assessor', 'assessee'].includes(account.mode)) return false;
+    appraisalState.objectiveSnapshot = getObjectiveFingerprint();
+    appraisalState.objectiveSubmitted = true;
+    appraisalState.objectiveSubmittedAt = 'faculty cloud submission';
+    updateReviewStageDisplay(); calculateAll();
+    return true;
+  },
+  openAssignedCaseForReview() {
+    if (window.KMUAccount?.mode !== 'assessor' || !window.KMUAccount.selectedCaseId) return false;
+    appraisalState.objectiveSnapshot = getObjectiveFingerprint();
+    appraisalState.objectiveSubmitted = true;
+    appraisalState.objectiveSubmittedAt = 'faculty cloud submission';
+    updateReviewStageDisplay(); initPeerControls(); calculateAll(); window.switchTab('tab-peer');
+    return true;
+  }
 };
 
 document.addEventListener('DOMContentLoaded', () => {

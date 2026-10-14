@@ -12,6 +12,7 @@ PUBLIC_FILES = {
     "/index.html": "index.html",
     "/styles.css": "styles.css",
     "/app.js": "app.js",
+    "/account.js": "account.js",
     "/kmu_logo.png": "kmu_logo.png",
     "/KMU_Unified_Policy_Draft.docx": "KMU_Unified_Policy_Draft.docx",
 }
@@ -26,7 +27,8 @@ SECURITY_HEADERS = [
         "Content-Security-Policy",
         "default-src 'self'; script-src 'self' 'unsafe-inline'; "
         "style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
-        "connect-src 'none'; object-src 'none'; base-uri 'none'; "
+        "connect-src 'self' https://wiglqhoihnlmalfzqepk.supabase.co; "
+        "object-src 'none'; base-uri 'none'; "
         "form-action 'none'; frame-ancestors 'none'",
     ),
 ]
