@@ -101,6 +101,7 @@ function authHarness(hash, scenario = {}) {
     'accountSaveProfile', 'accountSyncDraftProfile',
     'accountAssesseeMode', 'accountAssessorMode', 'accountAdminMode', 'accountCasePanel',
     'accountQueuePanel', 'accountAdminPanel', 'accountProfileSyncNotice', 'employeeProfileStatus',
+    'employeeProfileSaveMessage',
     'appraisalWorkspace', 'stageBanner', 'profileSnapshotNotice', 'myCaseList', 'assessorQueue',
     'accountDesignation', 'accountLeadershipRole', 'accountInstitute', 'accountCadre',
     'profileDisplayName', 'profileDesignation', 'profileLeadershipRole', 'profileInstitute',
@@ -175,6 +176,8 @@ function authHarness(hash, scenario = {}) {
         result = currentProfileRows;
       }
       else if (url.includes('/rest/v1/rpc/save_employee_profile')) {
+        if (scenario.profileSaveError) return { ok: false, status: 400,
+          text: async () => JSON.stringify({ message: 'Profile save rejected' }) };
         const submitted = JSON.parse(options.body);
         result = {
           id: user.id, display_name: submitted.p_display_name,
@@ -182,7 +185,7 @@ function authHarness(hash, scenario = {}) {
           leadership_role: submitted.p_leadership_role,
           institute: submitted.p_institute, service_cadre: submitted.p_service_cadre
         };
-        currentProfileRows = [result];
+        if (!scenario.profileSaveNotPersisted) currentProfileRows = [result];
       }
       else if (url.includes('/rest/v1/app_assessors')) result = scenario.assessor ? [{ user_id: user.id }] : [];
       else if (url.includes('/rest/v1/app_administrators')) result = scenario.administrator ? [{ user_id: user.id }] : [];
@@ -298,6 +301,8 @@ function authHarness(hash, scenario = {}) {
   assert.equal(profileSaveBody.p_substantive_designation, 'Associate Professor');
   assert.equal(Object.hasOwn(profileSaveBody, 'p_user_id'), false, 'Profile-save RPC does not accept a target user ID');
   assert.equal(signed.account.profile.display_name, 'Registered Faculty Updated', 'Saved profile reloads');
+  assert.match(signed.nodes.employeeProfileSaveMessage.textContent, /Profile saved to your employee account/,
+    'Profile-save confirmation appears beside the save button');
   assert.equal(signed.nodes.input_emp_name.value, 'Registered Faculty',
     'Changing the employee profile must not silently rewrite an open appraisal snapshot');
   assert.equal(signed.nodes.accountProfileSyncNotice.hidden, false,
@@ -311,6 +316,25 @@ function authHarness(hash, scenario = {}) {
   assert.equal(signed.account.caseOpen, false, 'Sign-out closes the prior case');
   assert.equal(signed.nodes.profileDisplayName.value, '', 'Sign-out clears profile edit fields');
   assert.equal(signed.nodes.appraisalWorkspace.hidden, false, 'Signed-out visitor returns only to local demo');
+
+  const failedSave = authHarness('', { profileSaveError: true }); failedSave.ready();
+  failedSave.nodes.accountEmail.value = failedSave.user.email;
+  failedSave.nodes.accountPassword.value = 'portal-password';
+  await failedSave.nodes.accountForm.handlers.submit({ preventDefault() {} });
+  await failedSave.nodes.accountSaveProfile.handlers.click({ preventDefault() {} });
+  assert.match(failedSave.nodes.employeeProfileSaveMessage.textContent, /Not saved: Profile save rejected/,
+    'A rejected profile save shows its reason beside the button');
+  assert.equal(failedSave.nodes.accountSaveProfile.disabled, false,
+    'Save can be retried after a failed request');
+
+  const unconfirmedSave = authHarness('', { profileSaveNotPersisted: true }); unconfirmedSave.ready();
+  unconfirmedSave.nodes.accountEmail.value = unconfirmedSave.user.email;
+  unconfirmedSave.nodes.accountPassword.value = 'portal-password';
+  await unconfirmedSave.nodes.accountForm.handlers.submit({ preventDefault() {} });
+  unconfirmedSave.nodes.profileDisplayName.value = 'A New Name';
+  await unconfirmedSave.nodes.accountSaveProfile.handlers.click({ preventDefault() {} });
+  assert.match(unconfirmedSave.nodes.employeeProfileSaveMessage.textContent, /Not saved: The saved profile could not be verified/,
+    'The UI must not claim success when a reloaded profile does not match');
 
   const legacy = authHarness('', { profileRows: [{ id: 'user-1', display_name: 'Invited Legacy' }], assessor: true });
   legacy.ready(); legacy.nodes.accountEmail.value = legacy.user.email;

@@ -103,12 +103,17 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     const node = $('accountMessage');
     if (node) { node.textContent = text; node.className = `account-message ${kind}`.trim(); }
   }
+  function setProfileSaveMessage(text, kind = '') {
+    const node = $('employeeProfileSaveMessage');
+    if (node) { node.textContent = text; node.className = `account-message ${kind}`.trim(); }
+  }
   function setText(id, value) { const node = $(id); if (node) node.textContent = String(value); }
   function show(id, visible) { const node = $(id); if (node) node.hidden = !visible; }
   function clearPrivatePanels() {
     ['myCaseList', 'assessorQueue', 'accountAdminUsers', 'adminFacultyRecords', 'adminAssessorId',
       'adminRevokeAssessorId', 'adminCaseId', 'adminAssignAssessorId', 'adminUnassignId']
       .forEach(id => $(id)?.replaceChildren());
+    setProfileSaveMessage('');
   }
   function populateProfileSelects() {
     PROFILE_SELECTS.forEach(([sourceId, registrationId, employeeId]) => {
@@ -259,8 +264,12 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     }));
     ensureCurrent(view);
     if (!saved?.id || saved.id !== account.user.id) throw new Error('The database did not confirm your employee profile.');
-    await loadMyProfile();
+    const persisted = await loadMyProfile();
     ensureCurrent(view);
+    if (['display_name', 'substantive_designation', 'leadership_role', 'institute', 'service_cadre']
+      .some(field => persisted?.[field] !== profile[field])) {
+      throw new Error('The saved profile could not be verified after reloading. Please retry or contact the portal administrator.');
+    }
     const changedOpenCase = account.caseOpen && caseIdentityDiffers();
     setMessage(changedOpenCase && (!account.selectedCaseStatus || account.selectedCaseStatus === 'draft')
       ? 'Employee profile saved. The open appraisal retains its original snapshot; use “Update this draft from my profile” if you want to change it.'
@@ -985,7 +994,31 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
       await requestPasswordRecovery($('accountEmail').value.trim().toLowerCase());
     }));
     $('accountPasswordSetupForm')?.addEventListener('submit', safeAction(() => finishPasswordSetup()));
-    $('accountSaveProfile')?.addEventListener('click', safeAction(() => saveEmployeeProfile()));
+    ['profileDisplayName', 'profileDesignation', 'profileLeadershipRole',
+      'profileInstitute', 'profileServiceCadre'].forEach(id => {
+      $(id)?.addEventListener('input', () => setProfileSaveMessage('Unsaved profile changes.'));
+      $(id)?.addEventListener('change', () => setProfileSaveMessage('Unsaved profile changes.'));
+    });
+    $('accountSaveProfile')?.addEventListener('click', async event => {
+      event?.preventDefault?.();
+      const button = $('accountSaveProfile');
+      if (!button || button.disabled) return;
+      button.disabled = true;
+      button.textContent = 'Saving employee profile…';
+      setProfileSaveMessage('Saving to your employee account…');
+      try {
+        await saveEmployeeProfile();
+        setProfileSaveMessage('Profile saved to your employee account. New appraisals will use these details.', 'success');
+      } catch (error) {
+        if (error instanceof StaleAccountRequest) return;
+        const message = `Not saved: ${error.message || 'The account service did not confirm the save.'}`;
+        setProfileSaveMessage(message, 'error');
+        setMessage(message, 'error');
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Save employee profile';
+      }
+    });
     $('accountSyncDraftProfile')?.addEventListener('click', safeAction(() => {
       if (account.mode !== 'assessee' || !account.caseOpen || !account.profileComplete
         || (account.selectedCaseStatus && account.selectedCaseStatus !== 'draft')) {
