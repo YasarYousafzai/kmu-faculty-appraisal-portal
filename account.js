@@ -370,7 +370,8 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     setText('objectiveSaveButton', account.mode === 'assessee' ? '💾 Save and return to Employee Portal' : '💾 Save provisional dossier on this browser');
     setText('objectiveSubmitButton', account.mode === 'assessee' ? 'Submit objective case to assessor queue ➔' : 'Continue to Committee Assessment ➔');
     setText('headerSaveButton', account.mode === 'assessee' ? '💾 Save and return' : '💾 Save & Return Later');
-    show('headerSaveButton', account.mode === 'demo' || account.mode === 'assessee');
+    show('headerSaveButton', account.mode === 'demo' || (account.mode === 'assessee'
+      && account.caseOpen && !['submitted', 'reviewed'].includes(account.selectedCaseStatus)));
     setText('reviewAccessNote', account.mode === 'assessor'
       ? 'This case was retrieved under your assigned assessor account. Only the separate subjective assessment is submitted by you; faculty objective entries are read-only and still require institutional verification.'
       : account.mode === 'demo'
