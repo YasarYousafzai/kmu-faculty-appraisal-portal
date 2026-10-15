@@ -344,9 +344,17 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
     'The saved registration profile should populate the employee portal');
   assert(await accountPage.locator('#appraisalWorkspace').isHidden(),
     'Employee profile view should not start an appraisal implicitly');
-  await accountPage.locator('#accountNewCase').click();
+  await accountPage.locator('[data-wizard="tab-teaching"]').click();
   assert(await accountPage.locator('#appraisalWorkspace').isVisible(),
-    'Explicitly opening a case should show the appraisal');
+    'Selecting Teaching should open a new unsaved faculty case when no cloud case exists');
+  assert(await accountPage.locator('#tab-teaching').evaluate(node => node.classList.contains('active')),
+    'Employee must be able to enter Teaching directly from the saved profile');
+  for (const tab of ['tab-research', 'tab-service', 'tab-provisional']) {
+    assert(await accountPage.evaluate(id => window.switchTab(id), tab), `Employee must be able to enter ${tab}`);
+  }
+  assert(await accountPage.evaluate(() => window.switchTab('tab-peer')) === false,
+    'The same employee must not enter committee assessment');
+  await accountPage.evaluate(() => window.switchTab('tab-meta'));
   assert(await accountPage.locator('#input_emp_name').inputValue() === 'Synthetic Employee'
     && await accountPage.locator('#input_emp_desig').inputValue() === 'Professor'
     && await accountPage.locator('#input_emp_dept').inputValue() === syntheticProfile.institute,
@@ -362,6 +370,9 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   assert(savedCasePayload?.meta?.name === 'Synthetic Employee'
     && (await accountPage.locator('#myCaseList').innerText()).includes('2026'),
     'Save and return must persist the draft and return to the Employee Portal case list');
+  assert(await accountPage.evaluate(() => window.switchTab('tab-teaching')) === false,
+    'An employee with a saved case must open it rather than silently starting a duplicate');
+  assert((await accountPage.locator('#accountMessage').innerText()).includes('Open your saved case under My appraisals'));
   await accountPage.locator('#myCaseList').getByRole('button', { name: 'Open case' }).click();
   await accountPage.locator('#appraisalWorkspace').waitFor({ state: 'visible' });
   assert(await accountPage.locator('#input_emp_name').inputValue() === 'Synthetic Employee',

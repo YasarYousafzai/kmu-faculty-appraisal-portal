@@ -284,6 +284,26 @@ function authHarness(hash, scenario = {}) {
   assert.equal(signed.account.caseOpen, false, 'Sign-in must not silently open or upload an appraisal');
   assert.equal(signed.nodes.appraisalWorkspace.hidden, true, 'Employee dashboard hides the appraisal until a case opens');
   assert.equal(signed.appliedProfiles.length, 0, 'No registration data is copied into a case without user action');
+  const direct = authHarness(''); direct.ready();
+  direct.nodes.accountEmail.value = direct.user.email;
+  direct.nodes.accountPassword.value = 'portal-password';
+  await direct.nodes.accountForm.handlers.submit({ preventDefault() {} });
+  await direct.nodes.accountSaveProfile.handlers.click({ preventDefault() {} });
+  assert.equal(direct.account.beginFacultyTab('tab-teaching'), true,
+    'Selecting Teaching after saving the employee profile explicitly opens a new unsaved case');
+  for (const tab of ['tab-teaching', 'tab-research', 'tab-clinical', 'tab-service', 'tab-provisional']) {
+    assert.equal(direct.account.canOpenTab(tab), true, `Employee can open ${tab} in their case`);
+  }
+  assert.equal(direct.account.canOpenTab('tab-peer'), false,
+    'Opening faculty sections must not grant committee assessment access');
+  const existing = authHarness('');
+  existing.ready(); existing.nodes.accountEmail.value = existing.user.email;
+  existing.nodes.accountPassword.value = 'portal-password';
+  await existing.nodes.accountForm.handlers.submit({ preventDefault() {} });
+  existing.account.ownCases = [{ id: 'draft-1', cycle_year: 2026, status: 'draft' }];
+  assert.equal(existing.account.beginFacultyTab('tab-research'), false,
+    'Navigation must not silently create a duplicate when a cloud case already exists');
+  assert.match(existing.nodes.accountMessage.textContent, /Open your saved case under My appraisals/);
   await signed.nodes.accountNewCase.handlers.click({ preventDefault() {} });
   assert.equal(signed.account.caseOpen, true, 'New-case action opens the appraisal');
   assert.equal(signed.appliedProfiles.length, 1, 'New appraisal receives the saved employee profile');

@@ -1330,7 +1330,8 @@ function saveAllData(activeTabId, persist = false) {
 }
 
 window.saveAndContinue = function (nextTabId, sectionLabel) {
-  calculateAll(); window.switchTab(nextTabId); showToast(`Updated. Continuing to ${sectionLabel}.`);
+  calculateAll();
+  if (window.switchTab(nextTabId)) showToast(`Updated. Continuing to ${sectionLabel}.`);
 };
 
 window.continueFromResearch = function () {
@@ -1765,17 +1766,35 @@ window.loadSampleData = function () {
 };
 
 window.switchTab = function (tabId) {
-  if (window.KMUAccount?.canOpenTab && !window.KMUAccount.canOpenTab(tabId)) {
-    showToast('That section is available only to the assigned assessor.'); return;
+  const account = window.KMUAccount;
+  if (account?.canOpenTab && !account.canOpenTab(tabId)) {
+    if (account.mode === 'assessee' && account.beginFacultyTab?.(tabId) && account.canOpenTab(tabId)) {
+      // The employee explicitly opened the first faculty section; the new case is still unsaved.
+    } else {
+      showToast(account.mode === 'assessee' && !account.caseOpen
+        ? !account.profileComplete
+          ? 'Save your complete employee profile before opening an appraisal.'
+          : account.ownCases?.length
+            ? 'Open your saved case from My appraisals, or start a new case for another cycle.'
+            : 'Wait for your appraisals to load, then select the faculty section again.'
+        : account.mode === 'assessee'
+          ? 'Committee assessment is available only to an assigned assessor.'
+          : account.mode === 'assessor' && !account.caseOpen
+            ? 'Open an assigned case from your Assessor Portal first.'
+            : account.mode === 'administrator' && !account.caseOpen
+              ? 'Open a case from Faculty records first.'
+              : 'This section is not available in the current portal role.');
+      return false;
+    }
   }
   if (REVIEW_STAGE_TABS.has(tabId) && !appraisalState.objectiveSubmitted) {
     if (tabId === 'tab-peer') {
       window.switchTab('tab-provisional');
       showToast('Review Section E before continuing to committee assessment.');
-      return;
+      return false;
     }
     showToast('Complete Section E before opening committee assessment.');
-    return;
+    return false;
   }
   document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
@@ -1784,6 +1803,7 @@ window.switchTab = function (tabId) {
   document.querySelector(`[data-tab="${tabId}"]`)?.classList.add('active');
   document.querySelector(`[data-wizard="${tabId}"]`)?.classList.add('active');
   window.scrollTo?.({ top: 0, behavior: 'smooth' });
+  return true;
 };
 
 window.printDossier = async function () {

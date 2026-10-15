@@ -60,6 +60,7 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
   }
   const ACCOUNT_REVIEW_TABS = new Set(['tab-peer', 'tab-targets', 'tab-redflag', 'tab-summary']);
   const OBJECTIVE_TABS = ['tab-meta', 'tab-teaching', 'tab-research', 'tab-clinical', 'tab-service'];
+  const FACULTY_TABS = new Set([...OBJECTIVE_TABS, 'tab-provisional']);
   const PROFILE_FIELDS = Object.freeze({
     name: 'input_emp_name', designation: 'input_emp_desig', leadership: 'input_leadership_role',
     institute: 'input_emp_dept', cadre: 'input_emp_cadre'
@@ -74,7 +75,7 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
   const account = window.KMUAccount = {
     mode: 'demo', session: null, user: null, assessor: false, administrator: false,
     selectedCaseId: null, selectedCaseStatus: null, reviewLoaded: false, caseOpen: false,
-    profile: null, profileComplete: false,
+    profile: null, profileComplete: false, ownCases: null,
     backendVerified: KMU_ACCOUNT_CONFIG.backendVerified,
     buildObjectivePayload: () => objectivePayload(),
     canOpenTab(tabId) {
@@ -93,6 +94,7 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     },
     saveCurrent: () => saveCurrent(),
     saveAndReturn: () => saveAndReturn(),
+    beginFacultyTab: tabId => beginFacultyTab(tabId),
     submitObjective: () => submitObjective(),
     verifyActiveSelection: () => verifyActiveSelection(),
     loadMyProfile: () => loadMyProfile(),
@@ -400,7 +402,8 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     accountLoading = true;
     account.session = data; account.user = data.user;
     account.assessor = false; account.administrator = false; account.profile = null;
-    account.profileComplete = false; account.mode = 'assessee'; account.caseOpen = false;
+    account.profileComplete = false; account.ownCases = null;
+    account.mode = 'assessee'; account.caseOpen = false;
     account.selectedCaseId = null; account.selectedCaseStatus = null; account.reviewLoaded = false;
     clearPrivatePanels(); populateEmployeeProfileForm();
     setObjectiveReadonly(false); setReviewReadonly(false); window.KMUCalculator.loadBlank(); render();
@@ -432,7 +435,8 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
       accountLoading = false;
       account.session = null; account.user = null; account.mode = 'demo';
       account.assessor = false; account.administrator = false; account.profile = null;
-      account.profileComplete = false; account.caseOpen = false; clearPrivatePanels();
+      account.profileComplete = false; account.ownCases = null;
+      account.caseOpen = false; clearPrivatePanels();
       populateEmployeeProfileForm(); window.KMUCalculator.loadBlank(); render();
       throw new Error(`Account access is not ready: ${error.message}`);
     }
@@ -675,6 +679,7 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     box?.replaceChildren();
     const rows = await rest('appraisal_cases', `select=id,faculty_id,cycle_year,designation,institute,status,updated_at&faculty_id=eq.${encode(account.user.id)}&order=updated_at.desc`);
     ensureCurrent(view);
+    account.ownCases = rows;
     if (!box) return;
     if (!rows?.length) { box.textContent = 'No cloud cases yet. Complete your faculty profile and save a draft.'; return; }
     rows.forEach(row => {
@@ -957,6 +962,7 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     clearPrivatePanels();
     account.mode = mode; account.selectedCaseId = null; account.selectedCaseStatus = null;
     account.reviewLoaded = false; account.caseOpen = false;
+    account.ownCases = null;
     setObjectiveReadonly(false); setReviewReadonly(false); window.KMUCalculator.loadBlank();
     clearLocalRecoveryNotice(); render();
     const view = captureView();
@@ -965,6 +971,36 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     if (mode === 'administrator') await loadAdmin();
     ensureCurrent(view);
     setMessage(`Opened ${mode} workspace.`, 'success');
+  }
+  function startNewFacultyCase() {
+    if (account.mode !== 'assessee' || !account.user || !account.session || !account.profileComplete) {
+      throw new Error('Complete and save your employee profile before starting an appraisal.');
+    }
+    if (account.caseOpen && !confirm('Start a blank faculty case? Unsaved entries in the open form will be lost.')) return false;
+    account.selectedCaseId = null; account.selectedCaseStatus = null;
+    account.reviewLoaded = false; account.caseOpen = true;
+    setObjectiveReadonly(false); window.KMUCalculator.loadBlank();
+    applySavedProfileToNewCase(); render();
+    setMessage('New appraisal opened with your saved employee profile. Complete this cycle’s assignment and evidence, then save the cloud draft explicitly.', 'success');
+    return true;
+  }
+  function beginFacultyTab(tabId) {
+    if (account.mode !== 'assessee' || !FACULTY_TABS.has(tabId) || account.caseOpen) return false;
+    if (!account.user || !account.session || !account.profileComplete) {
+      setMessage('Save your complete employee profile before opening the appraisal.', 'error');
+      $('employeeProfileForm')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+      return false;
+    }
+    if (account.ownCases === null) {
+      setMessage('Your appraisals are still loading. Please try again in a moment.', 'error');
+      return false;
+    }
+    if (account.ownCases.length) {
+      setMessage('Open your saved case under My appraisals, or choose Start new faculty case for a different appraisal cycle.', 'error');
+      $('myCaseList')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+      return false;
+    }
+    return startNewFacultyCase();
   }
   function safeAction(fn) {
     return async event => {
@@ -1034,7 +1070,8 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
       accountGeneration += 1; viewGeneration += 1; signInAttempt += 1;
       accountLoading = false;
       account.session = null; account.user = null; account.assessor = false; account.administrator = false;
-      account.profile = null; account.profileComplete = false; account.caseOpen = false;
+      account.profile = null; account.profileComplete = false; account.ownCases = null;
+      account.caseOpen = false;
       account.mode = 'demo'; account.selectedCaseId = null; account.selectedCaseStatus = null; account.reviewLoaded = false;
       clearPrivatePanels();
       populateEmployeeProfileForm();
@@ -1070,15 +1107,7 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
       setMessage('Returned to the administrator’s faculty records.', 'success');
     }));
     $('accountNewCase')?.addEventListener('click', safeAction(() => {
-      if (account.mode !== 'assessee' || !account.profileComplete) {
-        throw new Error('Complete and save your employee profile before starting an appraisal.');
-      }
-      if (account.caseOpen && !confirm('Start a blank faculty case? Unsaved entries in the open form will be lost.')) return;
-      account.selectedCaseId = null; account.selectedCaseStatus = null;
-      account.reviewLoaded = false; account.caseOpen = true;
-      setObjectiveReadonly(false); window.KMUCalculator.loadBlank();
-      applySavedProfileToNewCase(); render(); window.switchTab('tab-meta');
-      setMessage('New appraisal opened with your saved employee profile. Complete this cycle’s assignment and evidence, then save the cloud draft explicitly.', 'success');
+      if (startNewFacultyCase()) window.switchTab('tab-meta');
     }));
     $('accountSubmitReview')?.addEventListener('click', safeAction(() => submitReview()));
     $('adminGrantAssessor')?.addEventListener('click', safeAction(async () => {
