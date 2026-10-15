@@ -1083,13 +1083,16 @@ function calculateAll() {
   const readiness = getAssessmentReadiness(penalty);
   const objectiveReadiness = getObjectiveReadiness();
   const objectiveReady = objectiveReadiness.ready;
-  const provisionalDomain = (key, attainment, weight, weighted, ready) => {
-    updateElementText(`provisional_${key}_attainment`, ready ? `${attainment.toFixed(1)}%` : 'Pending');
+  const provisionalDomain = (key, attainment, weight, weighted, ready, calculable = true) => {
+    const status = ready ? '' : ' (incomplete)';
+    updateElementText(`provisional_${key}_attainment`, !profileReady ? 'Pending profile'
+      : calculable ? `${attainment.toFixed(1)}%${status}` : 'Pending course entries');
     updateElementText(`provisional_${key}_weight`, appraisalState.profilePending ? '—' : `${weight} points`);
-    updateElementText(`provisional_${key}_points`, ready ? `${weighted.toFixed(2)} / ${weight}` : 'Pending');
+    updateElementText(`provisional_${key}_points`, !profileReady ? '—'
+      : calculable ? `${weighted.toFixed(2)} / ${weight}${status}` : 'Pending course entries');
   };
   const profileReady = !appraisalState.profilePending;
-  provisionalDomain('teaching', attainmentA, profile.teaching, weightedA, teachingReady);
+  provisionalDomain('teaching', attainmentA, profile.teaching, weightedA, teachingReady, teachingReady);
   provisionalDomain('research', attainmentB, profile.research, weightedB,
     profileReady && researchRubric.issues.length === 0);
   provisionalDomain('service', attainmentC, profile.service, weightedC,
@@ -1100,13 +1103,15 @@ function calculateAll() {
     profileReady && ['input_clin_admin', 'input_clin_volume', 'input_clin_oncall', 'input_clin_teaching']
       .every(id => getTextValue(id) !== '')
       && Boolean(getTextValue('input_clin_service_mode')) && Boolean(getTextValue('input_clin_evidence_ref')));
+  updateElementText('provisionalObjectiveTitle', objectiveReady
+    ? 'Total provisional objective score' : 'Interim objective score from current entries');
   updateElementText('provisional_objective_total', profileReady
-    ? objectiveReady ? `${objectiveScore.toFixed(2)} / ${objectiveMaximum} points`
-      : 'Pending complete faculty evidence'
+    ? `${objectiveScore.toFixed(2)} / ${objectiveMaximum} points${objectiveReady ? '' : ' (interim)'}`
     : 'Choose designation and institute');
-  updateElementText('provisional_objective_percent', objectiveReady
-    ? `${objectivePercent.toFixed(1)}% of the objective ceiling. The committee portion is not included.`
-    : 'The objective total will appear after all required faculty entries are complete.');
+  updateElementText('provisional_objective_percent', profileReady
+    ? `${objectivePercent.toFixed(1)}% of the objective ceiling${objectiveReady ? '.'
+      : ' from current entries; incomplete domains may change this score.'} The committee portion is not included.`
+    : 'Choose your profile details to calculate the applicable objective ceiling.');
   updateElementText('provisional_readiness', objectiveReady
     ? 'Faculty objective entries are complete for this pilot. Save this browser draft before continuing to committee assessment.'
     : `Still needed: ${objectiveReadiness.missing.join('; ')}.`);

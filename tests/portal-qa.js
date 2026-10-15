@@ -90,6 +90,8 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   assert(await page.locator('#input_emp_final').inputValue() === 'Vice Chancellor', 'Final-authority mapping failed.');
   await set(page, '#input_emp_cadre', 'TTS');
   assert(await page.locator('#disp_auto_profile_name').innerText() === 'Balanced Profile', 'TTS must not change weights.');
+  assert((await page.locator('#provisional_teaching_points').innerText()) === 'Pending course entries',
+    'An unscorable teaching course must not be presented as an earned zero.');
 
   await page.evaluate(() => window.switchTab('tab-teaching'));
   await fillCourse(page, 1, { title: 'Anatomy', code: 'ANAT-301', specialty: 'Anatomy', theory: '1', practical: '1', review: '80', term: 'Semester 3', level: 'Undergraduate' });
@@ -136,6 +138,17 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   near((await result(page)).researchRubric.raw, 56);
   near((await result(page)).attainmentB, 28);
 
+  current = await result(page);
+  assert(!current.objectiveReady, 'Service declaration should still be outstanding.');
+  assert((await page.locator('#provisional_objective_total').innerText()).startsWith(
+    (current.weightedA + current.weightedB + current.weightedC + current.weightedE).toFixed(2)),
+  'Section E must show the interim sum of current objective points before every declaration is complete.');
+  assert((await page.locator('#provisional_objective_total').innerText()).includes('(interim)')
+    && (await page.locator('#provisional_service_points').innerText()).includes('(incomplete)')
+    && (await page.locator('#provisional_readiness').innerText()).includes('institutional-service completion declaration'),
+  'Interim scores must remain visibly incomplete and list what is needed to submit.');
+  assert((await page.locator('#provisional_research_points').innerText()).startsWith(current.weightedB.toFixed(2)),
+    'Calculated research points must be visible in the provisional dossier.');
   await check(page, '#input_service_complete', true);
   assert(await page.evaluate(() => window.KMUCalculator.getObjectiveReadiness().ready), 'Faculty evidence should be ready.');
   await page.evaluate(() => window.continueFromResearch());
