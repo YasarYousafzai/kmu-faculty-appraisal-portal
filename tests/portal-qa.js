@@ -52,7 +52,9 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
   await page.goto(`http://127.0.0.1:${server.address().port}/`, { waitUntil: 'networkidle' });
 
-  assert(await page.locator('.teaching-course-card').count() === 3, 'Three starter courses required.');
+  assert(await page.locator('.teaching-course-card').count() === 1, 'Teaching must start with one course.');
+  assert(await page.locator('#addTeachingCourseButton').innerText() === '+ Add new course (maximum 10)',
+    'The add-course option must be clearly labelled.');
   assert(await page.locator('.teaching-course-card [data-course-field="theory"]').evaluateAll(nodes => nodes.every(node => node.value === '0')) &&
     await page.locator('.teaching-course-card [data-course-field="practical"]').evaluateAll(nodes => nodes.every(node => node.value === '0')),
   'Theory and practical credits should default to zero in every starter course.');
@@ -89,7 +91,9 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   await set(page, '#input_emp_cadre', 'TTS');
   assert(await page.locator('#disp_auto_profile_name').innerText() === 'Balanced Profile', 'TTS must not change weights.');
 
+  await page.evaluate(() => window.switchTab('tab-teaching'));
   await fillCourse(page, 1, { title: 'Anatomy', code: 'ANAT-301', specialty: 'Anatomy', theory: '1', practical: '1', review: '80', term: 'Semester 3', level: 'Undergraduate' });
+  await page.locator('#addTeachingCourseButton').click();
   await fillCourse(page, 2, { title: 'Histology', code: 'HIST-401', specialty: 'Histology', theory: '1', practical: '0', review: '90', term: 'Winter Semester', level: 'MPhil / MS' });
   let current = await result(page);
   near(current.teachingLoad.contactHours, 64);
@@ -104,7 +108,7 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   assert(await page.locator('#disp_effective_teaching').innerText() === '41.3%',
     'Faculty-entered courses should immediately contribute under the rank-adjusted pilot formula.');
   await page.evaluate(() => window.addTeachingCourse());
-  assert(await page.locator('.teaching-course-card').count() === 4, 'Add course failed.');
+  assert(await page.locator('.teaching-course-card').count() === 3, 'Add course failed.');
 
   await set(page, '#input_pub_high_lead', 2);
   await set(page, '#input_pub_mod_co', 1);
@@ -234,7 +238,8 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   await page.reload({ waitUntil: 'networkidle' });
   assert(await page.locator('#draftResumeButton').isVisible(), 'Saved draft should offer explicit resume.');
   await page.locator('#draftResumeButton').click();
-  assert(await page.locator('.teaching-course-card').count() === 4, 'Courses were not restored.');
+  assert(await page.locator('.teaching-course-card').count() === 2,
+    'Saved courses should restore without an unused trailing course.');
   assert(await page.locator('#input_pub_high_lead').inputValue() === '2' &&
     await page.locator('#input_grant_nat_pi').inputValue() === '1',
     'Publication and grant counts were not restored.');

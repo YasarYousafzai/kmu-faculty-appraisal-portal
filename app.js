@@ -361,10 +361,11 @@ function getTeachingLoad() {
     contactHours: theoryCredits * 16 + practicalCredits * 32
   };
 }
-function renderTeachingCourses(records = [{}, {}, {}]) {
+function renderTeachingCourses(records = [{}]) {
   const container = el('teachingCourses'); if (!container) return;
   container.replaceChildren();
-  records.slice(0, MAX_COURSES).forEach((record, index) => {
+  const displayedRecords = records.length ? records : [{}];
+  displayedRecords.slice(0, MAX_COURSES).forEach((record, index) => {
     const card = document.createElement('div'); card.className = 'teaching-course-card';
     const fields = [
       ['title', 'Course heading / title', 'text', 'e.g., Human Anatomy'],
@@ -377,7 +378,7 @@ function renderTeachingCourses(records = [{}, {}, {}]) {
     const heading = document.createElement('div'); heading.className = 'teaching-course-heading';
     const title = document.createElement('strong'); title.textContent = `Course ${index + 1}`;
     const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'btn btn-secondary no-print';
-    remove.textContent = 'Remove'; remove.disabled = records.length === 1;
+    remove.textContent = 'Remove'; remove.disabled = displayedRecords.length === 1;
     remove.addEventListener('click', () => {
       const current = getTeachingLoad().records; current.splice(index, 1);
       renderTeachingCourses(current.length ? current : [{}]); calculateAll();
@@ -420,7 +421,12 @@ function renderTeachingCourses(records = [{}, {}, {}]) {
     addSelect('level', 'Level of teaching', ['Undergraduate', 'Postgraduate', 'MPhil / MS', 'PhD', 'Clinical Residency / Fellowship']);
     card.appendChild(grid); container.appendChild(card);
   });
-  if (el('addTeachingCourseButton')) el('addTeachingCourseButton').disabled = records.length >= MAX_COURSES;
+  if (el('addTeachingCourseButton')) el('addTeachingCourseButton').disabled = displayedRecords.length >= MAX_COURSES;
+}
+function removeUnusedTrailingCourses(records) {
+  const retained = [...records];
+  while (retained.length > 1 && !isEnteredTeachingCourse(retained.at(-1))) retained.pop();
+  return retained.length ? retained : [{}];
 }
 window.addTeachingCourse = function () {
   const records = getTeachingLoad().records;
@@ -1469,7 +1475,8 @@ function restoreDraftObject(rawDraft) {
     input_comm_member_3: safeString(meta.committeeMember3, 160)
   };
   Object.entries(metaMapping).forEach(([id, value]) => setVal(id, value));
-  renderTeachingCourses(draft.schemaVersion >= 4 ? draft.teachingCourses : [{}, {}, {}]);
+  renderTeachingCourses(draft.schemaVersion >= 4
+    ? removeUnusedTrailingCourses(draft.teachingCourses) : [{}]);
   RESEARCH_RUBRIC_TEXT_IDS.forEach(id => setVal(id, safeString(draft.research?.text?.[id], 240)));
   setVal('input_reviewer_role', safeString(draft.reviewStage?.reviewerRole, 80));
   setVal('input_reviewer_name', safeString(draft.reviewStage?.reviewerName, 160));
