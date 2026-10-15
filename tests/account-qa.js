@@ -317,6 +317,15 @@ function authHarness(hash, scenario = {}) {
   assert.equal(signed.nodes.profileDisplayName.value, '', 'Sign-out clears profile edit fields');
   assert.equal(signed.nodes.appraisalWorkspace.hidden, false, 'Signed-out visitor returns only to local demo');
 
+  const singleName = authHarness(''); singleName.ready();
+  singleName.nodes.accountEmail.value = singleName.user.email;
+  singleName.nodes.accountPassword.value = 'portal-password';
+  await singleName.nodes.accountForm.handlers.submit({ preventDefault() {} });
+  singleName.nodes.profileDisplayName.value = 'Ayesha';
+  await singleName.nodes.accountSaveProfile.handlers.click({ preventDefault() {} });
+  assert.equal(singleName.account.profile.display_name, 'Ayesha',
+    'A single official name is accepted by the employee-profile save flow');
+
   const failedSave = authHarness('', { profileSaveError: true }); failedSave.ready();
   failedSave.nodes.accountEmail.value = failedSave.user.email;
   failedSave.nodes.accountPassword.value = 'portal-password';

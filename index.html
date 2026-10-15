@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://wiglqhoihnlmalfzqepk.supabase.co; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>KMU Faculty Appraisal Portal — Controlled Pilot</title>
-  <link rel="stylesheet" href="styles.css?v=20261015-employee-portals">
+  <link rel="stylesheet" href="styles.css?v=20261015-name-help">
   <link rel="icon" type="image/png" href="kmu_logo.png">
 </head>
 <body>
@@ -71,7 +71,7 @@
         <summary>Registration guide and role assignment</summary>
         <ol>
           <li>Enter your email address and a new password, then open <strong>Create an employee account</strong> below.</li>
-          <li>Enter your full name, substantive designation, any additional leadership appointment, current KMU institute/unit, and BPS, TTS or Fixed Pay service cadre. Use your appointment and posting order; do not include BPS in the designation.</li>
+          <li>Enter your full name as recorded by KMU (including a surname if your record has one), substantive designation, any additional leadership appointment, current KMU institute/unit, and BPS, TTS or Fixed Pay service cadre. Use your appointment and posting order; do not include BPS in the designation.</li>
           <li>Select <strong>Register employee account</strong>. Confirm your email if a link is sent, then return here and sign in. Existing invited accounts can complete missing job details in the Employee Portal after sign-in.</li>
           <li>In the Employee Portal, start a year’s appraisal. The saved job profile is copied into the case; enter that year’s work assignment and evidence, save the draft, then submit it when complete.</li>
         </ol>
@@ -92,9 +92,13 @@
         <summary>Create an employee account — enter your job profile</summary>
         <p class="account-note">Use your appointment and current posting order. These pilot lists do not establish that a post or unit has been formally notified. Your profile is self-declared and never grants assessor access.</p>
         <div class="account-form account-profile-grid">
-          <label for="accountDisplayName">Full name *
-            <input id="accountDisplayName" type="text" autocomplete="name" maxlength="160" placeholder="Example: Dr [Full Name]">
-          </label>
+          <div class="account-profile-name">
+            <div class="account-profile-name-heading">
+              <label for="accountDisplayName">Full name as recorded by KMU *</label>
+              <button type="button" class="help-tip" aria-label="Help with full name" data-help="Enter your name as it appears in your KMU appointment or service record. Include a surname if your record has one. A single official name is accepted; the field does not require two words.">?</button>
+            </div>
+            <input id="accountDisplayName" type="text" autocomplete="name" maxlength="160" placeholder="e.g., Dr Ayesha Khan">
+          </div>
           <label for="accountDesignation">Substantive designation *
             <select id="accountDesignation"></select>
           </label>
@@ -140,9 +144,13 @@
         <p>Complete or update your job profile here. It will be copied into each <em>new</em> appraisal as a dated case snapshot. Existing submitted cases will not change.</p>
         <p id="employeeProfileStatus" class="account-profile-status" role="status"></p>
         <div class="account-form account-profile-grid" id="employeeProfileForm">
-          <label for="profileDisplayName">Full name *
-            <input id="profileDisplayName" type="text" autocomplete="name" maxlength="160" placeholder="Example: Dr [Full Name]">
-          </label>
+          <div class="account-profile-name">
+            <div class="account-profile-name-heading">
+              <label for="profileDisplayName">Full name as recorded by KMU *</label>
+              <button type="button" class="help-tip" aria-label="Help with full name" data-help="Enter your name as it appears in your KMU appointment or service record. Include a surname if your record has one. A single official name is accepted; the field does not require two words.">?</button>
+            </div>
+            <input id="profileDisplayName" type="text" autocomplete="name" maxlength="160" placeholder="e.g., Dr Ayesha Khan">
+          </div>
           <label for="profileDesignation">Substantive designation *
             <select id="profileDesignation"></select>
           </label>
