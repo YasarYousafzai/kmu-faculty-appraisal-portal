@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://wiglqhoihnlmalfzqepk.supabase.co; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>KMU Faculty Appraisal Portal — Controlled Pilot</title>
-  <link rel="stylesheet" href="styles.css?v=20261014-password-setup">
+  <link rel="stylesheet" href="styles.css?v=20261015-employee-portals">
   <link rel="icon" type="image/png" href="kmu_logo.png">
 </head>
 <body>
@@ -52,7 +52,7 @@
     </div>
   </section>
 
-  <section class="stage-banner no-print" aria-live="polite">
+  <section class="stage-banner no-print" id="stageBanner" aria-live="polite">
     <strong id="stageBannerTitle">Stage 1 — Faculty evidence</strong>
     <span id="stageBannerText">Complete the faculty sections, review and save Section E provisional objective scores, then continue to committee assessment in this same-browser pilot.</span>
   </section>
@@ -66,7 +66,17 @@
       <span id="accountModeBadge" class="account-badge">Local demo</span>
     </div>
     <div id="accountGuest" class="account-guest">
-      <p class="account-warning">Use an email address as your username. Registration creates a faculty (assessee) account only; assessor and administrator access must be assigned by an administrator. Do not reuse a KMU password.</p>
+      <p class="account-warning">Use an email address as your username. Registration creates an employee (assessee) account only; assessor and administrator access must be assigned separately by an administrator. Do not reuse a KMU password.</p>
+      <details class="account-guide" open>
+        <summary>Registration guide and role assignment</summary>
+        <ol>
+          <li>Enter your email address and a new password, then open <strong>Create an employee account</strong> below.</li>
+          <li>Enter your full name, substantive designation, any additional leadership appointment, current KMU institute/unit, and BPS, TTS or Fixed Pay service cadre. Use your appointment and posting order; do not include BPS in the designation.</li>
+          <li>Select <strong>Register employee account</strong>. Confirm your email if a link is sent, then return here and sign in. Existing invited accounts can complete missing job details in the Employee Portal after sign-in.</li>
+          <li>In the Employee Portal, start a year’s appraisal. The saved job profile is copied into the case; enter that year’s work assignment and evidence, save the draft, then submit it when complete.</li>
+        </ol>
+        <p>The portal administrator grants assessor access to a registered account and assigns submitted cases in the Administrator workspace. A portal grant does not replace KMU’s formal appointment or reporting order. An assessor sees only assigned cases.</p>
+      </details>
       <form id="accountForm" class="account-form" autocomplete="on">
         <label for="accountEmail">Email / username
           <input id="accountEmail" type="email" autocomplete="username" required placeholder="name@example.edu.pk">
@@ -74,16 +84,35 @@
         <label for="accountPassword">Password
           <input id="accountPassword" type="password" autocomplete="current-password" minlength="8" required placeholder="At least 8 characters">
         </label>
-        <label for="accountDisplayName">Name (registration only)
-          <input id="accountDisplayName" type="text" autocomplete="name" maxlength="160" placeholder="Name as used in faculty profile">
-        </label>
         <div class="account-actions">
           <button type="submit" class="btn btn-primary" id="accountSignIn">Sign in</button>
-          <button type="button" class="btn btn-secondary" id="accountSignUp">Register faculty account</button>
         </div>
       </form>
+      <details id="accountRegistrationDetails" class="account-registration">
+        <summary>Create an employee account — enter your job profile</summary>
+        <p class="account-note">Use your appointment and current posting order. These pilot lists do not establish that a post or unit has been formally notified. Your profile is self-declared and never grants assessor access.</p>
+        <div class="account-form account-profile-grid">
+          <label for="accountDisplayName">Full name *
+            <input id="accountDisplayName" type="text" autocomplete="name" maxlength="160" placeholder="Example: Dr [Full Name]">
+          </label>
+          <label for="accountDesignation">Substantive designation *
+            <select id="accountDesignation"></select>
+          </label>
+          <label for="accountLeadershipRole">Additional leadership appointment
+            <select id="accountLeadershipRole"></select>
+          </label>
+          <label for="accountInstitute">Current KMU institute / unit *
+            <select id="accountInstitute"></select>
+          </label>
+          <label for="accountCadre">Pay scale &amp; service cadre *
+            <select id="accountCadre"></select>
+          </label>
+        </div>
+        <button type="button" class="btn btn-secondary" id="accountSignUp">Register employee account</button>
+      </details>
       <button type="button" class="account-text-button" id="accountRecover">Forgot password? Email me a reset link</button>
       <p class="account-note">Email confirmation may be required. Passwords are sent directly to the authentication service and are not stored in the website files or browser draft.</p>
+      <p class="account-note">For this controlled pilot, sign-in lasts only in the current tab. Refreshing or opening another tab requires signing in again.</p>
       <p class="account-note">Pilot email delivery is limited by the default mail service. Wider faculty invitations and confirmation emails need an approved SMTP service before rollout.</p>
     </div>
     <div id="accountPasswordSetup" class="account-password-setup" hidden>
@@ -101,31 +130,65 @@
     </div>
     <div id="accountSignedIn" class="account-signed-in" hidden>
       <div class="account-actions">
-        <button type="button" class="btn btn-secondary" id="accountAssesseeMode">My faculty case</button>
-        <button type="button" class="btn btn-secondary" id="accountAssessorMode" hidden>Assigned assessments</button>
+        <button type="button" class="btn btn-secondary" id="accountAssesseeMode">Employee Portal</button>
+        <button type="button" class="btn btn-secondary" id="accountAssessorMode" hidden>Assessor Portal</button>
         <button type="button" class="btn btn-secondary" id="accountAdminMode" hidden>Administrator</button>
         <button type="button" class="btn btn-secondary" id="accountSignOut">Sign out</button>
       </div>
       <div id="accountCasePanel" class="account-workspace">
+        <h3>Employee Portal</h3>
+        <p>Complete or update your job profile here. It will be copied into each <em>new</em> appraisal as a dated case snapshot. Existing submitted cases will not change.</p>
+        <p id="employeeProfileStatus" class="account-profile-status" role="status"></p>
+        <div class="account-form account-profile-grid" id="employeeProfileForm">
+          <label for="profileDisplayName">Full name *
+            <input id="profileDisplayName" type="text" autocomplete="name" maxlength="160" placeholder="Example: Dr [Full Name]">
+          </label>
+          <label for="profileDesignation">Substantive designation *
+            <select id="profileDesignation"></select>
+          </label>
+          <label for="profileLeadershipRole">Additional leadership appointment
+            <select id="profileLeadershipRole"></select>
+          </label>
+          <label for="profileInstitute">Current KMU institute / unit *
+            <select id="profileInstitute"></select>
+          </label>
+          <label for="profileServiceCadre">Pay scale &amp; service cadre *
+            <select id="profileServiceCadre"></select>
+          </label>
+        </div>
+        <div class="account-actions"><button type="button" class="btn btn-secondary" id="accountSaveProfile">Save employee profile</button></div>
+        <p class="account-note">The current appointment/posting order controls where these pilot options differ. An annual work assignment, appraisal cycle and committee details are entered separately for each case.</p>
+        <h4>My appraisals</h4>
         <p>Cloud drafts are saved only when you select <strong>Save cloud draft</strong>. Local browser drafts are never uploaded automatically.</p>
         <div id="myCaseList" class="account-list" aria-live="polite"></div>
         <div class="account-actions">
           <button type="button" class="btn btn-secondary" id="accountNewCase">Start new faculty case</button>
           <button type="button" class="btn btn-secondary" id="accountRefreshCases">Refresh my cases</button>
         </div>
+        <div id="accountProfileSyncNotice" class="account-sync-notice" hidden>
+          <span>This draft contains older job details. It remains unchanged until you choose to copy the current employee profile into it. Submitted cases cannot be changed.</span>
+          <button type="button" class="btn btn-secondary" id="accountSyncDraftProfile">Update this draft from my profile</button>
+        </div>
       </div>
       <div id="accountQueuePanel" class="account-workspace" hidden>
+        <h3>Assessor Portal</h3>
         <p>Only cases assigned to your authenticated assessor account appear here. Open a case to review its faculty-entered evidence. Reviewer entries remain in this tab until submitted.</p>
         <div id="assessorQueue" class="account-list" aria-live="polite"></div>
         <div class="account-actions"><button type="button" class="btn btn-secondary" id="accountRefreshQueue">Refresh assigned cases</button></div>
         <button type="button" class="btn btn-primary" id="accountSubmitReview" hidden>Submit assessment for selected case</button>
       </div>
       <div id="accountAdminPanel" class="account-workspace" hidden>
-        <p>Administrator privileges come only from the database. Choose an account and assign an existing submitted case; this does not alter a faculty score.</p>
+        <h3>Administrator workspace</h3>
+        <p>Administrator privileges come only from the database. The role grant and case assignment below control portal access; KMU’s competent authority remains responsible for formal appraisal appointments.</p>
         <div id="accountAdminUsers" class="account-list" aria-live="polite"></div>
         <div class="account-actions"><button type="button" class="btn btn-secondary" id="accountRefreshAdmin">Refresh administration lists</button></div>
+        <h4>Faculty records and dossiers</h4>
+        <p>Registered pilot accounts and their saved appraisal cases appear here. Open a dossier to inspect its recorded evidence and, when reviewed, both scores. This is not a verified HR service record.</p>
+        <div id="adminFacultyRecords" class="account-list" aria-live="polite"></div>
+        <div class="account-actions"><button type="button" class="btn btn-secondary" id="adminCloseCase" hidden>Back to faculty records</button></div>
+        <h4>Assessor access and assignments</h4>
         <div class="account-form">
-          <label for="adminAssessorId">Faculty account to grant assessor access
+          <label for="adminAssessorId">Registered account to grant assessor access
             <select id="adminAssessorId"></select>
           </label>
           <button type="button" class="btn btn-secondary" id="adminGrantAssessor">Grant assessor role</button>
@@ -167,7 +230,7 @@
     <div class="wizard-steps-container">
       <div class="wizard-step active" data-wizard="tab-meta" onclick="switchTab('tab-meta')">
         <span class="wizard-step-num">1</span>
-        <span>Faculty Profile</span>
+        <span>Appraisal Setup</span>
       </div>
       <span class="wizard-arrow">➔</span>
       <div class="wizard-step" data-wizard="tab-teaching" onclick="switchTab('tab-teaching')">
@@ -209,7 +272,7 @@
   </nav>
 
   <!-- Main App Body -->
-  <main class="main-wrapper">
+  <main class="main-wrapper" id="appraisalWorkspace">
     <div class="portal-grid">
       
       <!-- Left Sidebar Navigation -->
@@ -273,11 +336,13 @@
         <div class="tab-content active" id="tab-meta">
           <div class="section-title-wrap">
             <div>
-              <h2 class="section-title" id="metaSectionTitle">Step 1: Faculty Member & Institutional Details</h2>
-              <p class="section-desc">Use the employee's substantive post, current institute and approved annual work assignment.</p>
+              <h2 class="section-title" id="metaSectionTitle">Step 1: Appraisal Setup &amp; Employee Profile Snapshot</h2>
+              <p class="section-desc">Signed-in cases copy the employee's saved job profile. Enter the appraisal cycle and any documented annual work assignment for this case.</p>
             </div>
-            <span class="section-badge">Part I: Master Profile</span>
+            <span class="section-badge">Part I: Case Setup</span>
           </div>
+
+          <p id="profileSnapshotNotice" class="account-snapshot-notice" hidden>These identity fields come from your Employee Portal profile and are read-only in this appraisal. Update your profile there; an existing draft changes only if you explicitly sync it.</p>
 
           <div class="form-grid">
             <div class="form-group" style="grid-column: span 2;">
@@ -1741,6 +1806,9 @@
           <button type="button" class="btn btn-primary" onclick="closeModal('saveReturnModal')">
             Resume Editing
           </button>
+          <button type="button" class="btn btn-secondary" onclick="returnAfterLocalSave()">
+            Return to Start
+          </button>
         </div>
       </div>
       <div class="modal-footer" style="justify-content:center; background:#f8fafc;">
@@ -1808,8 +1876,8 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20261014-accounts"></script>
-  <script src="account.js?v=20261014-password-setup"></script>
+  <script src="app.js?v=20261015-employee-portals"></script>
+  <script src="account.js?v=20261015-employee-portals"></script>
 
   <div style="display:none;">
     <span id="top_pip_status"></span>

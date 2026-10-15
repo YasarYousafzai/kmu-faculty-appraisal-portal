@@ -243,7 +243,177 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   await page.reload({ waitUntil: 'networkidle' });
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 2), 'Mobile layout scrolls horizontally.');
   assert(errors.length === 0, `Browser errors:\n${errors.join('\n')}`);
-  console.log('PASS: credit-weighted teaching, count-based research form, reporting line, clinical flow, peer-review gate, PDF scales, persistence and mobile layout.');
+
+  // Authenticated portal walkthrough with synthetic, intercepted API results.
+  // No test request reaches Supabase, and no real account is used.
+  const accountPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  const accountErrors = [];
+  accountPage.on('pageerror', error => accountErrors.push(error.message));
+  const syntheticUid = '99999999-9999-4999-8999-999999999999';
+  const syntheticProfile = {
+    id: syntheticUid, display_name: 'Synthetic Employee', substantive_designation: 'Professor',
+    leadership_role: 'None',
+    institute: 'KMU Institute of Basic Medical Sciences (KMU-IBMS), Peshawar',
+    service_cadre: 'BPS', profile_updated_at: '2026-10-15T00:00:00Z'
+  };
+  const assignedCaseId = '88888888-8888-4888-8888-888888888888';
+  const otherFacultyId = '77777777-7777-4777-8777-777777777777';
+  const savedCaseId = '66666666-6666-4666-8666-666666666666';
+  let exposeAssignment = false;
+  let savedCasePayload = null;
+  let rejectNextSave = false;
+  const historicalPayload = {
+    schemaVersion: 5, configVersion: 'PILOT', profile: 'Balanced Profile',
+    meta: { name: 'Historical Case Name', desig: 'Associate Professor',
+      dept: syntheticProfile.institute, cadre: 'BPS', leadershipRole: 'None',
+      cycle: 'Calendar Year 2026 (01 January – 31 December 2026)' },
+    values: {}, teachingCourses: [], research: { text: {}, complete: true },
+    serviceComplete: true, provisional: { ready: true }
+  };
+  const cloudRequests = [];
+  const cloudUrls = [];
+  await accountPage.route('https://wiglqhoihnlmalfzqepk.supabase.co/**', async route => {
+    const request = route.request();
+    const url = new URL(request.url());
+    cloudRequests.push(`${request.method()} ${url.pathname}`);
+    cloudUrls.push(request.url());
+    if (request.method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers: {
+        'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,POST,PUT,OPTIONS',
+        'Access-Control-Allow-Headers': '*'
+      } });
+      return;
+    }
+    let payload;
+    if (url.pathname === '/auth/v1/token') payload = {
+      access_token: 'synthetic-access', refresh_token: 'synthetic-refresh',
+      user: { id: syntheticUid, email: 'synthetic.employee@example.invalid' }
+    };
+    else if (url.pathname === '/rest/v1/app_user_profiles') payload =
+      url.searchParams.get('id') === `eq.${otherFacultyId}`
+        ? [{ ...syntheticProfile, id: otherFacultyId, display_name: 'Renamed Current Profile' }]
+        : url.searchParams.has('id') ? [syntheticProfile]
+          : [syntheticProfile, { ...syntheticProfile, id: otherFacultyId,
+            display_name: 'Renamed Current Profile', login_email: 'other@example.invalid' }];
+    else if (url.pathname === '/rest/v1/app_assessors') payload = [{ user_id: syntheticUid }];
+    else if (url.pathname === '/rest/v1/app_administrators') payload = [{ user_id: syntheticUid }];
+    else if (url.pathname === '/rest/v1/assessor_assignments') payload = exposeAssignment
+      ? [{ id: 'assignment-1', case_id: assignedCaseId }] : [];
+    else if (url.pathname === '/rest/v1/rpc/save_appraisal_draft') {
+      if (rejectNextSave) {
+        rejectNextSave = false;
+        await route.fulfill({ status: 400, contentType: 'application/json',
+          headers: { 'Access-Control-Allow-Origin': '*' },
+          body: JSON.stringify({ message: 'Synthetic save rejection' }) });
+        return;
+      }
+      savedCasePayload = JSON.parse(request.postData()).p_objective_payload;
+      payload = { id: savedCaseId, faculty_id: syntheticUid, cycle_year: 2026,
+        designation: 'Professor', institute: syntheticProfile.institute, status: 'draft' };
+    }
+    else if (url.pathname === '/rest/v1/appraisal_cases') {
+      const saved = savedCasePayload ? [{ id: savedCaseId, faculty_id: syntheticUid,
+        cycle_year: 2026, designation: 'Professor', institute: syntheticProfile.institute,
+        status: 'draft', objective_payload: savedCasePayload }] : [];
+      const historical = { id: assignedCaseId, faculty_id: otherFacultyId, cycle_year: 2026,
+        designation: 'Associate Professor', institute: syntheticProfile.institute,
+        status: 'submitted', objective_payload: historicalPayload };
+      payload = url.searchParams.get('id') === `eq.${assignedCaseId}` ? [historical]
+        : url.searchParams.get('id') === `eq.${savedCaseId}` ? saved
+          : url.searchParams.has('faculty_id') ? saved : [historical, ...saved];
+    }
+    else if (url.pathname === '/auth/v1/logout') payload = {};
+    else throw new Error(`Unexpected synthetic cloud route: ${url.pathname}`);
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify(payload) });
+  });
+  await accountPage.goto(`http://127.0.0.1:${server.address().port}/`, { waitUntil: 'networkidle' });
+  for (const selector of ['#accountDisplayName', '#accountDesignation', '#accountLeadershipRole',
+    '#accountInstitute', '#accountCadre']) {
+    assert(await accountPage.locator(selector).count() === 1, `Missing registration field ${selector}`);
+  }
+  assert(await accountPage.locator('#accountAssessorMode').isHidden(),
+    'Assessor workspace should not show before a role is loaded');
+  await accountPage.locator('#accountEmail').fill('synthetic.employee@example.invalid');
+  await accountPage.locator('#accountPassword').fill('synthetic-password');
+  await accountPage.locator('#accountSignIn').click();
+  await accountPage.waitForFunction(() => window.KMUAccount?.profileComplete === true);
+  assert(await accountPage.locator('#accountModeBadge').innerText() === 'Employee',
+    'A signed-in user should start in the employee portal');
+  assert(await accountPage.locator('#profileDisplayName').inputValue() === 'Synthetic Employee',
+    'The saved registration profile should populate the employee portal');
+  assert(await accountPage.locator('#appraisalWorkspace').isHidden(),
+    'Employee profile view should not start an appraisal implicitly');
+  await accountPage.locator('#accountNewCase').click();
+  assert(await accountPage.locator('#appraisalWorkspace').isVisible(),
+    'Explicitly opening a case should show the appraisal');
+  assert(await accountPage.locator('#input_emp_name').inputValue() === 'Synthetic Employee'
+    && await accountPage.locator('#input_emp_desig').inputValue() === 'Professor'
+    && await accountPage.locator('#input_emp_dept').inputValue() === syntheticProfile.institute,
+    'New appraisal should prefill identity and job fields from the owner profile');
+  assert(await accountPage.locator('#input_emp_name').isDisabled()
+    && await accountPage.locator('#input_emp_desig').isDisabled()
+    && await accountPage.locator('#input_emp_dept').isDisabled(),
+    'Profile identity is not editable inside a signed-in appraisal');
+  assert((await accountPage.locator('.account-guide').innerText()).includes('portal administrator'),
+    'Registration guidance must explain who grants assessor access');
+  await accountPage.locator('#headerSaveButton').click();
+  await accountPage.locator('#appraisalWorkspace').waitFor({ state: 'hidden' });
+  assert(savedCasePayload?.meta?.name === 'Synthetic Employee'
+    && (await accountPage.locator('#myCaseList').innerText()).includes('2026'),
+    'Save and return must persist the draft and return to the Employee Portal case list');
+  await accountPage.locator('#myCaseList').getByRole('button', { name: 'Open case' }).click();
+  await accountPage.locator('#appraisalWorkspace').waitFor({ state: 'visible' });
+  assert(await accountPage.locator('#input_emp_name').inputValue() === 'Synthetic Employee',
+    'The saved draft must reopen with its employee-profile snapshot');
+  rejectNextSave = true;
+  await accountPage.locator('#headerSaveButton').click();
+  await accountPage.locator('#accountMessage').getByText('Not saved: Synthetic save rejection').waitFor();
+  assert(await accountPage.locator('#appraisalWorkspace').isVisible(),
+    'A rejected save must keep the open appraisal visible for correction');
+  await accountPage.locator('#accountAssessorMode').click();
+  await accountPage.waitForFunction(() => window.KMUAccount?.mode === 'assessor');
+  await accountPage.locator('#assessorQueue').getByText('No cases are assigned to your account.').waitFor();
+  assert(await accountPage.locator('#assessorQueue').innerText() === 'No cases are assigned to your account.',
+    'An assessor sees only their assigned-case queue');
+  assert(await accountPage.locator('#appraisalWorkspace').isHidden(),
+    'Changing role should close the employee case rather than carry it into the assessor portal');
+  assert(await accountPage.evaluate(() => window.KMUAccount.canOpenTab('tab-peer')) === false,
+    'An empty assessor queue cannot open a subjective assessment');
+  exposeAssignment = true;
+  await accountPage.locator('#accountRefreshQueue').click();
+  await accountPage.waitForFunction(() => document.getElementById('assessorQueue')?.textContent.includes('Historical Case Name'));
+  const assignedQueue = await accountPage.locator('#assessorQueue').innerText();
+  assert(assignedQueue.includes('Historical Case Name') && !assignedQueue.includes('Renamed Current Profile'),
+    'Assessor queue should label a case with its submitted historical profile snapshot');
+  assert(!cloudUrls.some(url => url.includes(`id=eq.${otherFacultyId}`)
+    && url.includes('/app_user_profiles')),
+  'Assessor queue must not fetch another employee’s current profile to rename an old case');
+  assert(await accountPage.evaluate(() => window.KMUAccount.canOpenTab('tab-peer')) === false,
+    'Merely listing an assignment cannot unlock the review form before opening the case');
+  await accountPage.locator('#accountAdminMode').click();
+  await accountPage.locator('#adminFacultyRecords').getByText('Renamed Current Profile').waitFor();
+  assert((await accountPage.locator('#adminFacultyRecords').innerText()).includes('Historical Case Name') === false,
+    'The administrator roster should identify current registered accounts separately from case snapshots');
+  assert((await accountPage.locator('#adminFacultyRecords').getByRole('button', { name: 'View dossier' }).count()) >= 2,
+    'Administrator must be able to inspect each saved faculty dossier');
+  await accountPage.locator('.admin-record').filter({ hasText: 'Renamed Current Profile' })
+    .getByRole('button', { name: 'View dossier' }).click();
+  await accountPage.locator('#appraisalWorkspace').waitFor({ state: 'visible' });
+  assert(await accountPage.locator('#input_emp_name').inputValue() === 'Historical Case Name'
+    && await accountPage.locator('#input_emp_name').isDisabled(),
+    'Administrator view must show the immutable case identity read-only, not the current roster name');
+  await accountPage.locator('#adminCloseCase').click();
+  await accountPage.locator('#appraisalWorkspace').waitFor({ state: 'hidden' });
+  await accountPage.locator('#accountSignOut').click();
+  assert(await accountPage.locator('#accountModeBadge').innerText() === 'Local demo'
+    && await accountPage.locator('#profileDisplayName').inputValue() === '',
+    'Sign-out must clear the profile and return to local demo');
+  assert(cloudRequests.some(request => request.includes('/auth/v1/token'))
+    && cloudRequests.some(request => request.includes('/rest/v1/app_user_profiles')),
+    'The synthetic sign-in and profile load were exercised');
+  assert(accountErrors.length === 0, `Account browser errors:\n${accountErrors.join('\n')}`);
+  console.log('PASS: scoring, PDF, persistence, mobile layout, save-and-return, registration guidance, employee and administrator dossiers, and assessor queue.');
   await browser.close();
   await new Promise(resolve => server.close(resolve));
 })().catch(error => { console.error(error.stack || error); process.exit(1); });

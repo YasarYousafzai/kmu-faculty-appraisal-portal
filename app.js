@@ -1221,7 +1221,7 @@ function syncTargetsToDossier() {
 function canPrintDossierForAccount() {
   const account = window.KMUAccount;
   if (!account || account.mode === 'demo') return true;
-  return ['assessee', 'assessor'].includes(account.mode)
+  return ['assessee', 'assessor', 'administrator'].includes(account.mode)
     && Boolean(account.selectedCaseId) && account.selectedCaseStatus === 'reviewed'
     && account.reviewLoaded === true;
 }
@@ -1363,7 +1363,7 @@ window.continueToPeerReview = function () {
 window.submitObjectiveForReview = window.continueToPeerReview; // Earlier pilot drafts may still call this.
 
 window.saveAndReturnLater = function () {
-  if (window.KMUAccount?.mode && window.KMUAccount.mode !== 'demo') return window.KMUAccount.saveCurrent();
+  if (window.KMUAccount?.mode && window.KMUAccount.mode !== 'demo') return window.KMUAccount.saveAndReturn();
   try {
     const currentTab = document.querySelector('.tab-content.active')?.id || 'tab-meta';
     const draft = saveAllData(currentTab, true);
@@ -1374,6 +1374,13 @@ window.saveAndReturnLater = function () {
   } catch (error) {
     console.error(error); alert('This browser could not store the draft. Download a JSON backup instead.');
   }
+};
+
+window.returnAfterLocalSave = function () {
+  window.closeModal('saveReturnModal');
+  window.switchTab('tab-meta');
+  document.getElementById('accountTitle')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+  showToast('Local draft stored. Use “Resume Where I Left Off” when you return.');
 };
 
 function validateImportedDraft(draft) {
@@ -1551,6 +1558,10 @@ function restoreDraftObject(rawDraft) {
 }
 
 window.restoreDraft = function () {
+  if (window.KMUAccount?.mode && window.KMUAccount.mode !== 'demo') {
+    alert('Local browser drafts cannot replace a signed-in case. Open a cloud case from your Employee Portal instead.');
+    return false;
+  }
   try {
     const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('KMU_APPRAISAL_DRAFT_v4') || localStorage.getItem('KMU_APPRAISAL_DRAFT_v3_3'); if (!raw) return false;
     const older = !localStorage.getItem(STORAGE_KEY);
@@ -1564,6 +1575,10 @@ window.restoreDraft = function () {
 
 window.importDraftBackup = async function (event) {
   const file = event.target.files?.[0]; event.target.value = ''; if (!file) return;
+  if (window.KMUAccount?.mode && window.KMUAccount.mode !== 'demo') {
+    alert('Local backup import is available only in demo mode; it cannot replace a signed-in case.');
+    return;
+  }
   if (file.size > 1024 * 1024) { alert('The backup exceeds the 1 MB import limit.'); return; }
   try {
     restoreDraftObject(JSON.parse(await file.text())); showToast('Backup imported. Review all fields before use.');
@@ -1698,6 +1713,24 @@ function loadBlankData() {
   const override = el('manualProfileOverridePanel'); if (override) override.style.display = 'none';
   updateReportingLine(); autoSelectProfileAndWeights(); initPeerControls();
   updateReviewStageDisplay(); calculateAll();
+}
+
+function applyEmployeeProfile(profile) {
+  if (!profile || typeof profile !== 'object') throw new Error('Saved employee profile is unavailable.');
+  const fields = [
+    ['input_emp_desig', profile.substantive_designation],
+    ['input_leadership_role', profile.leadership_role],
+    ['input_emp_dept', profile.institute],
+    ['input_emp_cadre', profile.service_cadre]
+  ];
+  if (!profile.display_name || String(profile.display_name).trim().length > 160
+    || fields.some(([id, value]) => !value || !Array.from(el(id)?.options || []).some(option => option.value === value))) {
+    throw new Error('Saved employee profile is incomplete or no longer matches the controlled pilot options. Update it in the Employee Portal.');
+  }
+  setVal('input_emp_name', safeString(profile.display_name, 160));
+  fields.forEach(([id, value]) => setVal(id, value));
+  updateReportingLine(); autoSelectProfileAndWeights(); calculateAll();
+  return true;
 }
 
 window.loadSampleData = function () {
@@ -1883,12 +1916,13 @@ window.KMUCalculator = {
   scorePublicationCounts, scoreGrantCounts, scoreResearchOriginal, getTeachingLoad, getResearchRubric,
   getObjectiveReadiness, getAssessmentReadiness, lastResult: null,
   restoreDraft: restoreDraftObject, loadBlank: loadBlankData,
+  applyEmployeeProfile,
   getObjectiveFingerprint, canEditReviewerScores, canPrintDossierForAccount,
   rebuildReviewerScoreChips: initPeerControls,
   applySubmittedReview(review) {
     const account = window.KMUAccount;
     if (!account?.selectedCaseId || account.selectedCaseStatus !== 'reviewed'
-      || !['assessor', 'assessee'].includes(account.mode)) return false;
+      || !['assessor', 'assessee', 'administrator'].includes(account.mode)) return false;
     const payload = review && typeof review === 'object' ? review : {};
     setVal('input_reviewer_role', safeString(payload.reviewerRole, 80));
     setVal('input_reviewer_name', safeString(payload.reviewerName, 160));

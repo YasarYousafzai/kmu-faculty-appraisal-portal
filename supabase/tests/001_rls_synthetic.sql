@@ -117,10 +117,23 @@ select pg_temp.kmu_expect_failure(
   'select public.grant_assessor(''11111111-1111-4111-8111-111111111111'')',
   'faculty cannot self-appoint assessor');
 
+-- The follow-up employee-profile migration requires a complete, owner-saved
+-- personnel profile before a cloud appraisal draft may be created. This is
+-- synthetic data and remains inside this transaction.
+select public.save_employee_profile(
+  'Synthetic Faculty A',
+  'Professor',
+  'None',
+  'KMU Institute of Basic Medical Sciences (KMU-IBMS), Peshawar',
+  'BPS');
+
 select public.save_appraisal_draft(
   null, 2026, 'Professor',
   'KMU Institute of Basic Medical Sciences (KMU-IBMS), Peshawar',
-  '{"provisional":{"ready":true}}'::jsonb);
+  '{"meta":{"name":"Synthetic Faculty A","desig":"Professor",
+    "leadershipRole":"None",
+    "dept":"KMU Institute of Basic Medical Sciences (KMU-IBMS), Peshawar",
+    "cadre":"BPS"},"provisional":{"ready":true}}'::jsonb);
 select set_config('kmu.test.case_id',
   (select id::text from public.appraisal_cases
     where faculty_id = '11111111-1111-4111-8111-111111111111'
@@ -134,7 +147,10 @@ select pg_temp.kmu_expect_failure(
     current_setting(''kmu.test.case_id'')::uuid,
     2026, ''Professor'',
     ''KMU Institute of Basic Medical Sciences (KMU-IBMS), Peshawar'',
-    ''{"values":{"input_pub_high_lead":"NaN"}}''::jsonb)',
+    ''{"meta":{"name":"Synthetic Faculty A","desig":"Professor",
+       "leadershipRole":"None",
+       "dept":"KMU Institute of Basic Medical Sciences (KMU-IBMS), Peshawar",
+       "cadre":"BPS"},"values":{"input_pub_high_lead":"NaN"}}''::jsonb)',
   'malformed research count cannot be saved');
 
 select public.save_appraisal_draft(
@@ -145,6 +161,7 @@ select public.save_appraisal_draft(
     "schemaVersion":5,
     "meta":{
       "name":"Synthetic Faculty A", "desig":"Professor",
+      "leadershipRole":"None",
       "dept":"KMU Institute of Basic Medical Sciences (KMU-IBMS), Peshawar", "cadre":"BPS",
       "cycle":"Calendar Year 2026 (01 January – 31 December 2026)",
       "workAssignment":"Synthetic annual assignment"

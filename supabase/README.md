@@ -10,8 +10,13 @@ independently recompute the KMU appraisal formula or verify evidence.
 
 1. Use a dedicated Supabase project and complete KMU privacy/security and
    retention review before entering any real personnel or patient information.
-2. Review and run `migrations/202610140001_kmu_pilot_accounts.sql` **once** in
-   Supabase SQL Editor. It creates no users or administrator. Keep project
+2. Review and run `migrations/202610140001_kmu_pilot_accounts.sql` **once**, then
+   `migrations/202610150001_employee_profiles.sql` **once**, in that order in
+   Supabase SQL Editor. The second migration adds self-declared employee job
+   fields to existing profiles without backfilling or changing submitted cases.
+   Existing invited/registered users must complete their employee profile before
+   saving another cloud appraisal draft. Neither migration creates an
+   administrator. Keep project
    secrets and service-role keys out of the public website. In
    **Authentication → URL Configuration**, set both the Site URL and an allowed
    Redirect URL to `https://yasaryousafzai.github.io/kmu-faculty-appraisal-portal/`.
@@ -45,23 +50,63 @@ independently recompute the KMU appraisal formula or verify evidence.
    may use `unassign_assessor(p_case_id, p_assessor_id)` or
    `revoke_assessor(p_user_id)` to remove access. Completed reviews and audit
    history remain; former assessors lose case/review reads immediately.
-5. Run `tests/001_rls_synthetic.sql` only in an **empty, isolated pilot database**
-   after migration. It creates synthetic `example.invalid` Auth accounts and ends
-   in `ROLLBACK`. On 14 October 2026 it completed without errors in this empty
-   pilot project; a subsequent query confirmed zero synthetic Auth users,
-   profiles, cases, assignments, reviews, or events remained. All nine created
-   public tables had RLS enabled. This does not replace a KMU production audit.
+   In the portal, the administrator opens **Administrator → Faculty records and
+   dossiers** to see registered pilot profiles and all saved cases, then opens
+   a case read-only. The same workspace contains role-grant and case-assignment
+   controls. A portal role grant is operational access, not a KMU statutory
+   appointment or substitute for a current reporting order. Passwords are not
+   shown in the administrator roster.
+5. Run `tests/001_rls_synthetic.sql` and the employee-profile rollback-only
+   suite only in an **empty, isolated pilot database** after both migrations.
+   They create synthetic `example.invalid` Auth accounts and end
+   in `ROLLBACK`. The original 14 October 2026 baseline test completed without
+   errors before the employee-profile migration; a subsequent query confirmed
+   zero synthetic Auth users, profiles, cases, assignments, reviews, or events
+   remained. Re-run the updated suites after applying the new migration. This
+   does not replace a KMU production audit.
 
 The Supabase default email service is limited to project-team recipients and is
 not suitable for broader faculty invitations. Configure and review a dedicated
 SMTP service before expanding registration; keep email confirmation enabled.
 
-The public RPC contract is `save_appraisal_draft(p_case_id, p_cycle_year,
+The public RPC contract includes
+`save_employee_profile(p_display_name, p_substantive_designation,
+p_leadership_role, p_institute, p_service_cadre)` and
+`save_appraisal_draft(p_case_id, p_cycle_year,
 p_designation, p_institute, p_objective_payload)`,
 `submit_appraisal_case(p_case_id)`,
 `submit_assessor_review(p_case_id, p_subjective_payload)`, and the administrator
-functions listed above. `p_case_id = NULL` creates or resumes that faculty
-member's draft for a year. Direct browser DML on these tables is revoked.
+functions listed above. `p_case_id = NULL` creates a new year case only. If
+one already exists, the RPC rejects that request and tells the faculty member
+to open it from their Employee Portal. Editing an existing draft requires its
+specific case ID; this prevents an unsaved/new browser form from silently
+overwriting a different draft for the same year. Direct browser DML on these
+tables is revoked.
+Only the confirmed account owner can update their employee profile through the
+RPC; even an administrator cannot use that RPC to edit someone else's profile.
+The profile captures the user's **self-declared** name, substantive designation,
+additional leadership role, KMU unit and BPS/TTS/Fixed Pay appointment basis.
+These values are not HR-verified. Registration metadata contains only these
+profile fields and cannot grant an assessor or administrator role. An invited or
+older account with missing fields remains profile-incomplete until the signed-in
+owner saves them. Annual appraisal cycle, work assignment and reference,
+clinical-service evidence, committee membership and proposed reporting lines
+remain case-specific rather than permanent employee profile attributes.
+
+Draft saving checks the designation and institute arguments and five identity
+fields in the objective payload against the owner's current employee profile.
+The database also checks that same match when the case moves from draft to
+submitted, including when submission is called directly through the RPC. If
+the profile changes during an open draft, the user must refresh those fields
+and save again before submitting. A later profile correction never rewrites a
+submitted case: its recorded designation, institute and objective evidence
+remain an immutable historical snapshot. The assessor should evaluate that case
+snapshot, not silently substitute the employee's newer profile.
+The **Save and return** control confirms a cloud draft save before closing the
+appraisal and returning to the Employee Portal case list. A failed save leaves
+the case open and displays an error; it must not imply that data reached the
+database. In local demo mode, saving remains browser-only and the confirmation
+dialog offers a return-to-start action.
 
 The designation and institute catalogs reproduce the current portal's **pilot
 dropdown vocabulary only**. They do not certify statutory notification;

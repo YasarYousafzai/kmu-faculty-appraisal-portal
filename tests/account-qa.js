@@ -53,6 +53,9 @@ assert.equal(context.window.KMUAccount.backendVerified, true,
   'Account UI is enabled only after the pilot schema and RLS suite pass');
 const account = context.window.KMUAccount;
 account.mode = 'assessee';
+assert.equal(account.canOpenTab('tab-teaching'), false,
+  'A signed-in employee cannot enter an appraisal until a case is explicitly opened');
+account.caseOpen = true;
 assert.equal(account.canOpenTab('tab-summary'), false, 'Faculty cannot open an unreviewed final report');
 account.selectedCaseId = 'case-1'; account.selectedCaseStatus = 'reviewed';
 assert.equal(account.canOpenTab('tab-summary'), false, 'Faculty final report must wait for an RLS-loaded review');
@@ -63,6 +66,9 @@ account.mode = 'assessor'; account.selectedCaseStatus = 'submitted';
 assert.equal(account.canOpenTab('tab-peer'), true, 'Assigned assessor can open review stage');
 account.selectedCaseId = null;
 assert.equal(account.canOpenTab('tab-peer'), false, 'Assessor cannot open review without an assigned case');
+account.caseOpen = false;
+assert.equal(account.canOpenTab('tab-teaching'), false,
+  'An assessor without an opened assignment cannot browse the appraisal form');
 account.mode = 'demo';
 
 const payload = context.window.KMUAccount.buildObjectivePayload();
@@ -87,39 +93,99 @@ for (const marker of ['Never upload', 'input_reviewer_secret']) {
 }
 assert.equal(networkCalls, 0, 'Calculating an objective payload must not upload it automatically');
 
-function authHarness(hash) {
+function authHarness(hash, scenario = {}) {
   const ids = ['accountGuest', 'accountSignedIn', 'accountPasswordSetup', 'accountPasswordSetupIntro',
     'accountPasswordSetupForm', 'accountNewPassword', 'accountConfirmPassword', 'accountMessage',
     'accountStatus', 'accountModeBadge', 'accountEmail', 'accountPassword', 'accountDisplayName',
-    'accountSignUp', 'accountRecover'];
+    'accountSignUp', 'accountRecover', 'accountForm', 'accountSignOut', 'accountNewCase',
+    'accountSaveProfile', 'accountSyncDraftProfile',
+    'accountAssesseeMode', 'accountAssessorMode', 'accountAdminMode', 'accountCasePanel',
+    'accountQueuePanel', 'accountAdminPanel', 'accountProfileSyncNotice', 'employeeProfileStatus',
+    'appraisalWorkspace', 'stageBanner', 'profileSnapshotNotice', 'myCaseList', 'assessorQueue',
+    'accountDesignation', 'accountLeadershipRole', 'accountInstitute', 'accountCadre',
+    'profileDisplayName', 'profileDesignation', 'profileLeadershipRole', 'profileInstitute',
+    'profileServiceCadre', 'input_emp_name', 'input_emp_desig', 'input_leadership_role',
+    'input_emp_dept', 'input_emp_cadre'];
   const nodes = Object.fromEntries(ids.map(id => [id, {
     hidden: false, textContent: '', value: '', className: '', disabled: false, handlers: {},
-    addEventListener(type, callback) { this.handlers[type] = callback; }
+    dataset: {}, children: [], options: [], classList: { toggle() {} },
+    addEventListener(type, callback) { this.handlers[type] = callback; },
+    replaceChildren(...children) { this.children = children; },
+    querySelectorAll() { return []; }
   }]));
+  function choices(id, values) {
+    nodes[id].options = values.map(value => ({ value, cloneNode() { return { value }; } }));
+    nodes[id].children = nodes[id].options;
+  }
+  choices('input_emp_desig', ['', 'Professor', 'Associate Professor', 'Lecturer']);
+  choices('input_leadership_role', ['None', 'Dean of Faculty']);
+  choices('input_emp_dept', ['', 'KMU Institute of Basic Medical Sciences (KMU-IBMS), Peshawar']);
+  choices('input_emp_cadre', ['', 'BPS', 'TTS', 'Fixed Pay']);
+  nodes.accountLeadershipRole.value = 'None';
+  nodes.profileLeadershipRole.value = 'None';
   let onReady = null;
   const calls = [];
+  const appliedProfiles = [];
   const location = { hash, pathname: '/kmu-faculty-appraisal-portal/', search: '?v=pilot' };
   const user = { id: 'user-1', email: 'invited@example.edu.pk' };
+  const profile = {
+    id: user.id, display_name: 'Registered Faculty', substantive_designation: 'Professor',
+    leadership_role: 'None',
+    institute: 'KMU Institute of Basic Medical Sciences (KMU-IBMS), Peshawar',
+    service_cadre: 'BPS', profile_updated_at: '2026-10-15T00:00:00Z'
+  };
+  let currentProfileRows = scenario.profileRows ?? [profile];
   const localContext = {
     window: {
       location,
       history: { state: null, replaceState(_state, _unused, path) {
         assert.equal(path, '/kmu-faculty-appraisal-portal/?v=pilot'); location.hash = '';
       } },
-      KMUCalculator: { calculate() {}, loadBlank() {} }
+      KMUCalculator: {
+        calculate() {}, loadBlank() {},
+        applyEmployeeProfile(value) {
+          appliedProfiles.push(value);
+          nodes.input_emp_name.value = value.display_name;
+          nodes.input_emp_desig.value = value.substantive_designation;
+          nodes.input_leadership_role.value = value.leadership_role;
+          nodes.input_emp_dept.value = value.institute;
+          nodes.input_emp_cadre.value = value.service_cadre;
+        }
+      },
+      switchTab() {}
     },
     document: {
       body: { dataset: {} }, getElementById: id => nodes[id] || null,
       addEventListener(type, callback) { if (type === 'DOMContentLoaded') onReady = callback; }
     },
     URLSearchParams, Blob, Date, NUMERIC_INPUT_IDS: [], appraisalState: { activeWeights: null },
+    confirm: () => true,
     fetch: async (url, options) => {
       calls.push({ url, options });
+      const override = await scenario.fetchOverride?.({ url, options });
+      if (override) return override;
       let result;
       if (url.endsWith('/auth/v1/user') && options.method === 'GET') result = user;
       else if (url.endsWith('/auth/v1/user') && options.method === 'PUT') result = user;
       else if (url.includes('grant_type=password')) result = { access_token: 'fresh-token', refresh_token: 'fresh-refresh', user };
       else if (url.includes('/auth/v1/signup')) result = user;
+      else if (url.includes('/rest/v1/app_user_profiles')) {
+        if (scenario.profileError) return { ok: false, status: 403,
+          text: async () => JSON.stringify({ message: 'Profile access denied' }) };
+        result = currentProfileRows;
+      }
+      else if (url.includes('/rest/v1/rpc/save_employee_profile')) {
+        const submitted = JSON.parse(options.body);
+        result = {
+          id: user.id, display_name: submitted.p_display_name,
+          substantive_designation: submitted.p_substantive_designation,
+          leadership_role: submitted.p_leadership_role,
+          institute: submitted.p_institute, service_cadre: submitted.p_service_cadre
+        };
+        currentProfileRows = [result];
+      }
+      else if (url.includes('/rest/v1/app_assessors')) result = scenario.assessor ? [{ user_id: user.id }] : [];
+      else if (url.includes('/rest/v1/app_administrators')) result = scenario.administrator ? [{ user_id: user.id }] : [];
       else if (url.includes('/rest/v1/')) result = [];
       else if (url.includes('/auth/v1/recover')) result = {};
       else throw new Error(`Unexpected account request: ${url}`);
@@ -128,7 +194,7 @@ function authHarness(hash) {
     console
   };
   vm.runInNewContext(source, localContext, { filename: 'account.js' });
-  return { nodes, calls, location, user, account: localContext.window.KMUAccount,
+  return { nodes, calls, location, user, profile, appliedProfiles, account: localContext.window.KMUAccount,
     ready: () => onReady(), tick: () => new Promise(resolve => setImmediate(resolve)) };
 }
 
@@ -187,10 +253,151 @@ function authHarness(hash) {
   ordinary.nodes.accountEmail.value = 'new@example.edu.pk';
   ordinary.nodes.accountPassword.value = 'signup-password';
   ordinary.nodes.accountDisplayName.value = 'Pilot Faculty';
+  ordinary.nodes.accountDesignation.value = 'Professor';
+  ordinary.nodes.accountLeadershipRole.value = 'None';
+  ordinary.nodes.accountInstitute.value = 'KMU Institute of Basic Medical Sciences (KMU-IBMS), Peshawar';
+  ordinary.nodes.accountCadre.value = 'BPS';
   await ordinary.nodes.accountSignUp.handlers.click({ preventDefault() {} });
-  assert.ok(ordinary.calls.some(call => call.url.includes('/auth/v1/signup?redirect_to=')),
+  const signup = ordinary.calls.find(call => call.url.includes('/auth/v1/signup?redirect_to='));
+  assert.ok(signup,
     'Confirmation-required signup must use the allow-listed portal redirect');
+  const signupBody = JSON.parse(signup.options.body);
+  assert.deepEqual(signupBody.data, {
+    display_name: 'Pilot Faculty', substantive_designation: 'Professor', leadership_role: 'None',
+    institute: 'KMU Institute of Basic Medical Sciences (KMU-IBMS), Peshawar', service_cadre: 'BPS'
+  }, 'Job-related details should be captured at registration, without any assessor or administrator role');
+  assert.equal(Object.hasOwn(signupBody.data, 'role'), false, 'The user cannot self-select an account role');
   assert.match(ordinary.nodes.accountMessage.textContent, /Check your email for a confirmation link/);
   assert.equal(ordinary.nodes.accountPassword.value, '', 'Signup must clear the password input');
-  console.log('Account QA passed: objective allowlist, no auto-upload, secure invite/recovery setup and final report gate.');
+
+  const signed = authHarness(''); signed.ready();
+  signed.nodes.accountEmail.value = signed.user.email;
+  signed.nodes.accountPassword.value = 'portal-password';
+  await signed.nodes.accountForm.handlers.submit({ preventDefault() {} });
+  assert.equal(signed.account.mode, 'assessee', 'Valid sign-in opens the employee portal');
+  assert.equal(signed.account.profileComplete, true, 'The saved employee profile is loaded');
+  assert.equal(signed.account.profile.id, signed.user.id, 'Loaded profile belongs to signed-in user');
+  assert.equal(signed.nodes.profileDisplayName.value, 'Registered Faculty', 'Profile edit form is hydrated');
+  assert.equal(signed.account.caseOpen, false, 'Sign-in must not silently open or upload an appraisal');
+  assert.equal(signed.nodes.appraisalWorkspace.hidden, true, 'Employee dashboard hides the appraisal until a case opens');
+  assert.equal(signed.appliedProfiles.length, 0, 'No registration data is copied into a case without user action');
+  await signed.nodes.accountNewCase.handlers.click({ preventDefault() {} });
+  assert.equal(signed.account.caseOpen, true, 'New-case action opens the appraisal');
+  assert.equal(signed.appliedProfiles.length, 1, 'New appraisal receives the saved employee profile');
+  assert.equal(signed.appliedProfiles[0].display_name, 'Registered Faculty');
+  assert.equal(signed.appliedProfiles[0].substantive_designation, 'Professor');
+  assert.equal(signed.nodes.input_emp_name.disabled, true, 'Appraisal identity is read-only for the signed-in employee');
+  assert.equal(signed.nodes.input_emp_desig.disabled, true, 'Appraisal designation is read-only for the signed-in employee');
+  signed.nodes.profileDisplayName.value = 'Registered Faculty Updated';
+  signed.nodes.profileDesignation.value = 'Associate Professor';
+  await signed.nodes.accountSaveProfile.handlers.click({ preventDefault() {} });
+  const profileSave = signed.calls.find(call => call.url.includes('/rest/v1/rpc/save_employee_profile'));
+  assert.ok(profileSave, 'Employee profile edits use the owner-checked save RPC');
+  const profileSaveBody = JSON.parse(profileSave.options.body);
+  assert.equal(profileSaveBody.p_display_name, 'Registered Faculty Updated');
+  assert.equal(profileSaveBody.p_substantive_designation, 'Associate Professor');
+  assert.equal(Object.hasOwn(profileSaveBody, 'p_user_id'), false, 'Profile-save RPC does not accept a target user ID');
+  assert.equal(signed.account.profile.display_name, 'Registered Faculty Updated', 'Saved profile reloads');
+  assert.equal(signed.nodes.input_emp_name.value, 'Registered Faculty',
+    'Changing the employee profile must not silently rewrite an open appraisal snapshot');
+  assert.equal(signed.nodes.accountProfileSyncNotice.hidden, false,
+    'Changed profile offers an explicit draft synchronization action');
+  await signed.nodes.accountSyncDraftProfile.handlers.click({ preventDefault() {} });
+  assert.equal(signed.nodes.input_emp_name.value, 'Registered Faculty Updated',
+    'Explicit sync applies current job details to an editable draft');
+  await signed.nodes.accountSignOut.handlers.click({ preventDefault() {} });
+  assert.equal(signed.account.session, null, 'Sign-out discards the in-memory session');
+  assert.equal(signed.account.profile, null, 'Sign-out clears the employee profile');
+  assert.equal(signed.account.caseOpen, false, 'Sign-out closes the prior case');
+  assert.equal(signed.nodes.profileDisplayName.value, '', 'Sign-out clears profile edit fields');
+  assert.equal(signed.nodes.appraisalWorkspace.hidden, false, 'Signed-out visitor returns only to local demo');
+
+  const legacy = authHarness('', { profileRows: [{ id: 'user-1', display_name: 'Invited Legacy' }], assessor: true });
+  legacy.ready(); legacy.nodes.accountEmail.value = legacy.user.email;
+  legacy.nodes.accountPassword.value = 'portal-password';
+  await legacy.nodes.accountForm.handlers.submit({ preventDefault() {} });
+  assert.equal(legacy.account.profileComplete, false, 'Old invited accounts need to complete their job profile');
+  assert.equal(legacy.account.assessor, true, 'An independently granted assessor role remains available');
+  assert.equal(legacy.nodes.accountNewCase.disabled, true, 'Incomplete employee profile cannot start an appraisal');
+  await legacy.nodes.accountNewCase.handlers.click({ preventDefault() {} });
+  assert.equal(legacy.account.caseOpen, false, 'Bypassing the disabled button still fails closed');
+  await legacy.nodes.accountAssessorMode.handlers.click({ preventDefault() {} });
+  assert.equal(legacy.account.mode, 'assessor', 'Assessor may use only the independently granted assessor workspace');
+  assert.equal(legacy.account.caseOpen, false, 'No case opens without a current assignment');
+  assert.equal(legacy.account.canOpenTab('tab-peer'), false, 'Empty assessor queue does not open review fields');
+
+  const denied = authHarness('', { profileError: true }); denied.ready();
+  denied.nodes.accountEmail.value = denied.user.email;
+  denied.nodes.accountPassword.value = 'portal-password';
+  await denied.nodes.accountForm.handlers.submit({ preventDefault() {} });
+  assert.equal(denied.account.session, null, 'Profile fetch failure must tear down the session');
+  assert.equal(denied.account.user, null, 'Profile fetch failure must not leave a signed-in identity');
+  assert.equal(denied.account.mode, 'demo', 'Profile fetch failure fails closed to local demo');
+  assert.equal(denied.account.caseOpen, false, 'Profile fetch failure cannot open an appraisal');
+  assert.equal(denied.calls.some(call => call.url.includes('/rest/v1/appraisal_cases')), false,
+    'Failed profile load must not fetch cases');
+
+  const mismatched = authHarness('', {
+    profileRows: [{ ...signed.profile, id: 'some-other-user' }]
+  });
+  mismatched.ready(); mismatched.nodes.accountEmail.value = mismatched.user.email;
+  mismatched.nodes.accountPassword.value = 'portal-password';
+  await mismatched.nodes.accountForm.handlers.submit({ preventDefault() {} });
+  assert.equal(mismatched.account.session, null, 'A profile row for another account must be rejected');
+  assert.equal(mismatched.account.profile, null, 'Cross-user profile data must not remain in memory');
+  assert.equal(mismatched.account.caseOpen, false, 'Mismatched profile cannot open an appraisal');
+
+  // A stale response for account A must not repopulate private state after
+  // signing out and authenticating as account B in the same browser tab.
+  let releaseOldProfile;
+  const oldProfileBlocked = new Promise(resolve => { releaseOldProfile = resolve; });
+  const secondUser = { id: 'user-2', email: 'second@example.edu.pk' };
+  const secondProfile = {
+    ...signed.profile, id: secondUser.id, display_name: 'Second Faculty',
+    substantive_designation: 'Lecturer'
+  };
+  const race = authHarness('', { fetchOverride: async ({ url, options }) => {
+    if (url.includes('grant_type=password')) {
+      const email = JSON.parse(options.body).email;
+      const selected = email === secondUser.email ? secondUser : {
+        id: 'user-1', email: 'invited@example.edu.pk'
+      };
+      return { ok: true, status: 200, text: async () => JSON.stringify({
+        access_token: `token-${selected.id}`, refresh_token: `refresh-${selected.id}`, user: selected
+      }) };
+    }
+    if (url.includes('/rest/v1/app_user_profiles')) {
+      const second = url.includes(encodeURIComponent(secondUser.id));
+      if (!second) await oldProfileBlocked;
+      return { ok: true, status: 200, text: async () => JSON.stringify(second
+        ? [secondProfile] : [signed.profile]) };
+    }
+    if (url.endsWith('/auth/v1/logout')) {
+      return { ok: true, status: 200, text: async () => '{}' };
+    }
+    return null;
+  } });
+  race.ready();
+  race.nodes.accountEmail.value = 'invited@example.edu.pk';
+  race.nodes.accountPassword.value = 'password-one';
+  const oldSignIn = race.nodes.accountForm.handlers.submit({ preventDefault() {} });
+  for (let attempt = 0; attempt < 5; attempt += 1) await race.tick();
+  assert.equal(race.calls.some(call => call.url.includes('/rest/v1/app_user_profiles')),
+    true, 'First sign-in must reach its delayed employee profile read');
+  await race.nodes.accountSignOut.handlers.click({ preventDefault() {} });
+  race.nodes.accountEmail.value = secondUser.email;
+  race.nodes.accountPassword.value = 'password-two';
+  await race.nodes.accountForm.handlers.submit({ preventDefault() {} });
+  assert.equal(race.account.user.id, secondUser.id, 'Second account is signed in before stale response arrives');
+  assert.equal(race.account.profile.display_name, secondProfile.display_name,
+    'Second account profile is active before stale response arrives');
+  releaseOldProfile();
+  await oldSignIn;
+  assert.equal(race.account.user.id, secondUser.id, 'Stale first-account response cannot replace second identity');
+  assert.equal(race.account.profile.id, secondUser.id, 'Stale first-account response cannot replace second profile');
+  assert.equal(race.nodes.profileDisplayName.value, secondProfile.display_name,
+    'Stale first-account response cannot repaint the private profile form');
+  assert.equal(race.account.mode, 'assessee', 'Stale first-account response cannot change the active role');
+
+  console.log('Account QA passed: profile registration/prefill, employee/assessor isolation, stale-response isolation, fail-closed load, no auto-upload and auth recovery.');
 })().catch(error => { console.error(error); process.exitCode = 1; });
