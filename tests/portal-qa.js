@@ -166,15 +166,16 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   const certificate = page.locator('#objectiveCertificatePrintable');
   assert(await certificate.isVisible(), 'The provisional objective certificate must appear on Section E.');
   const certificateText = await certificate.textContent();
-  for (const fragment of ['Synthetic Professor', 'ANAT-301', 'B1 Papers', 'Employee declaration and sign-off']) {
+  for (const fragment of ['Synthetic Professor', '2 courses', '4 papers', '3 grant/proposal activities', 'Employee declaration and sign-off']) {
     assert(certificateText.includes(fragment), `The certificate is missing ${fragment}.`);
   }
   assert(await certificate.locator('#objective_cert_signatory').innerText() === 'Synthetic Professor',
     'The employee declaration must show the faculty member’s printed name.');
   assert(await certificate.locator('[id="dossier_final_score"], [id="dossier_subjective_total"]').count() === 0,
     'The provisional certificate must not contain committee or final scores.');
-  assert(await page.locator('#objectiveCertificatePapers [id], #objectiveCertificateCourses [id]').count() === 0,
-    'Copied evidence tables must not duplicate final-dossier DOM identifiers.');
+  assert(await certificate.locator('table').count() === 3
+    && await certificate.locator('#objectiveCertificatePapers, #objectiveCertificateCourses').count() === 0,
+    'The provisional certificate should contain only identity, scores and activity summaries, not detailed evidence tables.');
   const objectiveBeforePrint = JSON.stringify((await result(page)).objectivePercent);
   assert(await page.evaluate(() => {
     window.print = () => {};
@@ -267,6 +268,9 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
     'Clinical profiles must include patient care in the Section E objective dossier.');
   assert((await page.locator('#provisional_objective_total').innerText()).includes('/ 90 points'),
     'A clinical profile must use its 90-point objective ceiling.');
+  assert(await page.locator('#objectiveCertificateClinical').isVisible()
+    && (await page.locator('#objective_cert_clinical_summary').innerText()).includes('Patient care'),
+    'The concise objective certificate must include clinical activity when the profile requires it.');
   assert(await page.locator('#dossierClinicalEvidence').evaluate(node => getComputedStyle(node).display) !== 'none',
     'Clinical evidence must appear for a clinical profile.');
   const clinicalSummary = await page.locator('#dossierClinicalRows').textContent();

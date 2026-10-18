@@ -1183,7 +1183,7 @@ function calculateAll() {
   updateElementText('dossier_final_score', readiness.ready ? `${displayedScore.toFixed(1)} / 100` : 'Not assessed');
   updateElementText('dossier_final_rating', rating); updateElementText('dossier_pip_note', pipStatus);
   syncMetaToDossier(); syncTargetsToDossier(); updateDossierCompleteness(readiness);
-  syncProvisionalCertificate(objectiveReadiness, profile);
+  syncProvisionalCertificate(objectiveReadiness, profile, teachingLoad, researchRubric, attainmentE);
   renderScoreBars({ teaching: attainmentA, research: attainmentB, service: attainmentC, peer: attainmentD, clinical: attainmentE });
   window.KMUCalculator.lastResult = {
     profile: profile.name, teachingReady, teachingLoad, teachingTarget, teachingExempted,
@@ -1221,7 +1221,7 @@ function syncMetaToDossier() {
   updateElementText('sig_final', finalAuthority ? `${finalAuthority} (Final Authority)` : 'Final Authority');
 }
 
-function syncProvisionalCertificate(readiness, profile) {
+function syncProvisionalCertificate(readiness, profile, teachingLoad, researchRubric, clinicalAttainment) {
   const fields = {
     objective_cert_name: getTextValue('input_emp_name') || '—',
     objective_cert_desig: getTextValue('input_emp_desig') || '—',
@@ -1229,30 +1229,36 @@ function syncProvisionalCertificate(readiness, profile) {
     objective_cert_cadre: getTextValue('input_emp_cadre') || '—',
     objective_cert_cycle: getTextValue('input_emp_cycle') || '—',
     objective_cert_profile: appraisalState.profilePending ? 'Pending profile details' : profile.name,
-    objective_cert_signatory: getTextValue('input_emp_name') || '—',
-    objective_cert_clinical_mode: getTextValue('input_clin_service_mode') || '—',
-    objective_cert_clinical_ref: getTextValue('input_clin_evidence_ref') || '—'
+    objective_cert_signatory: getTextValue('input_emp_name') || '—'
   };
   Object.entries(fields).forEach(([id, value]) => updateElementText(id, value));
-  const evidenceTables = [
-    ['dossierCourseRows', 'objectiveCertificateCourses'],
-    ['dossierResearchPaperRows', 'objectiveCertificatePapers'],
-    ['dossierResearchSummaryRows', 'objectiveCertificateResearch'],
-    ['dossierGrantRows', 'objectiveCertificateGrants'],
-    ['dossierClinicalRows', 'objectiveCertificateClinicalRows'],
-    ['dossierServiceRows', 'objectiveCertificateService']
-  ];
-  evidenceTables.forEach(([sourceId, targetId]) => {
-    const source = el(sourceId)?.closest('table');
-    const target = el(targetId);
-    if (!source || !target) return;
-    const copy = source.cloneNode(true);
-    copy.removeAttribute('id');
-    copy.querySelectorAll('[id]').forEach(node => node.removeAttribute('id'));
-    target.replaceChildren(copy);
-  });
+  const item = (count, singular, plural = `${singular}s`) => `${count} ${count === 1 ? singular : plural}`;
+  const sumCounts = ids => ids.reduce((total, id) => total + getActivityCount(id), 0);
+  updateElementText('objective_cert_teaching_summary', teachingLoad.valid && teachingLoad.hasEntry
+    ? `${item(teachingLoad.courseCount, 'course')}; ${formatTeachingNumber(teachingLoad.creditsTaught)} credit hours (${formatTeachingNumber(teachingLoad.contactHours)} contact hours); ${teachingLoad.reviewAverage.toFixed(1)}% contact-hour-weighted student review.`
+    : 'No complete course entered.');
+  const researchItems = [
+    [researchRubric.publicationCount, 'paper'],
+    [sumCounts(['input_book_int', 'input_book_nat', 'input_chapter_int', 'input_chapter_nat']), 'book/chapter', 'books/chapters'],
+    [researchRubric.grantCount, 'grant/proposal activity', 'grant/proposal activities'],
+    [sumCounts(['input_sup_phd', 'input_sup_mphil', 'input_sup_clin_sr', 'input_sup_clin_jr']), 'completed supervision', 'completed supervisions'],
+    [sumCounts(['input_innov_patent_int', 'input_innov_patent_nat', 'input_innov_project', 'input_innov_overhead']), 'innovation activity', 'innovation activities']
+  ].filter(([count]) => count > 0).map(([count, singular, plural]) => item(count, singular, plural));
+  updateElementText('objective_cert_research_summary', researchItems.length
+    ? `${researchItems.join('; ')}.` : 'No research activity declared.');
+  const serviceItems = [
+    [getActivityCount('input_comm_member'), 'committee membership', 'committee memberships'],
+    [getActivityCount('input_comm_chair'), 'chair/convenor role', 'chair/convenor roles'],
+    [getActivityCount('input_policy_doc'), 'curriculum/policy output', 'curriculum/policy outputs'],
+    [getActivityCount('input_facility_charge'), 'facility charge', 'facility charges']
+  ].filter(([count]) => count > 0).map(([count, singular, plural]) => item(count, singular, plural));
+  if (el('input_additional_appoint')?.value === 'Y') serviceItems.push('additional appointment declared');
+  updateElementText('objective_cert_service_summary', serviceItems.length
+    ? `${serviceItems.join('; ')}.` : 'No institutional service activity declared.');
   const clinical = el('objectiveCertificateClinical');
   if (clinical) clinical.hidden = profile.clinical <= 0;
+  if (profile.clinical > 0) updateElementText('objective_cert_clinical_summary',
+    `${getTextValue('input_clin_service_mode') || 'Service mode not entered'}; ${clinicalAttainment.toFixed(1)}% aggregate clinical attainment. No patient identifiers included.`);
   const status = el('objectiveCertificateStatus');
   if (status) {
     status.textContent = readiness.ready ? 'Faculty objective entries complete — self-declared, pending review'

@@ -1516,7 +1516,9 @@ select.form-control optgroup {
 .objective-certificate .provisional-score-table { width: 100%; }
 .objective-certificate .provisional-score-table th,
 .objective-certificate .provisional-score-table td { white-space: normal; }
-.objective-certificate .certificate-evidence .dossier-meta-table { margin-bottom: 0.8rem; }
+.objective-activity-summary th:first-child,
+.objective-activity-summary td:first-child { width: 26%; }
+.objective-activity-summary td:first-child { font-weight: 700; }
 .objective-undertaking {
   margin-top: 1.5rem;
   padding-top: 0.5rem;

@@ -1072,22 +1072,17 @@
           </div>
           <p class="provisional-readiness" id="provisional_readiness" role="status">Complete the faculty sections to finalize this provisional objective calculation.</p>
             <p class="dossier-evidence-note">The score is the objective component only. Appraising Officer / Appraisal Committee assessment and any final consolidated score are not included. Entries remain subject to the applicable KMU review process.</p>
-            <h3 class="dossier-subheading">Course-level teaching evidence</h3>
-            <div id="objectiveCertificateCourses" class="certificate-evidence"></div>
-            <h3 class="dossier-subheading">Research, grants, supervision and innovation evidence</h3>
-            <h4 class="dossier-minor-heading">Publication counts by impact-factor band and author role</h4>
-            <div id="objectiveCertificatePapers" class="certificate-evidence"></div>
-            <h4 class="dossier-minor-heading">Research activity summary</h4>
-            <div id="objectiveCertificateResearch" class="certificate-evidence"></div>
-            <h4 class="dossier-minor-heading">Competitive grant and proposal counts</h4>
-            <div id="objectiveCertificateGrants" class="certificate-evidence"></div>
-            <section id="objectiveCertificateClinical" hidden>
-              <h3 class="dossier-subheading">Clinical and patient-care evidence</h3>
-              <p class="dossier-evidence-note">Aggregate measures only; no patient identifiers. Service mode: <span id="objective_cert_clinical_mode">—</span>. Unit norm / evidence reference: <span id="objective_cert_clinical_ref">—</span>.</p>
-              <div id="objectiveCertificateClinicalRows" class="certificate-evidence"></div>
-            </section>
-            <h3 class="dossier-subheading">Institutional service evidence</h3>
-            <div id="objectiveCertificateService" class="certificate-evidence"></div>
+            <h3 class="dossier-subheading">Work done at a glance</h3>
+            <table class="dossier-meta-table objective-activity-summary">
+              <thead><tr><th>Objective domain</th><th>Faculty-reported summary</th></tr></thead>
+              <tbody>
+                <tr><td>Teaching</td><td id="objective_cert_teaching_summary">No complete course entered</td></tr>
+                <tr><td>Research and grants</td><td id="objective_cert_research_summary">No activity declared</td></tr>
+                <tr id="objectiveCertificateClinical" hidden><td>Clinical / patient care</td><td id="objective_cert_clinical_summary">—</td></tr>
+                <tr><td>Institutional service</td><td id="objective_cert_service_summary">No activity declared</td></tr>
+              </tbody>
+            </table>
+            <p class="dossier-evidence-note">The underlying course, research, patient-care and service entries remain in the appraisal record for reviewer assessment and the final work-done report.</p>
             <section class="objective-undertaking" aria-label="Employee declaration and sign-off">
               <h3 class="dossier-subheading">Employee declaration and sign-off</h3>
               <p>I declare that the information and supporting evidence I have provided in this objective dossier are true and complete to the best of my knowledge and belief. I understand that these entries are subject to review and verification under applicable KMU procedures.</p>
