@@ -1183,6 +1183,7 @@ function calculateAll() {
   updateElementText('dossier_final_score', readiness.ready ? `${displayedScore.toFixed(1)} / 100` : 'Not assessed');
   updateElementText('dossier_final_rating', rating); updateElementText('dossier_pip_note', pipStatus);
   syncMetaToDossier(); syncTargetsToDossier(); updateDossierCompleteness(readiness);
+  syncProvisionalCertificate(objectiveReadiness, profile);
   renderScoreBars({ teaching: attainmentA, research: attainmentB, service: attainmentC, peer: attainmentD, clinical: attainmentE });
   window.KMUCalculator.lastResult = {
     profile: profile.name, teachingReady, teachingLoad, teachingTarget, teachingExempted,
@@ -1218,6 +1219,49 @@ function syncMetaToDossier() {
   const appraiser = getTextValue('input_emp_appraiser'); const finalAuthority = getTextValue('input_emp_final');
   updateElementText('sig_appraiser', appraiser ? `${appraiser} (Appraising Officer)` : 'Appraising Officer');
   updateElementText('sig_final', finalAuthority ? `${finalAuthority} (Final Authority)` : 'Final Authority');
+}
+
+function syncProvisionalCertificate(readiness, profile) {
+  const fields = {
+    objective_cert_name: getTextValue('input_emp_name') || '—',
+    objective_cert_desig: getTextValue('input_emp_desig') || '—',
+    objective_cert_dept: getTextValue('input_emp_dept') || '—',
+    objective_cert_cadre: getTextValue('input_emp_cadre') || '—',
+    objective_cert_cycle: getTextValue('input_emp_cycle') || '—',
+    objective_cert_profile: appraisalState.profilePending ? 'Pending profile details' : profile.name,
+    objective_cert_signatory: getTextValue('input_emp_name') || '—',
+    objective_cert_clinical_mode: getTextValue('input_clin_service_mode') || '—',
+    objective_cert_clinical_ref: getTextValue('input_clin_evidence_ref') || '—'
+  };
+  Object.entries(fields).forEach(([id, value]) => updateElementText(id, value));
+  const evidenceTables = [
+    ['dossierCourseRows', 'objectiveCertificateCourses'],
+    ['dossierResearchPaperRows', 'objectiveCertificatePapers'],
+    ['dossierResearchSummaryRows', 'objectiveCertificateResearch'],
+    ['dossierGrantRows', 'objectiveCertificateGrants'],
+    ['dossierClinicalRows', 'objectiveCertificateClinicalRows'],
+    ['dossierServiceRows', 'objectiveCertificateService']
+  ];
+  evidenceTables.forEach(([sourceId, targetId]) => {
+    const source = el(sourceId)?.closest('table');
+    const target = el(targetId);
+    if (!source || !target) return;
+    const copy = source.cloneNode(true);
+    copy.removeAttribute('id');
+    copy.querySelectorAll('[id]').forEach(node => node.removeAttribute('id'));
+    target.replaceChildren(copy);
+  });
+  const clinical = el('objectiveCertificateClinical');
+  if (clinical) clinical.hidden = profile.clinical <= 0;
+  const status = el('objectiveCertificateStatus');
+  if (status) {
+    status.textContent = readiness.ready ? 'Faculty objective entries complete — self-declared, pending review'
+      : 'Incomplete faculty evidence — interim calculation only';
+    status.className = `dossier-completeness ${readiness.ready ? 'dossier-complete' : 'dossier-incomplete'}`;
+  }
+  updateElementText('objectivePrintGuidance', readiness.ready
+    ? 'Print or save as PDF, then sign and date the employee declaration. Save the portal draft separately.'
+    : 'Complete the faculty evidence before printing the certificate.');
 }
 
 function syncTargetsToDossier() {
@@ -1835,6 +1879,28 @@ window.printDossier = async function () {
   }
   setTimeout(() => window.print(), 150);
 };
+function canPrintObjectiveForAccount() {
+  const account = window.KMUAccount;
+  return !account || account.mode === 'demo'
+    || (['assessee', 'assessor', 'administrator'].includes(account.mode)
+      && account.caseOpen && Boolean(account.selectedCaseId));
+}
+window.printObjectiveDossier = function () {
+  calculateAll();
+  const readiness = getObjectiveReadiness();
+  if (!canPrintObjectiveForAccount()) {
+    alert('Open your faculty case before printing its objective certificate.');
+    return false;
+  }
+  if (!readiness.ready) {
+    alert(`Complete the objective evidence before printing: ${readiness.missing.join(', ')}.`);
+    return false;
+  }
+  document.body.classList.add('objective-print-requested');
+  window.switchTab('tab-provisional');
+  setTimeout(() => window.print(), 150);
+  return true;
+};
 let previousModalFocus = null;
 window.openModal = function (id) {
   const modal = el(id); if (!modal) return;
@@ -2004,4 +2070,11 @@ document.addEventListener('DOMContentLoaded', () => {
   renderTeachingCourses(); loadBlankData(); initHelpTips(); initEventListeners(); checkExistingDraft();
 });
 
-window.addEventListener('beforeprint', () => calculateAll());
+window.addEventListener('beforeprint', () => {
+  calculateAll();
+  if (el('tab-provisional')?.classList.contains('active')
+    && getObjectiveReadiness().ready && canPrintObjectiveForAccount()) {
+    document.body.classList.add('objective-print-requested');
+  }
+});
+window.addEventListener('afterprint', () => document.body.classList.remove('objective-print-requested'));

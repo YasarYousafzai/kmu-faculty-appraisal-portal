@@ -1499,6 +1499,41 @@ select.form-control optgroup {
   color: var(--slate-700);
 }
 
+.objective-certificate-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  color: var(--slate-600);
+  font-size: 0.8rem;
+}
+.objective-certificate { margin: 1rem 0 1.5rem; }
+.certificate-pilot-line {
+  margin-top: 0.2rem;
+  color: var(--slate-500);
+  font-size: 0.75rem;
+}
+.objective-certificate .provisional-score-table { width: 100%; }
+.objective-certificate .provisional-score-table th,
+.objective-certificate .provisional-score-table td { white-space: normal; }
+.objective-certificate .certificate-evidence .dossier-meta-table { margin-bottom: 0.8rem; }
+.objective-undertaking {
+  margin-top: 1.5rem;
+  padding-top: 0.5rem;
+  border-top: 2px solid var(--kmu-maroon);
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.objective-undertaking p { font-size: 0.85rem; line-height: 1.5; }
+.objective-signature-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+  margin-top: 3rem;
+}
+.objective-signature-grid .signature-line { display: block; }
+.certificate-signatory { margin: 0.8rem 0 0; }
+
 /* Modal */
 .modal-overlay {
   position: fixed;
@@ -1692,10 +1727,10 @@ select.form-control optgroup {
 }
 
 @media print {
-  body:not(.dossier-print-ready) > * {
+  body:not(.dossier-print-ready):not(.objective-print-requested) > * {
     display: none !important;
   }
-  body:not(.dossier-print-ready) > .print-blocked-notice {
+  body:not(.dossier-print-ready):not(.objective-print-requested) > .print-blocked-notice {
     display: block !important;
     margin: 2rem;
     padding: 1.5rem;
@@ -1709,7 +1744,19 @@ select.form-control optgroup {
   }
   .portal-grid { display: block !important; }
   .tab-content { display: none !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
+  .tab-content.active { animation: none !important; opacity: 1 !important; transform: none !important; }
   #tab-summary { display: block !important; }
+  body.objective-print-requested #tab-summary { display: none !important; }
+  body.objective-print-requested #tab-provisional { display: block !important; }
+  body.objective-print-requested #tab-provisional > :not(.objective-certificate) { display: none !important; }
+  body.objective-print-requested .objective-certificate .data-table-wrap { overflow: visible; border: 0; }
+  body.objective-print-requested .objective-certificate .data-table,
+  body.objective-print-requested .objective-certificate .dossier-meta-table { width: 100%; table-layout: fixed; }
+  body.objective-print-requested .objective-certificate .data-table th,
+  body.objective-print-requested .objective-certificate .data-table td { overflow-wrap: anywhere; }
+  body.objective-print-requested .objective-certificate .provisional-total-card { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  body.objective-print-requested .objective-certificate thead { display: table-header-group; }
+  body.objective-print-requested .objective-certificate tr { break-inside: avoid; page-break-inside: avoid; }
   .official-dossier { border: none !important; padding: 0 !important; box-shadow: none !important; overflow: visible !important; }
   .comparison-panel { box-shadow: none !important; break-inside: avoid; margin: 0.8rem 0 !important; }
   .comparison-fill { print-color-adjust: exact; -webkit-print-color-adjust: exact; }

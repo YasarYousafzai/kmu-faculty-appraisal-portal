@@ -163,6 +163,34 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   assert(parseFloat(sectionEScore).toFixed(2) ===
     (current.weightedA + current.weightedB + current.weightedC + current.weightedE).toFixed(2),
   'Section E objective total must equal the sum of teaching, research, service and any patient-care weighted points.');
+  const certificate = page.locator('#objectiveCertificatePrintable');
+  assert(await certificate.isVisible(), 'The provisional objective certificate must appear on Section E.');
+  const certificateText = await certificate.textContent();
+  for (const fragment of ['Synthetic Professor', 'ANAT-301', 'B1 Papers', 'Employee declaration and sign-off']) {
+    assert(certificateText.includes(fragment), `The certificate is missing ${fragment}.`);
+  }
+  assert(await certificate.locator('#objective_cert_signatory').innerText() === 'Synthetic Professor',
+    'The employee declaration must show the faculty member’s printed name.');
+  assert(await certificate.locator('[id="dossier_final_score"], [id="dossier_subjective_total"]').count() === 0,
+    'The provisional certificate must not contain committee or final scores.');
+  assert(await page.locator('#objectiveCertificatePapers [id], #objectiveCertificateCourses [id]').count() === 0,
+    'Copied evidence tables must not duplicate final-dossier DOM identifiers.');
+  const objectiveBeforePrint = JSON.stringify((await result(page)).objectivePercent);
+  assert(await page.evaluate(() => {
+    window.print = () => {};
+    return window.printObjectiveDossier();
+  }), 'A complete objective certificate should be printable.');
+  await page.emulateMedia({ media: 'print' });
+  assert(await certificate.evaluate(node => getComputedStyle(node).display !== 'none')
+    && await page.locator('#tab-summary').evaluate(node => getComputedStyle(node).display === 'none'),
+  'Objective printing must show only the provisional certificate, not the final report.');
+  if (process.env.KMU_CERTIFICATE_SCREENSHOT) {
+    await page.screenshot({ path: process.env.KMU_CERTIFICATE_SCREENSHOT, fullPage: true });
+  }
+  await page.emulateMedia({ media: 'screen' });
+  await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+  assert(JSON.stringify((await result(page)).objectivePercent) === objectiveBeforePrint,
+    'Printing or rearranging the provisional dossier must not alter an existing score.');
   await page.locator('#tab-provisional button[onclick="saveAndReturnLater()"]').click();
   assert(await page.evaluate(() => Boolean(localStorage.getItem('KMU_APPRAISAL_DRAFT_v5'))),
     'Faculty must be able to save the provisional dossier locally.');

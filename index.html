@@ -1033,6 +1033,27 @@
           <div class="info-callout">
             These are pilot calculations from this form, not a final KMU appraisal or a verified personnel record. Scores from current entries appear even while the dossier is incomplete; incomplete domains are marked and the outstanding items remain listed below. The objective maximum depends on the assigned profile; the remaining points belong to committee assessment.
           </div>
+          <div class="objective-certificate-actions no-print">
+            <button type="button" class="btn btn-primary" id="printObjectiveButton" onclick="printObjectiveDossier()">🖨️ Print Provisional Objective Certificate</button>
+            <span id="objectivePrintGuidance">Complete the faculty evidence before printing the certificate.</span>
+          </div>
+          <article class="official-dossier objective-certificate" id="objectiveCertificatePrintable" aria-label="Provisional objective work done certificate">
+            <div class="dossier-header">
+              <img src="kmu_logo.png" alt="KMU Crest" class="dossier-logo">
+              <div class="dossier-title">Khyber Medical University, Peshawar</div>
+              <div class="dossier-sub">Provisional Objective Work Done Certificate — Faculty Self-Declaration</div>
+              <div class="certificate-pilot-line">Controlled pilot • Faculty-entered evidence • Not an official PER or final appraisal</div>
+              <div id="objectiveCertificateStatus" class="dossier-completeness dossier-incomplete">Incomplete faculty evidence</div>
+            </div>
+            <h3 class="dossier-subheading">Faculty and reporting period</h3>
+            <table class="dossier-meta-table">
+              <tbody>
+                <tr><th>Faculty member</th><td id="objective_cert_name">—</td><th>Substantive designation</th><td id="objective_cert_desig">—</td></tr>
+                <tr><th>KMU institute / unit</th><td id="objective_cert_dept">—</td><th>Pay scale &amp; service cadre</th><td id="objective_cert_cadre">—</td></tr>
+                <tr><th>Appraisal cycle</th><td id="objective_cert_cycle">—</td><th>Assigned pilot profile</th><td id="objective_cert_profile">—</td></tr>
+              </tbody>
+            </table>
+            <h3 class="dossier-subheading">Faculty-entered objective score</h3>
           <div class="data-table-wrap">
             <table class="data-table provisional-score-table">
               <thead><tr><th>Objective domain</th><th>Attainment</th><th>Profile weight / maximum</th><th>Weighted points earned</th></tr></thead>
@@ -1050,6 +1071,33 @@
             <span class="kpi-desc" id="provisional_objective_percent">This is the objective portion only, not a score out of the full 100.</span>
           </div>
           <p class="provisional-readiness" id="provisional_readiness" role="status">Complete the faculty sections to finalize this provisional objective calculation.</p>
+            <p class="dossier-evidence-note">The score is the objective component only. Appraising Officer / Appraisal Committee assessment and any final consolidated score are not included. Entries remain subject to the applicable KMU review process.</p>
+            <h3 class="dossier-subheading">Course-level teaching evidence</h3>
+            <div id="objectiveCertificateCourses" class="certificate-evidence"></div>
+            <h3 class="dossier-subheading">Research, grants, supervision and innovation evidence</h3>
+            <h4 class="dossier-minor-heading">Publication counts by impact-factor band and author role</h4>
+            <div id="objectiveCertificatePapers" class="certificate-evidence"></div>
+            <h4 class="dossier-minor-heading">Research activity summary</h4>
+            <div id="objectiveCertificateResearch" class="certificate-evidence"></div>
+            <h4 class="dossier-minor-heading">Competitive grant and proposal counts</h4>
+            <div id="objectiveCertificateGrants" class="certificate-evidence"></div>
+            <section id="objectiveCertificateClinical" hidden>
+              <h3 class="dossier-subheading">Clinical and patient-care evidence</h3>
+              <p class="dossier-evidence-note">Aggregate measures only; no patient identifiers. Service mode: <span id="objective_cert_clinical_mode">—</span>. Unit norm / evidence reference: <span id="objective_cert_clinical_ref">—</span>.</p>
+              <div id="objectiveCertificateClinicalRows" class="certificate-evidence"></div>
+            </section>
+            <h3 class="dossier-subheading">Institutional service evidence</h3>
+            <div id="objectiveCertificateService" class="certificate-evidence"></div>
+            <section class="objective-undertaking" aria-label="Employee declaration and sign-off">
+              <h3 class="dossier-subheading">Employee declaration and sign-off</h3>
+              <p>I declare that the information and supporting evidence I have provided in this objective dossier are true and complete to the best of my knowledge and belief. I understand that these entries are subject to review and verification under applicable KMU procedures.</p>
+              <div class="objective-signature-grid">
+                <div><span class="signature-line">Employee signature</span></div>
+                <div><span class="signature-line">Date</span></div>
+              </div>
+              <p class="certificate-signatory">Printed name: <strong id="objective_cert_signatory">—</strong></p>
+            </section>
+          </article>
           <p class="provisional-note" id="provisionalStorageNote">In local demo mode, saving keeps the draft only in this browser and does not submit it to an assessor. Sign in for pilot cloud case storage. Use fictional or non-confidential data until KMU approves hosting and security.</p>
           <div class="step-footer-actions">
             <button type="button" class="btn btn-secondary" onclick="switchTab('tab-service')">← Back to Section D</button>
