@@ -97,6 +97,22 @@ or raw passwords in this public repository or GitHub Pages. Agree a KMU-owned
 sender/domain and privacy review before inviting actual faculty; a personal
 Gmail address is not an institutional sender policy.
 
+## Live pilot deployment record (20 October 2026)
+
+The annual/clinical evidence and scholarly-identifier scripts above were
+applied, in order, to the existing Faculty Annual Appraisal pilot project via
+the Supabase SQL Editor before the matching GitHub Pages frontend was published.
+The rollback-only validator test (`tests/003_annual_clinical_evidence_synthetic.sql`)
+passed there. A read-only post-check confirmed both functions, the new column
+and trigger, profile RLS and authenticated-only profile-save access; existing
+profile and appraisal-case counts were unchanged. The fictional-account test
+(`tests/004_scholar_identifier_synthetic.sql`) was **not** run in the live
+project because it inserts a temporary Auth user. Run it only in an isolated
+test project. SQL Editor execution does not register these scripts in the
+Supabase CLI migration history: check the actual database objects and this
+record before any repeat deployment; do **not** rerun either one-time script
+blindly.
+
 The 32 hospital-teaching-hours = one practical-credit equivalent is a **pilot
 calculation**, not an approved KMU workload rule. A teaching entry may use
 practical/lab credits or hospital teaching hours, not both. OPD sessions and
