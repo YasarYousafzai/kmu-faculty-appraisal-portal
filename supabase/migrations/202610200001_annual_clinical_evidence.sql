@@ -181,7 +181,7 @@ begin
           raise exception 'Invalid teaching course number field %', v_field
             using errcode = '22023';
         end if;
-        if v_raw::numeric > case when v_field = 'hospitalHours' then 3200 else 100 end then
+        if v_raw::numeric > (case when v_field = 'hospitalHours' then 3200 else 100 end) then
           raise exception 'Teaching course value % exceeds its limit', v_field
             using errcode = '22023';
         end if;
