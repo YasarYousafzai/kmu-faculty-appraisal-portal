@@ -117,7 +117,7 @@
       <button type="button" class="account-text-button" id="accountRecover">Forgot password? Email me a reset link</button>
       <p class="account-note">Email confirmation may be required. Passwords are sent directly to the authentication service and are not stored in the website files or browser draft.</p>
       <p class="account-note">For this controlled pilot, sign-in lasts only in the current tab. Refreshing or opening another tab requires signing in again.</p>
-      <p class="account-note">Pilot email delivery has a very small project-wide limit and is restricted to project-team addresses. If registration reports an email rate limit, stop retrying and contact the portal administrator. Wider faculty registration needs an approved SMTP service; do not disable email confirmation to work around this.</p>
+      <p class="account-note">Until an approved SMTP sender is configured, Supabase's default email service has a very small project-wide limit and permits only project-team recipients. If registration reports an email rate limit, stop retrying and contact the portal administrator. Keep email confirmation enabled; do not share a password or ask the administrator to bypass confirmation.</p>
     </div>
     <div id="accountPasswordSetup" class="account-password-setup" hidden>
       <p id="accountPasswordSetupIntro" class="account-warning">Your account link was verified. Choose a new password to finish setup.</p>
@@ -613,7 +613,7 @@
           </div>
 
           <div class="info-callout">
-            <strong>Proposed pilot teaching calculation:</strong> each faculty-entered course review contributes in proportion to the contact hours taught. Enter theory and practical credits separately: 1 theory credit = 16 contact hours; 1 practical credit = 32 contact hours, so a 1+1 course represents 48 contact hours and 2 taught credits. The resulting student-review mean is multiplied by a capped workload factor based on the provisional rank target below. Course entries calculate immediately without a separate KMU verification step. This rubric is not KMU-approved for personnel use.
+            <strong>Proposed pilot teaching calculation:</strong> enter a semester course, annual MBBS subject or teaching module, even when no formal course code was issued. One theory credit = 16 contact hours and one practical/lab credit = 32 contact hours. As an alternative to practical/lab credits for the same entry, 32 documented hospital <em>teaching</em> hours count as one pilot practical-credit equivalent. Do not enter both alternatives or include patient-care hours. Student reviews are weighted by teaching contact hours, then the capped pilot rank workload factor applies. Faculty-entered teaching calculates immediately; this conversion is not KMU-approved for personnel use.
           </div>
           <details class="research-rubric-guide">
             <summary>HEC credit-hour and designation workload guidance (context only)</summary>
@@ -621,15 +621,15 @@
             <p>This pilot uses an <a href="https://www.hec.gov.pk/english/services/universities/RevisedCurricula/Documents/2007-2008/Maths%202008.pdf" target="_blank" rel="noopener noreferrer">HEC mathematics curriculum recommendation</a> as an illustrative, <strong>unapproved KMU</strong> teaching-volume target: Professor 3, Associate Professor 6, Assistant Professor 9, and Lecturer 12 taught credits per semester. Meritorious Professor is provisionally mapped to the Professor target; the HEC example does not name that designation. For the January–December pilot, two regular semesters are assumed, giving annual targets of 6, 12, 18, and 24 credits. The workload factor is credits taught ÷ annual target, capped at 100%; an approved exemption declaration waives this proration. Other designations have no invented automatic target. These figures are discipline-specific, not a universal KMU medical-faculty rule: the <a href="https://www.nbeac.org.pk/files/Policies%20and%20Documents/NBEAC%20Standards%202024%2030-Dec-2024.pdf" target="_blank" rel="noopener noreferrer">business-school accreditation standard</a> uses different maxima. KMU must approve or replace these pilot targets before formal use.</p>
           </details>
           <div id="teachingCourses" class="teaching-courses" aria-live="polite"></div>
-          <button type="button" class="btn btn-secondary no-print" id="addTeachingCourseButton" onclick="addTeachingCourse()">+ Add new course (maximum 10)</button>
+          <button type="button" class="btn btn-secondary no-print" id="addTeachingCourseButton" onclick="addTeachingCourse()">+ Add teaching entry (maximum 10)</button>
           <div class="teaching-load-result" aria-live="polite">
-            <div><span>Courses entered</span><strong id="disp_course_count">0</strong><small>Student reviews weighted by taught contact hours</small></div>
-            <div><span>Documented contact time</span><strong id="disp_teaching_hours">—</strong><small id="disp_teaching_hours_detail">Theory + practical hours</small></div>
-            <div><span>Credit hours taught</span><strong id="disp_teaching_credits">—</strong><small>Theory + practical credits entered</small></div>
+            <div><span>Teaching entries</span><strong id="disp_course_count">0</strong><small>Student reviews weighted by taught contact hours</small></div>
+            <div><span>Documented contact time</span><strong id="disp_teaching_hours">—</strong><small id="disp_teaching_hours_detail">Theory + practical/lab + hospital teaching hours</small></div>
+            <div><span>Pilot credit hours taught</span><strong id="disp_teaching_credits">—</strong><small>Theory + practical/lab + hospital teaching equivalents</small></div>
             <div><span>Provisional rank workload target</span><strong id="disp_rank_target">—</strong><small id="disp_teaching_load_factor">Awaiting course entries</small></div>
           </div>
           <p id="legacyTeachingNote" class="teaching-legacy-note" hidden></p>
-          <p class="field-hint">List only KMU teaching personally delivered in the selected calendar year. A repeated section needs its own documented course record and student review. Do not enter patient or student identifiers.</p>
+          <p class="field-hint">List only KMU teaching personally delivered in the selected calendar year. For MBBS annual teaching, select the professional year and enter each subject or module title; leave the code blank if none was issued. A repeated section needs its own teaching entry and student review. Do not enter patient or student identifiers.</p>
           <div class="form-group" style="max-width:440px;margin-top:1rem;">
             <label for="input_wu_exempted">Approved teaching-load shortfall / exemption</label>
             <select id="input_wu_exempted" class="form-control">
@@ -710,7 +710,7 @@
               </tbody>
             </table>
           </div>
-          <div class="form-group"><label for="input_publications_ref">Publication citations / evidence reference</label><input type="text" id="input_publications_ref" class="form-control" maxlength="240" placeholder="Example: Google Scholar link"><span class="field-hint">One short reference is enough for this pilot; enter each paper in only one count row.</span></div>
+          <div class="form-group"><label for="input_publications_ref">Employee Google Scholar profile URL, ORCID iD, or publication-list reference</label><input type="text" id="input_publications_ref" class="form-control" maxlength="240" placeholder="e.g., Google Scholar profile URL or ORCID iD 0000-0002-1825-0097"><span class="field-hint">Required when papers are counted. A profile identifier helps locate publications but does not verify eligibility or give extra points; enter each paper in only one count row.</span></div>
 
           <label class="research-complete-label" for="input_research_complete"><input type="checkbox" id="input_research_complete"> I have completed Section B; any research activity not entered here is zero for this appraisal year.</label>
           <span class="field-hint">Select this even if your research score is zero. It distinguishes a completed no-activity declaration from an unfinished page.</span>
@@ -1222,7 +1222,20 @@
           </div>
 
           <div class="warning-callout">
-            <strong>Aggregate evidence only:</strong> do not enter patient names, MR numbers, specimen identifiers or other patient-level information. Patient treatment is assessed here as a clinical-service measure and must not be claimed again under Institutional Service or Teaching.
+            <strong>Aggregate evidence only:</strong> do not enter patient names, MR numbers, specimen identifiers or other patient-level information. OPD sessions and patient-contact hours below document service volume but do not independently add points. Keep patient care separate from hospital teaching hours claimed in Section A.
+          </div>
+
+          <div class="form-grid clinical-evidence-grid">
+            <div class="form-group">
+              <label for="input_clin_opd_sessions">OPD service sessions delivered (annual aggregate)</label>
+              <input type="number" id="input_clin_opd_sessions" class="form-control" min="0" max="10000" step="1" placeholder="e.g., 120">
+              <span class="field-hint">Optional count of personally delivered OPD sessions; no patient-level details and no automatic extra points.</span>
+            </div>
+            <div class="form-group">
+              <label for="input_clin_patient_contact_hours">Patient-contact hours (annual aggregate)</label>
+              <input type="number" id="input_clin_patient_contact_hours" class="form-control" min="0" max="10000" step="0.01" placeholder="e.g., 480">
+              <span class="field-hint">OPD, ward, theatre or other patient-service time; exclude hours claimed as teaching in Section A.</span>
+            </div>
           </div>
 
           <div class="data-table-wrap">
@@ -1256,7 +1269,7 @@
                 </tr>
                 <tr>
                   <td>Clinical Teaching &amp; Supervision Delivery</td>
-                  <td>Verified bedside teaching, tutorials or supervision against the clinical assignment</td>
+                  <td>Verified clinical supervision against the clinical assignment; exclude hospital teaching hours already counted in Section A</td>
                   <td>20%</td>
                   <td><input type="number" id="input_clin_teaching" class="input-num" min="0" max="100" step="0.1" placeholder="Example: 80" aria-label="Verified clinical teaching and supervision attainment percentage"></td>
                 </tr>
@@ -1588,8 +1601,8 @@
 
             <h4 class="dossier-subheading">Course-level teaching evidence</h4>
             <table class="dossier-meta-table dossier-course-table">
-              <thead><tr><th>Course / code</th><th>Term</th><th>Level</th><th>Discipline</th><th>Credits (T+P)</th><th>Student review</th></tr></thead>
-              <tbody id="dossierCourseRows"><tr><td colspan="6">No complete course entered</td></tr></tbody>
+              <thead><tr><th>Course / module</th><th>Code / ID</th><th>Period</th><th>Level</th><th>Discipline</th><th>Teaching allocation</th><th>Student review</th></tr></thead>
+              <tbody id="dossierCourseRows"><tr><td colspan="7">No complete teaching entry</td></tr></tbody>
             </table>
 
             <h4 class="dossier-subheading">Section B — Research and grants evidence</h4>
@@ -1615,6 +1628,7 @@
             <section id="dossierClinicalEvidence" hidden>
               <h4 class="dossier-subheading">Section C — Clinical and patient-care evidence</h4>
               <p class="dossier-evidence-note">Aggregate measures only; no patient identifiers. Service mode: <span id="dossierClinicalMode">—</span>. Approved unit norm / evidence reference: <span id="dossierClinicalReference">—</span>.</p>
+              <p class="dossier-evidence-note" id="dossierClinicalActivity">OPD sessions and patient-contact hours not entered.</p>
               <table class="dossier-meta-table dossier-evidence-table">
                 <thead><tr><th>Clinical / patient-care measure</th><th>Share of clinical score</th><th>Entered attainment</th><th>Contribution to clinical score</th></tr></thead>
                 <tbody id="dossierClinicalRows"><tr><td colspan="4">Clinical evidence pending</td></tr></tbody>
@@ -1888,7 +1902,7 @@
         
         <h4 style="color:var(--kmu-maroon); font-weight:700; margin-bottom:0.5rem;">Objective vs Subjective Structure</h4>
         <ul style="margin:0.5rem 0 1rem 1.25rem;">
-          <li><strong>Faculty evidence domains:</strong> A teaching (contact-hour-weighted mean of faculty-entered course reviews); B research; C patient care when applicable; D institutional service. Theory and practical credits determine each course's contribution.</li>
+          <li><strong>Faculty evidence domains:</strong> A teaching (contact-hour-weighted mean of faculty-entered teaching-entry reviews); B research; C patient care when applicable; D institutional service. Theory and practical credits, or the pilot hospital-teaching-hour alternative, determine each entry's contribution.</li>
           <li><strong>Appraisal Committee assessment:</strong> Proposed qualitative evaluation by the designated Appraising Officer or committee across 13 professional criteria and 5 CPD goals.</li>
           <li><strong>Research pilot calibration:</strong> the original draft B1–B5 count tables and scoring have been restored: publications (50), books/chapters (20), grants/proposals (50), supervision (40), innovation (40), divided by 200. The old W/X/Y-to-impact-factor equivalence is not repeated because it is not established. The resulting research percentage will be low for ordinary annual output; KMU must validate this before personnel use.</li>
           <li><strong>80% display benchmark:</strong> Green means a dimension reached at least 80% of its available weighted-point ceiling; red means it is below 80%. This visual aid does not replace the overall rating bands.</li>
@@ -1928,7 +1942,7 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20261015-interim-objective-scores"></script>
+  <script src="app.js?v=20261020-annual-clinical-evidence"></script>
   <script src="account.js?v=20261020-email-limit-guidance"></script>
 
   <div style="display:none;">

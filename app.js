@@ -6,7 +6,7 @@
  */
 'use strict';
 
-const CONFIG_VERSION = 'KMU-CONTROLLED-PILOT-2026-10-12-SECTION-E-OBJECTIVE';
+const CONFIG_VERSION = 'KMU-CONTROLLED-PILOT-2026-10-20-ANNUAL-CLINICAL-EVIDENCE';
 const STORAGE_KEY = 'KMU_APPRAISAL_DRAFT_v5';
 const LEGACY_STORAGE_KEYS = Object.freeze(['KMU_APPRAISAL_DRAFT_v4', 'KMU_APPRAISAL_DRAFT_v3_3', 'KMU_APPRAISAL_DRAFT_v3_2', 'KMU_APPRAISAL_DRAFT_v3_1', 'KMU_APPRAISAL_DRAFT_v3']);
 const SCHEMA_VERSION = 5;
@@ -109,7 +109,7 @@ const NUMERIC_INPUT_IDS = [
   'input_innov_patent_int', 'input_innov_patent_nat', 'input_innov_project',
   'input_innov_overhead', 'input_comm_member', 'input_comm_chair', 'input_policy_doc',
   'input_facility_charge', 'input_clin_admin', 'input_clin_volume', 'input_clin_oncall',
-  'input_clin_teaching'
+  'input_clin_teaching', 'input_clin_opd_sessions', 'input_clin_patient_contact_hours'
 ];
 
 const COUNT_INPUT_IDS = Object.freeze([
@@ -118,7 +118,8 @@ const COUNT_INPUT_IDS = Object.freeze([
   'input_chapter_int', 'input_chapter_nat', 'input_sup_phd', 'input_sup_mphil',
   'input_sup_clin_sr', 'input_sup_clin_jr', 'input_innov_patent_int',
   'input_innov_patent_nat', 'input_innov_project', 'input_innov_overhead',
-  'input_comm_member', 'input_comm_chair', 'input_policy_doc', 'input_facility_charge'
+  'input_comm_member', 'input_comm_chair', 'input_policy_doc', 'input_facility_charge',
+  'input_clin_opd_sessions'
 ]);
 
 const NUMERIC_MAXIMA = Object.freeze({
@@ -126,7 +127,9 @@ const NUMERIC_MAXIMA = Object.freeze({
   input_clin_admin: 100,
   input_clin_volume: 100,
   input_clin_oncall: 100,
-  input_clin_teaching: 100
+  input_clin_teaching: 100,
+  input_clin_opd_sessions: 10000,
+  input_clin_patient_contact_hours: 10000
 });
 
 const TARGET_IDS = [
@@ -154,7 +157,7 @@ const FIELD_HELP = Object.freeze({
   input_reviewer_role: 'Choose the capacity specified by the current reporting or committee notification; this static pilot cannot authenticate that capacity.',
   input_reviewer_name: 'Enter the designated officer name or exact committee identifier from the current notification.',
   input_research_review_confirm: 'The reviewer confirms that the self-reported publication counts, publication-year impact-factor bands, authorship, grants and supporting evidence were checked.',
-  input_publications_ref: 'For positive paper counts, provide a Google Scholar link or short publication-list reference. Enter each distinct paper once.',
+  input_publications_ref: 'For positive paper counts, provide your Google Scholar profile URL, ORCID iD, or a short publication-list reference. Enter each distinct paper once.',
   input_additional_appoint: 'Select Yes only for a formally notified additional Dean, Director, or Head of Department appointment.',
   input_red_flag: 'Select a deduction only where every due-process control below is supported by the formal record.',
   input_red_flag_ref: 'Enter the formal inquiry or penalty notification reference issued by the competent authority.',
@@ -166,13 +169,15 @@ const FIELD_HELP = Object.freeze({
   input_clin_admin: 'Enter the verified 0–100 attainment percentage for clinical governance, patient safety and quality improvement; it contributes 25% of the clinical score.',
   input_clin_volume: 'Enter the verified 0–100 attainment percentage for patient treatment or diagnostic delivery against the approved specialty/unit norm; it contributes 35%.',
   input_clin_oncall: 'Enter the verified 0–100 roster or continuity-duty compliance percentage; it contributes 20% of the clinical score.',
-  input_clin_teaching: 'Enter the verified 0–100 clinical teaching/supervision attainment percentage; it contributes 20% and must not duplicate Section A credit.'
+  input_clin_teaching: 'Enter the verified 0–100 clinical supervision attainment percentage; it contributes 20% and must not include the same hospital teaching hours claimed in Section A.',
+  input_clin_opd_sessions: 'Optional aggregate count of OPD sessions personally delivered in this appraisal year; no patient identifiers and no automatic extra points.',
+  input_clin_patient_contact_hours: 'Optional aggregate patient-contact hours in OPD, ward, theatre or other clinical service. Exclude teaching time claimed in Section A; these hours are evidence, not automatic points.'
 });
 
 const CONTEXT_HELP = Object.freeze({
   metaSectionTitle: 'Use the substantive appointment and current posting order. Acting or additional leadership roles are recorded separately.',
   profileAssignmentTitle: 'The default mix comes from designation and institute/unit. It changes only for a clinical, regional IHS, dedicated research, or documented special assignment.',
-  teachingSectionTitle: 'Enter each course, taught theory and practical credits, and its student-review score. The faculty-entered course entries immediately count in the proposed contact-hour-weighted teaching score; no KMU approval step is required for this pilot calculation.',
+  teachingSectionTitle: 'Enter semester courses, annual MBBS subjects or modules. A formal code is optional when none was issued. Hospital teaching hours may replace practical/lab credits for the same entry at 32 hours per pilot credit equivalent. Do not count the same hours twice.',
   teachingScoreTitle: 'This is the 0–100 teaching attainment before the profile weight is applied.',
   teachingContributionTitle: 'Teaching attainment multiplied by the teaching weight contributes this many points to the 100-point total.',
   researchSectionTitle: 'Use the original count tables for publications, books, grants, supervision and innovation. The original raw total is out of 200; the research percentage is raw points divided by 200.',
@@ -266,6 +271,8 @@ function renderDossierEvidence(researchRubric, service, clinical, profile) {
   if (profile.clinical > 0) {
     updateElementText('dossierClinicalMode', getTextValue('input_clin_service_mode') || 'Not entered');
     updateElementText('dossierClinicalReference', reference('input_clin_evidence_ref'));
+    updateElementText('dossierClinicalActivity',
+      `${count('input_clin_opd_sessions')} OPD sessions; ${number(getInputValue('input_clin_patient_contact_hours'))} patient-contact hours. These are aggregate, non-scoring activity measures.`);
     updateDossierTableRows('dossierClinicalRows', [
       ['Clinical governance, patient safety and quality improvement', '25%', 'input_clin_admin', clinical.admin, 0.25],
       ['Patient treatment / diagnostic service delivery', '35%', 'input_clin_volume', clinical.volume, 0.35],
@@ -288,7 +295,9 @@ function renderDossierEvidence(researchRubric, service, clinical, profile) {
 }
 function clamp(value, minimum, maximum) { return Math.min(maximum, Math.max(minimum, Number(value) || 0)); }
 function courseContactHours(record) {
-  return Math.max(0, Number(record.theory) || 0) * 16 + Math.max(0, Number(record.practical) || 0) * 32;
+  return Math.max(0, Number(record.theory) || 0) * 16
+    + Math.max(0, Number(record.practical) || 0) * 32
+    + Math.max(0, Number(record.hospitalHours) || 0);
 }
 function weightedStudentReviews(records) {
   const contactHours = records.reduce((sum, record) => sum + courseContactHours(record), 0);
@@ -325,7 +334,7 @@ function isEnteredTeachingCourse(record) {
     const input = String(value ?? '').trim();
     if (!input) return false;
     // A new course has both credit fields prefilled with zero. That alone is not an entry.
-    return key === 'theory' || key === 'practical' ? Number(input) !== 0 : true;
+    return ['theory', 'practical', 'hospitalHours'].includes(key) ? Number(input) !== 0 : true;
   });
 }
 function getTeachingLoad() {
@@ -339,26 +348,35 @@ function getTeachingLoad() {
   enteredWithIndex.forEach(({ record, index }) => {
     const theory = Number(record.theory);
     const practical = Number(record.practical);
+    const hospitalHours = Number(record.hospitalHours || 0);
     const review = Number(record.review);
-    if (!record.title || !record.code || !record.term || !record.level || !record.specialty
+    const decimalWithinTwoPlaces = value => /^\d+(?:\.\d{1,2})?$/.test(value);
+    if (!record.title || !record.term || !record.level || !record.specialty
       || record.theory === '' || record.practical === '' || record.review === ''
+      || !decimalWithinTwoPlaces(record.theory) || !decimalWithinTwoPlaces(record.practical)
+      || !decimalWithinTwoPlaces(record.hospitalHours || '0') || !decimalWithinTwoPlaces(record.review)
       || !Number.isFinite(theory) || theory < 0 || theory > 100
       || !Number.isFinite(practical) || practical < 0 || practical > 100
-      || theory + practical <= 0 || !Number.isFinite(review) || review < 0 || review > 100) {
-      issues.push(`complete course ${index + 1} (including both credit components and a 0–100 student review)`);
+      || !Number.isFinite(hospitalHours) || hospitalHours < 0 || hospitalHours > 3200
+      || (practical > 0 && hospitalHours > 0)
+      || theory + practical + hospitalHours / 32 <= 0
+      || !Number.isFinite(review) || review < 0 || review > 100) {
+      issues.push(`complete teaching entry ${index + 1} (title, period, level, discipline, theory credits, either practical credits or hospital teaching hours, and a 0–100 student review; do not enter practical and hospital hours together)`);
     }
   });
   const valid = issues.length === 0;
   const complete = valid ? entered : [];
   const theoryCredits = complete.reduce((sum, record) => sum + Number(record.theory), 0);
   const practicalCredits = complete.reduce((sum, record) => sum + Number(record.practical), 0);
+  const hospitalHours = complete.reduce((sum, record) => sum + Number(record.hospitalHours || 0), 0);
+  const hospitalCreditEquivalents = hospitalHours / 32;
   const reviewAverage = weightedStudentReviews(complete);
   return {
     records, entered, issues, hasEntry: complete.length > 0, valid, reviewAverage,
-    courseCount: complete.length, theoryCredits, practicalCredits,
-    creditsTaught: theoryCredits + practicalCredits,
+    courseCount: complete.length, theoryCredits, practicalCredits, hospitalHours, hospitalCreditEquivalents,
+    creditsTaught: theoryCredits + practicalCredits + hospitalCreditEquivalents,
     theoryHours: theoryCredits * 16, practicalHours: practicalCredits * 32,
-    contactHours: theoryCredits * 16 + practicalCredits * 32
+    contactHours: theoryCredits * 16 + practicalCredits * 32 + hospitalHours
   };
 }
 function renderTeachingCourses(records = [{}]) {
@@ -368,11 +386,12 @@ function renderTeachingCourses(records = [{}]) {
   displayedRecords.slice(0, MAX_COURSES).forEach((record, index) => {
     const card = document.createElement('div'); card.className = 'teaching-course-card';
     const fields = [
-      ['title', 'Course heading / title', 'text', 'e.g., Human Anatomy'],
-      ['code', 'Course code', 'text', 'e.g., ANAT-301'],
+      ['title', 'Course / annual subject / module title', 'text', 'e.g., MBBS Year 2 Pathology module'],
+      ['code', 'Course code / module ID (if issued)', 'text', 'e.g., PATH-201; leave blank if none'],
       ['specialty', 'Discipline / specialty', 'text', 'e.g., Anatomy'],
       ['theory', 'Theory credit hours taught', 'number', 'e.g., 1'],
       ['practical', 'Practical / lab credit hours taught', 'number', 'e.g., 1'],
+      ['hospitalHours', 'Hospital teaching contact hours (alternative to practical credits)', 'number', 'e.g., 32'],
       ['review', 'Student review score (0–100)', 'number', 'e.g., 85']
     ];
     const heading = document.createElement('div'); heading.className = 'teaching-course-heading';
@@ -391,15 +410,17 @@ function renderTeachingCourses(records = [{}]) {
       const input = document.createElement('input'); input.type = type; input.className = 'form-control';
       input.id = `course-${index + 1}-${key}`; label.htmlFor = input.id;
       input.dataset.courseField = key;
-      const initialValue = (key === 'theory' || key === 'practical') && (record[key] === undefined || record[key] === '')
+      const initialValue = ['theory', 'practical', 'hospitalHours'].includes(key)
+        && (record[key] === undefined || record[key] === '')
         ? '0' : record[key] ?? '';
       input.value = safeString(initialValue, 240);
       input.placeholder = placeholder; if (type === 'text') input.maxLength = 240;
-      if (type === 'number') { input.min = '0'; input.max = '100'; input.step = 'any'; }
+      if (type === 'number') { input.min = '0'; input.max = key === 'hospitalHours' ? '3200' : '100'; input.step = '0.01'; }
       input.addEventListener('input', calculateAll);
       const hint = document.createElement('span'); hint.className = 'field-hint';
       hint.textContent = key === 'theory' ? 'One theory credit = 16 contact hours; enter 0 if none.'
-        : key === 'practical' ? 'One practical credit = 32 contact hours; enter 0 if none.'
+        : key === 'practical' ? 'One practical credit = 32 contact hours; enter 0 if using hospital teaching hours instead.'
+          : key === 'hospitalHours' ? 'Pilot alternative: 32 documented hospital teaching hours = 1 practical-credit equivalent. Do not enter practical credits for the same entry or count patient-care hours here.'
           : key === 'review' ? 'Enter the course-level student feedback percentage. The faculty-entered score is used immediately, weighted by the course contact hours.' : '';
       const tip = document.createElement('button'); tip.type = 'button'; tip.className = 'help-tip';
       tip.textContent = '?'; tip.title = hint.textContent || `Enter the ${labelText.toLowerCase()} exactly as shown in the course record.`;
@@ -417,8 +438,8 @@ function renderTeachingCourses(records = [{}]) {
       select.value = safeString(record[key] ?? '', 80); select.addEventListener('change', calculateAll);
       field.append(label, select); grid.appendChild(field);
     };
-    addSelect('term', 'Term / semester', ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8', 'Winter Semester', 'Summer Semester', 'Annual Course']);
-    addSelect('level', 'Level of teaching', ['Undergraduate', 'Postgraduate', 'MPhil / MS', 'PhD', 'Clinical Residency / Fellowship']);
+    addSelect('term', 'Academic period / annual professional year', ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8', 'Winter Semester', 'Summer Semester', 'Annual Course', 'MBBS Annual Year 1', 'MBBS Annual Year 2', 'MBBS Annual Year 3', 'MBBS Annual Year 4', 'MBBS Annual Year 5', 'Other Annual Year', 'Module / Block']);
+    addSelect('level', 'Level of teaching', ['Undergraduate', 'MBBS', 'BDS', 'Postgraduate', 'MPhil / MS', 'PhD', 'Clinical Residency / Fellowship']);
     card.appendChild(grid); container.appendChild(card);
   });
   if (el('addTeachingCourseButton')) el('addTeachingCourseButton').disabled = displayedRecords.length >= MAX_COURSES;
@@ -824,7 +845,7 @@ function getObjectiveReadiness() {
   ];
   required.forEach(([id, label]) => { if (!getTextValue(id)) missing.push(label); });
   const teaching = getTeachingLoad();
-  if (!teaching.hasEntry) missing.push('at least one complete course and student-review score');
+  if (!teaching.hasEntry) missing.push('at least one complete teaching entry and student-review score');
   missing.push(...teaching.issues);
   missing.push(...getResearchRubric().issues);
   if (!el('input_service_complete')?.checked) missing.push('institutional-service completion declaration');
@@ -976,8 +997,8 @@ function calculateAll() {
   updateElementText('disp_teaching_hours', teachingLoad.hasEntry && teachingLoad.valid
     ? `${formatTeachingNumber(teachingLoad.contactHours)} contact hours` : '—');
   updateElementText('disp_teaching_hours_detail', teachingLoad.hasEntry && teachingLoad.valid
-    ? `${formatTeachingNumber(teachingLoad.theoryHours)} theory + ${formatTeachingNumber(teachingLoad.practicalHours)} practical`
-    : 'Theory + practical hours');
+    ? `${formatTeachingNumber(teachingLoad.theoryHours)} theory + ${formatTeachingNumber(teachingLoad.practicalHours)} practical/lab + ${formatTeachingNumber(teachingLoad.hospitalHours)} hospital teaching`
+    : 'Theory + practical/lab + hospital teaching hours');
   updateElementText('disp_teaching_credits', teachingReady ? formatTeachingNumber(teachingLoad.creditsTaught) : '—');
   updateElementText('disp_rank_target', appraisalState.profilePending ? '—'
     : teachingTarget.annualTarget === null ? 'Not assigned'
@@ -1152,18 +1173,20 @@ function calculateAll() {
     dossierCourseRows.replaceChildren();
     if (!teachingLoad.hasEntry || !teachingLoad.valid) {
       const row = document.createElement('tr'); const cell = document.createElement('td');
-      cell.colSpan = 6; cell.textContent = 'Complete course entries before the dossier is available'; row.appendChild(cell); dossierCourseRows.appendChild(row);
+      cell.colSpan = 7; cell.textContent = 'Complete teaching entries before the dossier is available'; row.appendChild(cell); dossierCourseRows.appendChild(row);
     } else teachingLoad.entered.forEach(course => {
       const row = document.createElement('tr');
-      [`${course.title} (${course.code})`, course.term, course.level, course.specialty,
-        `${course.theory}+${course.practical}`, `${Number(course.review).toFixed(1)}%`].forEach(value => {
+      [course.title, course.code || 'Not issued', course.term, course.level, course.specialty,
+        `${course.theory} theory + ${course.practical} practical${Number(course.hospitalHours || 0) > 0
+          ? ` + ${formatTeachingNumber(course.hospitalHours)} hospital h (${formatTeachingNumber(Number(course.hospitalHours) / 32)} pilot credit equivalent)` : ''}`,
+        `${Number(course.review).toFixed(1)}%`].forEach(value => {
         const cell = document.createElement('td'); cell.textContent = value; row.appendChild(cell);
       });
       dossierCourseRows.appendChild(row);
     });
   }
   updateElementText('dossier_teaching_detail', teachingLoad.hasEntry && teachingLoad.valid
-    ? `${teachingLoad.courseCount} faculty-entered courses; ${formatTeachingNumber(teachingLoad.theoryCredits)} theory + ${formatTeachingNumber(teachingLoad.practicalCredits)} practical = ${formatTeachingNumber(teachingLoad.creditsTaught)} credits and ${formatTeachingNumber(teachingLoad.contactHours)} contact hours. Contact-hour-weighted student review ${teachingLoad.reviewAverage.toFixed(1)}%; ${teachingTarget.annualTarget === null ? 'no pilot rank target' : teachingExempted ? 'approved exemption declared (review required)' : `${formatTeachingNumber(teachingLoad.creditsTaught)} / ${teachingTarget.annualTarget} annual pilot credits = ${(teachingTarget.loadFactor * 100).toFixed(1)}% workload factor`}; effective teaching ${attainmentA.toFixed(1)}%.`
+    ? `${teachingLoad.courseCount} faculty-entered teaching entries; ${formatTeachingNumber(teachingLoad.theoryCredits)} theory + ${formatTeachingNumber(teachingLoad.practicalCredits)} practical/lab + ${formatTeachingNumber(teachingLoad.hospitalHours)} hospital teaching hours (${formatTeachingNumber(teachingLoad.hospitalCreditEquivalents)} pilot practical-credit equivalents) = ${formatTeachingNumber(teachingLoad.creditsTaught)} pilot credits and ${formatTeachingNumber(teachingLoad.contactHours)} contact hours. Contact-hour-weighted student review ${teachingLoad.reviewAverage.toFixed(1)}%; ${teachingTarget.annualTarget === null ? 'no pilot rank target' : teachingExempted ? 'approved exemption declared (review required)' : `${formatTeachingNumber(teachingLoad.creditsTaught)} / ${teachingTarget.annualTarget} annual pilot credits = ${(teachingTarget.loadFactor * 100).toFixed(1)}% workload factor`}; effective teaching ${attainmentA.toFixed(1)}%.`
     : 'Complete course-level credit hours and student reviews pending.');
   renderDossierEvidence(researchRubric,
     { member: serviceMember, chair: serviceChair, policy: servicePolicy,
@@ -1235,7 +1258,7 @@ function syncProvisionalCertificate(readiness, profile, teachingLoad, researchRu
   const item = (count, singular, plural = `${singular}s`) => `${count} ${count === 1 ? singular : plural}`;
   const sumCounts = ids => ids.reduce((total, id) => total + getActivityCount(id), 0);
   updateElementText('objective_cert_teaching_summary', teachingLoad.valid && teachingLoad.hasEntry
-    ? `${item(teachingLoad.courseCount, 'course')}; ${formatTeachingNumber(teachingLoad.creditsTaught)} credit hours (${formatTeachingNumber(teachingLoad.contactHours)} contact hours); ${teachingLoad.reviewAverage.toFixed(1)}% contact-hour-weighted student review.`
+    ? `${item(teachingLoad.courseCount, 'teaching entry', 'teaching entries')}; ${formatTeachingNumber(teachingLoad.creditsTaught)} pilot credit hours (${formatTeachingNumber(teachingLoad.hospitalHours)} hospital teaching hours included; ${formatTeachingNumber(teachingLoad.contactHours)} total contact hours); ${teachingLoad.reviewAverage.toFixed(1)}% contact-hour-weighted student review.`
     : 'No complete course entered.');
   const researchItems = [
     [researchRubric.publicationCount, 'paper'],
@@ -1258,7 +1281,7 @@ function syncProvisionalCertificate(readiness, profile, teachingLoad, researchRu
   const clinical = el('objectiveCertificateClinical');
   if (clinical) clinical.hidden = profile.clinical <= 0;
   if (profile.clinical > 0) updateElementText('objective_cert_clinical_summary',
-    `${getTextValue('input_clin_service_mode') || 'Service mode not entered'}; ${clinicalAttainment.toFixed(1)}% aggregate clinical attainment. No patient identifiers included.`);
+    `${getTextValue('input_clin_service_mode') || 'Service mode not entered'}; ${getActivityCount('input_clin_opd_sessions')} OPD sessions and ${formatTeachingNumber(getInputValue('input_clin_patient_contact_hours'))} patient-contact hours reported; ${clinicalAttainment.toFixed(1)}% aggregate clinical attainment. No patient identifiers included.`);
   const status = el('objectiveCertificateStatus');
   if (status) {
     status.textContent = readiness.ready ? 'Faculty objective entries complete — self-declared, pending review'
@@ -1717,10 +1740,11 @@ window.exportCSV = function () {
     ['Reviewing officer', getTextValue('input_emp_reviewer')], ['Final authority', getTextValue('input_emp_final')],
     ['Pilot reviewer capacity', getTextValue('input_reviewer_role')],
     ['Pilot reviewer identifier', getTextValue('input_reviewer_name')],
-    [], ['Course', 'Code', 'Term', 'Level', 'Discipline', 'Theory credits', 'Practical credits', 'Student review'],
-    ...result.teachingLoad.entered.map(course => [course.title, course.code, course.term, course.level, course.specialty, course.theory, course.practical, course.review]),
+    [], ['Course / annual subject / module', 'Code / module ID if issued', 'Academic period', 'Level', 'Discipline', 'Theory credits', 'Practical credits', 'Hospital teaching hours', 'Student review'],
+    ...result.teachingLoad.entered.map(course => [course.title, course.code || 'Not issued', course.term, course.level, course.specialty, course.theory, course.practical, course.hospitalHours || '0', course.review]),
     ['Converted contact hours', result.teachingReady ? formatTeachingNumber(result.teachingLoad.contactHours) : 'Pending'],
     ['Credits taught', result.teachingReady ? formatTeachingNumber(result.teachingLoad.creditsTaught) : 'Pending'],
+    ['Hospital teaching credit equivalents (32 hours each)', result.teachingReady ? formatTeachingNumber(result.teachingLoad.hospitalCreditEquivalents) : 'Pending'],
     ['Contact-hour-weighted student-review mean', result.teachingReady ? `${result.teachingLoad.reviewAverage.toFixed(1)}%` : 'Pending'],
     ['Pilot rank target, credits per semester', result.teachingTarget.perSemesterTarget ?? 'Not assigned'],
     ['Pilot annual target, credits', result.teachingTarget.annualTarget ?? 'Not assigned'],
@@ -1743,6 +1767,8 @@ window.exportCSV = function () {
     ['Research original raw total', `${result.researchRubric.raw.toFixed(1)} / 200`],
     ['Research original score', `${result.attainmentB.toFixed(1)} / 100`],
     ['Research reviewer reference', getTextValue('input_research_review_ref')],
+    ['OPD service sessions (aggregate; non-scoring)', getActivityCount('input_clin_opd_sessions')],
+    ['Patient-contact hours (aggregate; non-scoring)', getInputValue('input_clin_patient_contact_hours')],
     [], ['Domain', 'Weighted points'], ['Teaching', result.weightedA.toFixed(2)], ['Research', result.weightedB.toFixed(2)],
     ['Institutional service', result.weightedC.toFixed(2)], ['Officer assessment / CPD', result.weightedD.toFixed(2)],
     ['Clinical / patient care service', result.weightedE.toFixed(2)], ['Valid penalty', result.penalty],

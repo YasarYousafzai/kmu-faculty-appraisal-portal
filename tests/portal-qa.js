@@ -53,18 +53,19 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   await page.goto(`http://127.0.0.1:${server.address().port}/`, { waitUntil: 'networkidle' });
 
   assert(await page.locator('.teaching-course-card').count() === 1, 'Teaching must start with one course.');
-  assert(await page.locator('#addTeachingCourseButton').innerText() === '+ Add new course (maximum 10)',
-    'The add-course option must be clearly labelled.');
+  assert(await page.locator('#addTeachingCourseButton').innerText() === '+ Add teaching entry (maximum 10)',
+    'The add-entry option must be clearly labelled.');
   assert(await page.locator('.teaching-course-card [data-course-field="theory"]').evaluateAll(nodes => nodes.every(node => node.value === '0')) &&
-    await page.locator('.teaching-course-card [data-course-field="practical"]').evaluateAll(nodes => nodes.every(node => node.value === '0')),
-  'Theory and practical credits should default to zero in every starter course.');
+    await page.locator('.teaching-course-card [data-course-field="practical"]').evaluateAll(nodes => nodes.every(node => node.value === '0')) &&
+    await page.locator('.teaching-course-card [data-course-field="hospitalHours"]').evaluateAll(nodes => nodes.every(node => node.value === '0')),
+  'Theory, practical and hospital-teaching hours should default to zero in every starter entry.');
   assert((await result(page)).teachingLoad.entered.length === 0,
     'Untouched zero-credit starter courses should not be treated as incomplete entries.');
   assert(await page.locator('[id^="input_pub_"]').count() === 6, 'Six publication-count rows required.');
   assert(await page.locator('[id^="input_grant_"]').count() === 6,
     'Six original grant and submitted-proposal count rows required.');
-  assert(await page.locator('#input_publications_ref').getAttribute('placeholder') === 'Example: Google Scholar link',
-    'The publication-reference example should use a Google Scholar link.');
+  assert((await page.locator('#input_publications_ref').getAttribute('placeholder')).includes('ORCID'),
+    'The publication-reference example should accept a Google Scholar profile or ORCID iD.');
   assert(await page.locator('#input_books_ref, #input_grants_ref, #input_supervision_ref, #input_innovation_ref').count() === 0,
     'B2–B5 evidence-reference fields should not remain.');
   assert(await page.locator('.research-output-card, #input_new_grant_title').count() === 0,
@@ -166,7 +167,7 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   const certificate = page.locator('#objectiveCertificatePrintable');
   assert(await certificate.isVisible(), 'The provisional objective certificate must appear on Section E.');
   const certificateText = await certificate.textContent();
-  for (const fragment of ['Synthetic Professor', '2 courses', '4 papers', '3 grant/proposal activities', 'Employee declaration and sign-off']) {
+  for (const fragment of ['Synthetic Professor', '2 teaching entries', '4 papers', '3 grant/proposal activities', 'Employee declaration and sign-off']) {
     assert(certificateText.includes(fragment), `The certificate is missing ${fragment}.`);
   }
   assert(await certificate.locator('#objective_cert_signatory').innerText() === 'Synthetic Professor',
@@ -263,6 +264,8 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   await set(page, '#input_clin_volume', 91);
   await set(page, '#input_clin_oncall', 96);
   await set(page, '#input_clin_teaching', 86);
+  await set(page, '#input_clin_opd_sessions', 120);
+  await set(page, '#input_clin_patient_contact_hours', 480.5);
   await page.evaluate(() => window.switchTab('tab-provisional'));
   assert(await page.locator('#provisional_clinical_row').isVisible(),
     'Clinical profiles must include patient care in the Section E objective dossier.');
@@ -275,7 +278,8 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
     'Clinical evidence must appear for a clinical profile.');
   const clinicalSummary = await page.locator('#dossierClinicalRows').textContent();
   const clinicalEvidence = await page.locator('#dossierClinicalEvidence').textContent();
-  assert(clinicalEvidence.includes('SYNTHETIC/UNIT-ROSTER') && clinicalSummary.includes('91.0%'),
+  assert(clinicalEvidence.includes('SYNTHETIC/UNIT-ROSTER') && clinicalSummary.includes('91.0%')
+    && clinicalEvidence.includes('120 OPD sessions') && clinicalEvidence.includes('480.5 patient-contact hours'),
     'Patient-care evidence is missing from the dossier.');
 
   await page.evaluate(() => window.saveAndReturnLater());
@@ -293,6 +297,32 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   await page.reload({ waitUntil: 'networkidle' });
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 2), 'Mobile layout scrolls horizontally.');
   assert(errors.length === 0, `Browser errors:\n${errors.join('\n')}`);
+
+  const annualPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  await annualPage.goto(`http://127.0.0.1:${server.address().port}/`, { waitUntil: 'networkidle' });
+  await set(annualPage, '#input_emp_name', 'Synthetic MBBS Teacher');
+  await set(annualPage, '#input_emp_desig', 'Professor');
+  await set(annualPage, '#input_emp_dept', 'KMU Institute of Medical Sciences (KIMS), Kohat');
+  await set(annualPage, '#input_emp_cadre', 'BPS');
+  await fillCourse(annualPage, 1, { title: 'Annual Medicine module', code: '',
+    specialty: 'Medicine', theory: '0', practical: '0', hospitalHours: '64', review: '88',
+    term: 'MBBS Annual Year 3', level: 'MBBS' });
+  let annual = await result(annualPage);
+  near(annual.teachingLoad.hospitalCreditEquivalents, 2);
+  near(annual.teachingLoad.contactHours, 64);
+  assert(annual.teachingLoad.valid && annual.teachingLoad.creditsTaught === 2,
+    'A no-code annual MBBS module must score its hospital teaching time.');
+  assert((await annualPage.locator('#dossierCourseRows').innerText()).includes('Not issued'),
+    'A non-issued module code must display honestly in the dossier.');
+  await fillCourse(annualPage, 1, { practical: '1' });
+  annual = await result(annualPage);
+  assert(!annual.teachingLoad.valid && annual.teachingLoad.issues.some(issue => issue.includes('do not enter practical and hospital hours together')),
+    'A teaching entry must not score practical credits and hospital hours twice.');
+  await fillCourse(annualPage, 1, { practical: '0' });
+  const annualDraft = await annualPage.evaluate(() => window.KMUCalculator.collectDraft('tab-teaching'));
+  assert(annualDraft.teachingCourses[0].hospitalHours === '64' && annualDraft.teachingCourses[0].code === '',
+    'The annual hospital-teaching evidence must persist without inventing a module code.');
+  await annualPage.close();
 
   // Authenticated portal walkthrough with synthetic, intercepted API results.
   // No test request reaches Supabase, and no real account is used.

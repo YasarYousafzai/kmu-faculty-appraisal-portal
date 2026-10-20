@@ -19,8 +19,10 @@ const draft = {
     finalAuthority: 'Vice Chancellor', committeeMember1: 'Fictional Committee Member',
     clinicalEvidenceRef: ''
   },
-  values: { input_actual_wu: '99', input_pub_high_lead: '1', input_clin_admin: '80', input_reviewer_secret: 'No' },
-  teachingCourses: [{ title: 'Fictional course', theory: '1', practical: '0', review: '85' }],
+  values: { input_actual_wu: '99', input_pub_high_lead: '1', input_clin_admin: '80',
+    input_clin_opd_sessions: '120', input_clin_patient_contact_hours: '480.5', input_reviewer_secret: 'No' },
+  teachingCourses: [{ title: 'Annual MBBS module', code: '', term: 'MBBS Annual Year 3',
+    level: 'MBBS', specialty: 'Medicine', theory: '0', practical: '0', hospitalHours: '64', review: '85' }],
   research: { text: { input_publications_ref: 'https://scholar.google.com/example', input_research_review_ref: 'Never' },
     complete: true, reviewConfirmed: true },
   reviewStage: { reviewerName: 'Never upload', objectiveSubmitted: true },
@@ -41,7 +43,8 @@ const context = {
     addEventListener(type, callback) { if (type === 'DOMContentLoaded') readyCallback = callback; }
   },
   appraisalState: { activeWeights: { teaching: 30, research: 30, service: 20, clinical: 0 } },
-  NUMERIC_INPUT_IDS: ['input_actual_wu', 'input_pub_high_lead', 'input_clin_admin'],
+  NUMERIC_INPUT_IDS: ['input_actual_wu', 'input_pub_high_lead', 'input_clin_admin',
+    'input_clin_opd_sessions', 'input_clin_patient_contact_hours'],
   Blob, Date, fetch: async () => { networkCalls += 1; throw new Error('No network expected'); },
   console
 };
@@ -84,6 +87,10 @@ assert.equal(payload.meta.finalAuthority, 'Vice Chancellor');
 assert.equal(payload.meta.committeeMember1, 'Fictional Committee Member');
 assert.equal(payload.values.input_actual_wu, undefined);
 assert.equal(payload.values.input_reviewer_secret, undefined);
+assert.equal(payload.values.input_clin_opd_sessions, '120');
+assert.equal(payload.values.input_clin_patient_contact_hours, '480.5');
+assert.equal(payload.teachingCourses[0].hospitalHours, '64');
+assert.equal(payload.teachingCourses[0].code, '');
 assert.equal(payload.research.text.input_research_review_ref, undefined);
 assert.equal(payload.research.reviewConfirmed, undefined);
 assert.equal(payload.provisional.ready, true);

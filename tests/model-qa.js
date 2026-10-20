@@ -80,7 +80,7 @@ function mockTeachingCards(records) {
     }));
   };
 }
-const blankCourse = { title: '', code: '', specialty: '', theory: '0', practical: '0',
+const blankCourse = { title: '', code: '', specialty: '', theory: '0', practical: '0', hospitalHours: '0',
   review: '', term: '', level: '' };
 mockTeachingCards([blankCourse, blankCourse, blankCourse]);
 let teachingLoad = getTeachingLoad();
@@ -90,7 +90,7 @@ assert.equal(teachingLoad.hasEntry, false, 'Untouched course cards cannot satisf
 mockTeachingCards([blankCourse, { ...blankCourse, title: 'Anatomy' }, blankCourse]);
 teachingLoad = getTeachingLoad();
 assert.equal(teachingLoad.issues.length, 1, 'A partially entered course must still be flagged.');
-assert.match(teachingLoad.issues[0], /course 2/, 'The error should identify the actual course card.');
+assert.match(teachingLoad.issues[0], /teaching entry 2/, 'The error should identify the actual teaching card.');
 mockTeachingCards([{ ...blankCourse, title: 'Anatomy', code: 'ANAT-301',
   specialty: 'Anatomy', theory: '1', review: '80', term: 'Semester 3',
   level: 'Undergraduate' }, blankCourse, blankCourse]);
@@ -99,6 +99,17 @@ assert.equal(teachingLoad.issues.length, 0, 'Blank starter cards should not inva
 assert.equal(teachingLoad.courseCount, 1);
 assert.equal(teachingLoad.creditsTaught, 1);
 assert.equal(teachingLoad.reviewAverage, 80);
+mockTeachingCards([{ ...blankCourse, title: 'MBBS annual Medicine module',
+  specialty: 'Medicine', theory: '0', hospitalHours: '64', review: '84',
+  term: 'MBBS Annual Year 3', level: 'MBBS' }]);
+teachingLoad = getTeachingLoad();
+assert.equal(teachingLoad.valid, true, 'An annual MBBS module may have no issued course code.');
+assert.equal(teachingLoad.hospitalCreditEquivalents, 2, '64 hospital teaching hours equal two pilot practical credits.');
+assert.equal(teachingLoad.creditsTaught, 2);
+assert.equal(teachingLoad.contactHours, 64);
+mockTeachingCards([{ ...blankCourse, title: 'Double counted', specialty: 'Medicine',
+  practical: '1', hospitalHours: '32', review: '80', term: 'MBBS Annual Year 3', level: 'MBBS' }]);
+assert.equal(getTeachingLoad().valid, false, 'The same entry cannot claim practical credits and hospital teaching hours.');
 
 for (const profile of Object.values(PROFILES)) {
   assert.equal(profile.teachingWeight + profile.researchWeight + profile.serviceWeight
@@ -117,6 +128,10 @@ assert.equal(weightedStudentReviews([
   { theory: 2, practical: 0, review: 80 },
   { theory: 0, practical: 1, review: 100 }
 ]), 90, 'One practical credit represents 32 hours, equivalent to two theory credits.');
+assert.equal(weightedStudentReviews([
+  { theory: 1, practical: 0, hospitalHours: 0, review: 80 },
+  { theory: 0, practical: 0, hospitalHours: 32, review: 100 }
+]), 93.33333333333333, 'Hospital teaching hours must weight student reviews by actual contact time.');
 assert.equal(weightedStudentReviews([]), 0, 'No courses must not divide by zero.');
 assert.equal(weightedStudentReviews([{ theory: 0, practical: 0, review: 90 }]), 0,
   'A zero-credit course must not contribute a score or divide by zero.');

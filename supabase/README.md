@@ -11,9 +11,16 @@ independently recompute the KMU appraisal formula or verify evidence.
 1. Use a dedicated Supabase project and complete KMU privacy/security and
    retention review before entering any real personnel or patient information.
 2. Review and run `migrations/202610140001_kmu_pilot_accounts.sql` **once**, then
-   `migrations/202610150001_employee_profiles.sql` **once**, in that order in
+   `migrations/202610150001_employee_profiles.sql` **once**, then
+   `migrations/202610200001_annual_clinical_evidence.sql` **once**, in that order in
    Supabase SQL Editor. The second migration adds self-declared employee job
    fields to existing profiles without backfilling or changing submitted cases.
+   The third only widens the faculty-payload validator and submission check to
+   accept annual/module teaching without an issued code, hospital teaching
+   hours, OPD session counts and aggregate patient-contact hours. It does not
+   rewrite stored cases, scores, roles, RLS policies or staff profiles.
+   Apply and test the third migration **before** publishing its matching
+   frontend; otherwise saving the new evidence fields will fail.
    Existing invited/registered users must complete their employee profile before
    saving another cloud appraisal draft. Neither migration creates an
    administrator. Keep project
@@ -56,8 +63,10 @@ independently recompute the KMU appraisal formula or verify evidence.
    controls. A portal role grant is operational access, not a KMU statutory
    appointment or substitute for a current reporting order. Passwords are not
    shown in the administrator roster.
-5. Run `tests/001_rls_synthetic.sql` and the employee-profile rollback-only
-   suite only in an **empty, isolated pilot database** after both migrations.
+5. Run `tests/001_rls_synthetic.sql` and `tests/002_employee_profiles_synthetic.sql`
+   only in an **empty, isolated pilot database** after all migrations. Run
+   `tests/003_annual_clinical_evidence_synthetic.sql` to check the additive
+   validator; it creates no faculty records and also ends in `ROLLBACK`.
    They create synthetic `example.invalid` Auth accounts and end
    in `ROLLBACK`. The original 14 October 2026 baseline test completed without
    errors before the employee-profile migration; a subsequent query confirmed
@@ -65,9 +74,31 @@ independently recompute the KMU appraisal formula or verify evidence.
    remained. Re-run the updated suites after applying the new migration. This
    does not replace a KMU production audit.
 
-The Supabase default email service is limited to project-team recipients and is
-not suitable for broader faculty invitations. Configure and review a dedicated
-SMTP service before expanding registration; keep email confirmation enabled.
+The Supabase default email service is limited to project-team recipients and
+two authentication emails per hour project-wide. It is not suitable for broader
+faculty registration. The lowest-cost practical path is to keep the pilot
+Supabase project and connect a reviewed, free-tier transactional SMTP sender
+under a domain the sender is authorized to use. Verify the sending domain's
+DNS and test one confirmation and one password-reset message. For example,
+Resend lists a free tier of 3,000 emails/month with a 100/day cap; Brevo lists
+300/day with SMTP relay on its free tier (branding applies). Provider terms
+and quotas can change. In Supabase, configure **Authentication → SMTP
+Settings** with the provider's credentials, then adjust the project's Auth
+email-rate limit only to a value within the provider's verified quota. Keep
+email confirmation enabled. Never place SMTP credentials, a service-role key
+or raw passwords in this public repository or GitHub Pages. Agree a KMU-owned
+sender/domain and privacy review before inviting actual faculty; a personal
+Gmail address is not an institutional sender policy.
+
+The 32 hospital-teaching-hours = one practical-credit equivalent is a **pilot
+calculation**, not an approved KMU workload rule. A teaching entry may use
+practical/lab credits or hospital teaching hours, not both. OPD sessions and
+patient-contact hours are aggregate clinical evidence only, with no extra
+automatic points. Avoid entering patient identifiers or claiming the same
+hours as both teaching and service. Annual MBBS subjects and teaching modules
+do not require an invented course code; enter the actual title and academic
+period. Existing saved cases with no hospital-hours field calculate as zero
+hospital hours, so this additive change does not alter their scores.
 
 The public RPC contract includes
 `save_employee_profile(p_display_name, p_substantive_designation,
