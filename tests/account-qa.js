@@ -111,8 +111,9 @@ function authHarness(hash, scenario = {}) {
     'employeeProfileSaveMessage',
     'appraisalWorkspace', 'stageBanner', 'profileSnapshotNotice', 'myCaseList', 'assessorQueue',
     'accountDesignation', 'accountLeadershipRole', 'accountInstitute', 'accountCadre',
+    'accountScholarIdentifier',
     'profileDisplayName', 'profileDesignation', 'profileLeadershipRole', 'profileInstitute',
-    'profileServiceCadre', 'input_emp_name', 'input_emp_desig', 'input_leadership_role',
+    'profileServiceCadre', 'profileScholarIdentifier', 'input_emp_name', 'input_emp_desig', 'input_leadership_role',
     'input_emp_dept', 'input_emp_cadre'];
   const nodes = Object.fromEntries(ids.map(id => [id, {
     hidden: false, textContent: '', value: '', className: '', disabled: false, handlers: {},
@@ -140,7 +141,8 @@ function authHarness(hash, scenario = {}) {
     id: user.id, display_name: 'Registered Faculty', substantive_designation: 'Professor',
     leadership_role: 'None',
     institute: 'KMU Institute of Basic Medical Sciences (KMU-IBMS), Peshawar',
-    service_cadre: 'BPS', profile_updated_at: '2026-10-15T00:00:00Z'
+    service_cadre: 'BPS', scholar_identifier: '0000-0002-1825-0097',
+    profile_updated_at: '2026-10-15T00:00:00Z'
   };
   let currentProfileRows = scenario.profileRows ?? [profile];
   const localContext = {
@@ -182,7 +184,7 @@ function authHarness(hash, scenario = {}) {
           text: async () => JSON.stringify({ message: 'Profile access denied' }) };
         result = currentProfileRows;
       }
-      else if (url.includes('/rest/v1/rpc/save_employee_profile')) {
+      else if (url.includes('/rest/v1/rpc/save_employee_profile_with_scholar')) {
         if (scenario.profileSaveError) return { ok: false, status: 400,
           text: async () => JSON.stringify({ message: 'Profile save rejected' }) };
         const submitted = JSON.parse(options.body);
@@ -190,7 +192,8 @@ function authHarness(hash, scenario = {}) {
           id: user.id, display_name: submitted.p_display_name,
           substantive_designation: submitted.p_substantive_designation,
           leadership_role: submitted.p_leadership_role,
-          institute: submitted.p_institute, service_cadre: submitted.p_service_cadre
+          institute: submitted.p_institute, service_cadre: submitted.p_service_cadre,
+          scholar_identifier: submitted.p_scholar_identifier
         };
         if (!scenario.profileSaveNotPersisted) currentProfileRows = [result];
       }
@@ -267,6 +270,7 @@ function authHarness(hash, scenario = {}) {
   ordinary.nodes.accountLeadershipRole.value = 'None';
   ordinary.nodes.accountInstitute.value = 'KMU Institute of Basic Medical Sciences (KMU-IBMS), Peshawar';
   ordinary.nodes.accountCadre.value = 'BPS';
+  ordinary.nodes.accountScholarIdentifier.value = 'https://scholar.google.com/citations?user=fictional';
   await ordinary.nodes.accountSignUp.handlers.click({ preventDefault() {} });
   const signup = ordinary.calls.find(call => call.url.includes('/auth/v1/signup?redirect_to='));
   assert.ok(signup,
@@ -274,7 +278,8 @@ function authHarness(hash, scenario = {}) {
   const signupBody = JSON.parse(signup.options.body);
   assert.deepEqual(signupBody.data, {
     display_name: 'Pilot Faculty', substantive_designation: 'Professor', leadership_role: 'None',
-    institute: 'KMU Institute of Basic Medical Sciences (KMU-IBMS), Peshawar', service_cadre: 'BPS'
+    institute: 'KMU Institute of Basic Medical Sciences (KMU-IBMS), Peshawar', service_cadre: 'BPS',
+    scholar_identifier: 'https://scholar.google.com/citations?user=fictional'
   }, 'Job-related details should be captured at registration, without any assessor or administrator role');
   assert.equal(Object.hasOwn(signupBody.data, 'role'), false, 'The user cannot self-select an account role');
   assert.match(ordinary.nodes.accountMessage.textContent, /Check your email for a confirmation link/);
@@ -310,6 +315,8 @@ function authHarness(hash, scenario = {}) {
   assert.equal(signed.account.profileComplete, true, 'The saved employee profile is loaded');
   assert.equal(signed.account.profile.id, signed.user.id, 'Loaded profile belongs to signed-in user');
   assert.equal(signed.nodes.profileDisplayName.value, 'Registered Faculty', 'Profile edit form is hydrated');
+  assert.equal(signed.nodes.profileScholarIdentifier.value, '0000-0002-1825-0097',
+    'The scholarly identifier is hydrated from the saved employee profile.');
   assert.equal(signed.account.caseOpen, false, 'Sign-in must not silently open or upload an appraisal');
   assert.equal(signed.nodes.appraisalWorkspace.hidden, true, 'Employee dashboard hides the appraisal until a case opens');
   assert.equal(signed.appliedProfiles.length, 0, 'No registration data is copied into a case without user action');
@@ -342,14 +349,17 @@ function authHarness(hash, scenario = {}) {
   assert.equal(signed.nodes.input_emp_desig.disabled, true, 'Appraisal designation is read-only for the signed-in employee');
   signed.nodes.profileDisplayName.value = 'Registered Faculty Updated';
   signed.nodes.profileDesignation.value = 'Associate Professor';
+  signed.nodes.profileScholarIdentifier.value = 'https://orcid.org/0000-0002-1825-0097';
   await signed.nodes.accountSaveProfile.handlers.click({ preventDefault() {} });
-  const profileSave = signed.calls.find(call => call.url.includes('/rest/v1/rpc/save_employee_profile'));
+  const profileSave = signed.calls.find(call => call.url.includes('/rest/v1/rpc/save_employee_profile_with_scholar'));
   assert.ok(profileSave, 'Employee profile edits use the owner-checked save RPC');
   const profileSaveBody = JSON.parse(profileSave.options.body);
   assert.equal(profileSaveBody.p_display_name, 'Registered Faculty Updated');
   assert.equal(profileSaveBody.p_substantive_designation, 'Associate Professor');
+  assert.equal(profileSaveBody.p_scholar_identifier, 'https://orcid.org/0000-0002-1825-0097');
   assert.equal(Object.hasOwn(profileSaveBody, 'p_user_id'), false, 'Profile-save RPC does not accept a target user ID');
   assert.equal(signed.account.profile.display_name, 'Registered Faculty Updated', 'Saved profile reloads');
+  assert.equal(signed.account.profile.scholar_identifier, 'https://orcid.org/0000-0002-1825-0097');
   assert.match(signed.nodes.employeeProfileSaveMessage.textContent, /Profile saved to your employee account/,
     'Profile-save confirmation appears beside the save button');
   assert.equal(signed.nodes.input_emp_name.value, 'Registered Faculty',

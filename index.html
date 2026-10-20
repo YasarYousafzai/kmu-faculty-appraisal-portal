@@ -111,6 +111,10 @@
           <label for="accountCadre">Pay scale &amp; service cadre *
             <select id="accountCadre"></select>
           </label>
+          <label for="accountScholarIdentifier">Google Scholar profile URL or ORCID iD (optional)
+            <button type="button" class="help-tip" aria-label="Help with scholarly profile" data-help="Enter a public Google Scholar profile URL or your ORCID iD, if you have one. This helps identify your publications but gives no points by itself. Leave blank if you do not have either.">?</button>
+            <input id="accountScholarIdentifier" type="text" maxlength="240" placeholder="e.g., https://scholar.google.com/citations?user=… or 0000-0002-1825-0097">
+          </label>
         </div>
         <button type="button" class="btn btn-secondary" id="accountSignUp">Register employee account</button>
       </details>
@@ -162,6 +166,10 @@
           </label>
           <label for="profileServiceCadre">Pay scale &amp; service cadre *
             <select id="profileServiceCadre"></select>
+          </label>
+          <label for="profileScholarIdentifier">Google Scholar profile URL or ORCID iD (optional)
+            <button type="button" class="help-tip" aria-label="Help with scholarly profile" data-help="Enter a public Google Scholar profile URL or your ORCID iD, if you have one. This helps identify your publications but gives no points by itself. Leave blank if you do not have either.">?</button>
+            <input id="profileScholarIdentifier" type="text" maxlength="240" placeholder="e.g., https://scholar.google.com/citations?user=… or 0000-0002-1825-0097">
           </label>
         </div>
         <div class="account-actions"><button type="button" class="btn btn-secondary" id="accountSaveProfile">Save employee profile</button></div>
@@ -1943,7 +1951,7 @@
   </footer>
 
   <script src="app.js?v=20261020-annual-clinical-evidence"></script>
-  <script src="account.js?v=20261020-email-limit-guidance"></script>
+  <script src="account.js?v=20261020-scholar-profile"></script>
 
   <div style="display:none;">
     <span id="top_pip_status"></span>

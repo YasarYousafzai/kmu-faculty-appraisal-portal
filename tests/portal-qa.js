@@ -300,10 +300,21 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
 
   const annualPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   await annualPage.goto(`http://127.0.0.1:${server.address().port}/`, { waitUntil: 'networkidle' });
-  await set(annualPage, '#input_emp_name', 'Synthetic MBBS Teacher');
-  await set(annualPage, '#input_emp_desig', 'Professor');
-  await set(annualPage, '#input_emp_dept', 'KMU Institute of Medical Sciences (KIMS), Kohat');
-  await set(annualPage, '#input_emp_cadre', 'BPS');
+  await annualPage.evaluate(() => window.KMUCalculator.applyEmployeeProfile({
+    display_name: 'Synthetic MBBS Teacher', substantive_designation: 'Professor',
+    leadership_role: 'None', institute: 'KMU Institute of Medical Sciences (KIMS), Kohat',
+    service_cadre: 'BPS', scholar_identifier: '0000-0002-1825-0097'
+  }));
+  assert(await annualPage.locator('#input_publications_ref').inputValue() === '0000-0002-1825-0097',
+    'A new appraisal should prefill an optional employee ORCID identifier in the research reference.');
+  await set(annualPage, '#input_publications_ref', 'Existing case reference');
+  await annualPage.evaluate(() => window.KMUCalculator.applyEmployeeProfile({
+    display_name: 'Synthetic MBBS Teacher', substantive_designation: 'Professor',
+    leadership_role: 'None', institute: 'KMU Institute of Medical Sciences (KIMS), Kohat',
+    service_cadre: 'BPS', scholar_identifier: 'https://scholar.google.com/citations?user=other'
+  }));
+  assert(await annualPage.locator('#input_publications_ref').inputValue() === 'Existing case reference',
+    'Refreshing job details must not overwrite a previously entered research reference.');
   await fillCourse(annualPage, 1, { title: 'Annual Medicine module', code: '',
     specialty: 'Medicine', theory: '0', practical: '0', hospitalHours: '64', review: '88',
     term: 'MBBS Annual Year 3', level: 'MBBS' });

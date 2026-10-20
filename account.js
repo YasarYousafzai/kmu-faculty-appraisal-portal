@@ -139,7 +139,8 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
       substantive_designation: $(id('accountDesignation', 'profileDesignation'))?.value || '',
       leadership_role: $(id('accountLeadershipRole', 'profileLeadershipRole'))?.value || 'None',
       institute: $(id('accountInstitute', 'profileInstitute'))?.value || '',
-      service_cadre: $(id('accountCadre', 'profileServiceCadre'))?.value || ''
+      service_cadre: $(id('accountCadre', 'profileServiceCadre'))?.value || '',
+      scholar_identifier: ($(id('accountScholarIdentifier', 'profileScholarIdentifier'))?.value || '').trim()
     };
   }
   function validateProfile(profile) {
@@ -148,6 +149,10 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     if (!allowedOption('input_leadership_role', profile.leadership_role)) throw new Error('Choose a valid additional leadership appointment.');
     if (!allowedOption('input_emp_dept', profile.institute)) throw new Error('Choose your current KMU institute or unit.');
     if (!allowedOption('input_emp_cadre', profile.service_cadre)) throw new Error('Choose BPS, TTS or Fixed Pay.');
+    if (profile.scholar_identifier && (profile.scholar_identifier.length > 240
+      || !/^(?:https:\/\/scholar\.google\.com\/citations\?[^\s]+|(?:https:\/\/orcid\.org\/)?\d{4}-\d{4}-\d{4}-[\dX]{4})$/i.test(profile.scholar_identifier))) {
+      throw new Error('Enter a Google Scholar citations URL or an ORCID iD/URL in 0000-0000-0000-0000 format, or leave it blank.');
+    }
     return profile;
   }
   function profileIsComplete(profile) {
@@ -158,7 +163,8 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
       id: row?.id || user?.id || '', display_name: row?.display_name || '',
       substantive_designation: row?.substantive_designation || '',
       leadership_role: row?.leadership_role ?? '', institute: row?.institute || '',
-      service_cadre: row?.service_cadre || '', profile_updated_at: row?.profile_updated_at || null
+      service_cadre: row?.service_cadre || '', scholar_identifier: row?.scholar_identifier || '',
+      profile_updated_at: row?.profile_updated_at || null
     };
   }
   function ownProfileFromRows(rows, user) {
@@ -172,7 +178,8 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     const values = {
       profileDisplayName: profile.display_name || '', profileDesignation: profile.substantive_designation || '',
       profileLeadershipRole: profile.leadership_role || 'None', profileInstitute: profile.institute || '',
-      profileServiceCadre: profile.service_cadre || ''
+      profileServiceCadre: profile.service_cadre || '',
+      profileScholarIdentifier: profile.scholar_identifier || ''
     };
     Object.entries(values).forEach(([id, value]) => { if ($(id)) $(id).value = value; });
   }
@@ -258,7 +265,7 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     if (!account.user?.id) throw new Error('Sign in before loading your employee profile.');
     const view = captureView();
     const rows = await rest('app_user_profiles',
-      `select=id,display_name,substantive_designation,leadership_role,institute,service_cadre,profile_updated_at&id=eq.${encode(account.user.id)}`);
+      `select=id,display_name,substantive_designation,leadership_role,institute,service_cadre,scholar_identifier,profile_updated_at&id=eq.${encode(account.user.id)}`);
     ensureCurrent(view);
     account.profile = ownProfileFromRows(rows, account.user);
     account.profileComplete = profileIsComplete(account.profile);
@@ -269,18 +276,19 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     if (!account.user?.id || !account.session?.access_token) throw new Error('Sign in before saving your employee profile.');
     const view = captureView();
     const profile = validateProfile(readProfileInputs('employee'));
-    const saved = first(await rpc('save_employee_profile', {
+    const saved = first(await rpc('save_employee_profile_with_scholar', {
       p_display_name: profile.display_name,
       p_substantive_designation: profile.substantive_designation,
       p_leadership_role: profile.leadership_role,
       p_institute: profile.institute,
-      p_service_cadre: profile.service_cadre
+      p_service_cadre: profile.service_cadre,
+      p_scholar_identifier: profile.scholar_identifier
     }));
     ensureCurrent(view);
     if (!saved?.id || saved.id !== account.user.id) throw new Error('The database did not confirm your employee profile.');
     const persisted = await loadMyProfile();
     ensureCurrent(view);
-    if (['display_name', 'substantive_designation', 'leadership_role', 'institute', 'service_cadre']
+    if (['display_name', 'substantive_designation', 'leadership_role', 'institute', 'service_cadre', 'scholar_identifier']
       .some(field => persisted?.[field] !== profile[field])) {
       throw new Error('The saved profile could not be verified after reloading. Please retry or contact the portal administrator.');
     }
@@ -1043,7 +1051,7 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     }));
     $('accountPasswordSetupForm')?.addEventListener('submit', safeAction(() => finishPasswordSetup()));
     ['profileDisplayName', 'profileDesignation', 'profileLeadershipRole',
-      'profileInstitute', 'profileServiceCadre'].forEach(id => {
+      'profileInstitute', 'profileServiceCadre', 'profileScholarIdentifier'].forEach(id => {
       $(id)?.addEventListener('input', () => setProfileSaveMessage('Unsaved profile changes.'));
       $(id)?.addEventListener('change', () => setProfileSaveMessage('Unsaved profile changes.'));
     });
@@ -1088,7 +1096,7 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
       clearPrivatePanels();
       populateEmployeeProfileForm();
       ['accountEmail', 'accountPassword', 'accountDisplayName', 'accountDesignation',
-        'accountInstitute', 'accountCadre'].forEach(id => { if ($(id)) $(id).value = ''; });
+        'accountInstitute', 'accountCadre', 'accountScholarIdentifier'].forEach(id => { if ($(id)) $(id).value = ''; });
       if ($('accountLeadershipRole')) $('accountLeadershipRole').value = 'None';
       setObjectiveReadonly(false); setReviewReadonly(false); window.KMUCalculator.loadBlank();
       render(); setText('lastSavedIndicator', 'Local demo — no cloud case open');

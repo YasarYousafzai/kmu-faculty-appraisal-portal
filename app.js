@@ -1818,6 +1818,9 @@ function applyEmployeeProfile(profile) {
   }
   setVal('input_emp_name', safeString(profile.display_name, 160));
   fields.forEach(([id, value]) => setVal(id, value));
+  if (profile.scholar_identifier && !getTextValue('input_publications_ref')) {
+    setVal('input_publications_ref', safeString(profile.scholar_identifier, 240));
+  }
   updateReportingLine(); autoSelectProfileAndWeights(); calculateAll();
   return true;
 }

@@ -12,14 +12,18 @@ independently recompute the KMU appraisal formula or verify evidence.
    retention review before entering any real personnel or patient information.
 2. Review and run `migrations/202610140001_kmu_pilot_accounts.sql` **once**, then
    `migrations/202610150001_employee_profiles.sql` **once**, then
-   `migrations/202610200001_annual_clinical_evidence.sql` **once**, in that order in
+   `migrations/202610200001_annual_clinical_evidence.sql` **once**, then
+   `migrations/202610200002_scholar_identifier.sql` **once**, in that order in
    Supabase SQL Editor. The second migration adds self-declared employee job
    fields to existing profiles without backfilling or changing submitted cases.
    The third only widens the faculty-payload validator and submission check to
    accept annual/module teaching without an issued code, hospital teaching
    hours, OPD session counts and aggregate patient-contact hours. It does not
    rewrite stored cases, scores, roles, RLS policies or staff profiles.
-   Apply and test the third migration **before** publishing its matching
+   The fourth adds an optional self-declared Google Scholar URL or ORCID iD/URL
+   to employee profiles and a new owner-checked save RPC; it does not alter
+   previously saved cases or the five-field registration requirements.
+   Apply and test both new migrations **before** publishing their matching
    frontend; otherwise saving the new evidence fields will fail.
    Existing invited/registered users must complete their employee profile before
    saving another cloud appraisal draft. Neither migration creates an
@@ -67,6 +71,9 @@ independently recompute the KMU appraisal formula or verify evidence.
    only in an **empty, isolated pilot database** after all migrations. Run
    `tests/003_annual_clinical_evidence_synthetic.sql` to check the additive
    validator; it creates no faculty records and also ends in `ROLLBACK`.
+   Run `tests/004_scholar_identifier_synthetic.sql` to check the new
+   scholar-profile RPC with a rollback-only fictional account before inviting
+   real users.
    They create synthetic `example.invalid` Auth accounts and end
    in `ROLLBACK`. The original 14 October 2026 baseline test completed without
    errors before the employee-profile migration; a subsequent query confirmed
@@ -103,6 +110,9 @@ hospital hours, so this additive change does not alter their scores.
 The public RPC contract includes
 `save_employee_profile(p_display_name, p_substantive_designation,
 p_leadership_role, p_institute, p_service_cadre)` and
+`save_employee_profile_with_scholar(p_display_name,
+p_substantive_designation, p_leadership_role, p_institute, p_service_cadre,
+p_scholar_identifier)` (used by the current client), plus
 `save_appraisal_draft(p_case_id, p_cycle_year,
 p_designation, p_institute, p_objective_payload)`,
 `submit_appraisal_case(p_case_id)`,
@@ -123,6 +133,9 @@ older account with missing fields remains profile-incomplete until the signed-in
 owner saves them. Annual appraisal cycle, work assignment and reference,
 clinical-service evidence, committee membership and proposed reporting lines
 remain case-specific rather than permanent employee profile attributes.
+The optional public Google Scholar citations URL or ORCID iD/URL is stored on
+the employee profile and copied into the research reference of a new appraisal
+only when that field is blank. It does not verify publications or award points.
 
 Draft saving checks the designation and institute arguments and five identity
 fields in the objective payload against the owner's current employee profile.
