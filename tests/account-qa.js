@@ -273,6 +273,28 @@ function authHarness(hash, scenario = {}) {
   assert.match(ordinary.nodes.accountMessage.textContent, /Check your email for a confirmation link/);
   assert.equal(ordinary.nodes.accountPassword.value, '', 'Signup must clear the password input');
 
+  const limited = authHarness('', { fetchOverride: ({ url }) => {
+    if (!url.includes('/auth/v1/signup')) return null;
+    return { ok: false, status: 429, text: async () => JSON.stringify({
+      error_code: 'over_email_send_rate_limit', msg: 'email rate limit exceeded'
+    }) };
+  } });
+  limited.ready();
+  limited.nodes.accountEmail.value = 'limited@example.edu.pk';
+  limited.nodes.accountPassword.value = 'signup-password';
+  limited.nodes.accountDisplayName.value = 'Pilot Faculty';
+  limited.nodes.accountDesignation.value = 'Professor';
+  limited.nodes.accountLeadershipRole.value = 'None';
+  limited.nodes.accountInstitute.value = 'KMU Institute of Basic Medical Sciences (KMU-IBMS), Peshawar';
+  limited.nodes.accountCadre.value = 'BPS';
+  await limited.nodes.accountSignUp.handlers.click({ preventDefault() {} });
+  assert.match(limited.nodes.accountMessage.textContent, /pilot email service has reached its sending limit/i,
+    'Email quota errors should explain the service problem rather than suggest a profile correction');
+  assert.match(limited.nodes.accountMessage.textContent, /do not keep retrying/i);
+  assert.equal(limited.nodes.accountPassword.value, '', 'Failed signup must clear the password input');
+  assert.equal(limited.calls.filter(call => call.url.includes('/auth/v1/signup')).length, 1,
+    'The portal must not retry a rate-limited signup automatically');
+
   const signed = authHarness(''); signed.ready();
   signed.nodes.accountEmail.value = signed.user.email;
   signed.nodes.accountPassword.value = 'portal-password';

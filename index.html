@@ -117,7 +117,7 @@
       <button type="button" class="account-text-button" id="accountRecover">Forgot password? Email me a reset link</button>
       <p class="account-note">Email confirmation may be required. Passwords are sent directly to the authentication service and are not stored in the website files or browser draft.</p>
       <p class="account-note">For this controlled pilot, sign-in lasts only in the current tab. Refreshing or opening another tab requires signing in again.</p>
-      <p class="account-note">Pilot email delivery is limited by the default mail service. Wider faculty invitations and confirmation emails need an approved SMTP service before rollout.</p>
+      <p class="account-note">Pilot email delivery has a very small project-wide limit and is restricted to project-team addresses. If registration reports an email rate limit, stop retrying and contact the portal administrator. Wider faculty registration needs an approved SMTP service; do not disable email confirmation to work around this.</p>
     </div>
     <div id="accountPasswordSetup" class="account-password-setup" hidden>
       <p id="accountPasswordSetupIntro" class="account-warning">Your account link was verified. Choose a new password to finish setup.</p>
@@ -1929,7 +1929,7 @@
   </footer>
 
   <script src="app.js?v=20261015-interim-objective-scores"></script>
-  <script src="account.js?v=20261015-profile-save-status"></script>
+  <script src="account.js?v=20261020-email-limit-guidance"></script>
 
   <div style="display:none;">
     <span id="top_pip_status"></span>

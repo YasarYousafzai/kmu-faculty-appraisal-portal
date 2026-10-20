@@ -202,6 +202,18 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     const detail = result?.msg || result?.error_description || result?.message || result?.error;
     return new Error(typeof detail === 'string' ? detail.slice(0, 240) : fallback);
   }
+  function accountServiceError(result, status, path) {
+    const detail = [result?.error_code, result?.code, result?.msg,
+      result?.error_description, result?.message, result?.error].filter(Boolean).join(' ');
+    if (path.startsWith('/auth/v1/')
+      && (/over_email_send_rate_limit/i.test(detail) || /email rate limit exceeded/i.test(detail))) {
+      return new Error('The pilot email service has reached its sending limit. This is not a problem with your profile. Please do not keep retrying. Check whether a confirmation email already arrived; otherwise ask the portal administrator to arrange an approved email sender before new registrations continue.');
+    }
+    if (status === 429 && path.startsWith('/auth/v1/')) {
+      return new Error('Too many account requests were made in a short time. Please wait before trying again. If this continues, contact the portal administrator.');
+    }
+    return plainError(result, `The account service returned ${status}.`);
+  }
   async function request(path, { method = 'GET', body, authenticated = true, retry = true } = {}) {
     assertBackend();
     if (authenticated && !account.session?.access_token) throw new Error('Sign in before accessing cloud cases.');
@@ -221,7 +233,7 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     if (authenticated && requestGeneration !== accountGeneration) throw new StaleAccountRequest();
     let parsed = null;
     try { parsed = raw ? JSON.parse(raw) : null; } catch { /* API errors may be plain text. */ }
-    if (!response.ok) throw plainError(parsed, `The account service returned ${response.status}.`);
+    if (!response.ok) throw accountServiceError(parsed, response.status, path);
     return parsed;
   }
   async function refreshSession(expectedGeneration = accountGeneration) {
