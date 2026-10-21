@@ -52,6 +52,12 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
   await page.goto(`http://127.0.0.1:${server.address().port}/`, { waitUntil: 'networkidle' });
 
+  const emailGuidance = await page.locator('#accountEmailDeliveryNote').innerText();
+  assert(emailGuidance.includes('KMU-domain SMTP sender is configured') &&
+    emailGuidance.includes('Email confirmation remains required') &&
+    !emailGuidance.includes('Until an approved SMTP sender is configured'),
+  'Registration guidance must reflect the configured pilot sender without claiming formal approval.');
+
   assert(await page.locator('.teaching-course-card').count() === 1, 'Teaching must start with one course.');
   assert(await page.locator('#addTeachingCourseButton').innerText() === '+ Add teaching entry (maximum 10)',
     'The add-entry option must be clearly labelled.');
