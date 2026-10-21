@@ -81,21 +81,16 @@ independently recompute the KMU appraisal formula or verify evidence.
    remained. Re-run the updated suites after applying the new migration. This
    does not replace a KMU production audit.
 
-The Supabase default email service is limited to project-team recipients and
-two authentication emails per hour project-wide. It is not suitable for broader
-faculty registration. The lowest-cost practical path is to keep the pilot
-Supabase project and connect a reviewed, free-tier transactional SMTP sender
-under a domain the sender is authorized to use. Verify the sending domain's
-DNS and test one confirmation and one password-reset message. For example,
-Resend lists a free tier of 3,000 emails/month with a 100/day cap; Brevo lists
-300/day with SMTP relay on its free tier (branding applies). Provider terms
-and quotas can change. In Supabase, configure **Authentication → SMTP
-Settings** with the provider's credentials, then adjust the project's Auth
-email-rate limit only to a value within the provider's verified quota. Keep
+The Supabase default email service was limited to project-team recipients and
+two authentication emails per hour project-wide. On 21 October 2026, a
+KMU-domain Google Workspace sender was configured in **Authentication → Emails
+→ SMTP Settings**. The Supabase Auth email limit now reads 30/hour. This
+confirms configuration, **not delivery**: test one confirmation and one
+password-reset message to authorized test accounts before wider invitations,
+and check Google Workspace sending quotas and mail logs if either fails. Keep
 email confirmation enabled. Never place SMTP credentials, a service-role key
-or raw passwords in this public repository or GitHub Pages. Agree a KMU-owned
-sender/domain and privacy review before inviting actual faculty; a personal
-Gmail address is not an institutional sender policy.
+or raw passwords in this public repository or GitHub Pages. KMU privacy,
+security and sender-policy review remains necessary before institutional use.
 
 ## Live pilot deployment record (20 October 2026)
 
