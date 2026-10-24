@@ -425,12 +425,28 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
       headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify(payload) });
   });
   await accountPage.goto(`http://127.0.0.1:${server.address().port}/`, { waitUntil: 'networkidle' });
-  for (const selector of ['#accountDisplayName', '#accountDesignation', '#accountLeadershipRole',
+  assert(await accountPage.locator('#accountSignUpPanel').isVisible()
+    && await accountPage.locator('#accountSignInPanel').isHidden(),
+  'New faculty should see a distinct signup path first.');
+  for (const selector of ['#accountSignupEmail', '#accountSignupPassword', '#accountSignupConfirmPassword',
+    '#accountDisplayName', '#accountDesignation', '#accountLeadershipRole',
     '#accountInstitute', '#accountCadre']) {
     assert(await accountPage.locator(selector).count() === 1, `Missing registration field ${selector}`);
   }
+  assert(await accountPage.locator('#accountSignupEmail').getAttribute('type') === 'email'
+    && await accountPage.locator('#accountSignupConfirmPassword').getAttribute('required') !== null,
+  'Signup must identify email as the username and request password confirmation.');
+  await accountPage.setViewportSize({ width: 375, height: 812 });
+  assert(await accountPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    'Registration and sign-in choices must not overflow a phone viewport.');
+  await accountPage.setViewportSize({ width: 1440, height: 1000 });
   assert(await accountPage.locator('#accountAssessorMode').isHidden(),
     'Assessor workspace should not show before a role is loaded');
+  await accountPage.locator('#accountShowSignIn').click();
+  assert(await accountPage.locator('#accountSignInPanel').isVisible()
+    && await accountPage.locator('#accountSignUpPanel').isHidden(),
+  'Existing users should have a separate sign-in path.');
+  assert(cloudRequests.length === 0, 'Choosing a registration or sign-in path must not contact Supabase.');
   await accountPage.locator('#accountEmail').fill('synthetic.employee@example.invalid');
   await accountPage.locator('#accountPassword').fill('synthetic-password');
   await accountPage.locator('#accountSignIn').click();
@@ -460,7 +476,7 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
     && await accountPage.locator('#input_emp_desig').isDisabled()
     && await accountPage.locator('#input_emp_dept').isDisabled(),
     'Profile identity is not editable inside a signed-in appraisal');
-  assert((await accountPage.locator('.account-guide').innerText()).includes('portal administrator'),
+  assert((await accountPage.locator('.account-guide').textContent()).includes('portal administrator'),
     'Registration guidance must explain who grants assessor access');
   await accountPage.locator('#headerSaveButton').click();
   await accountPage.locator('#appraisalWorkspace').waitFor({ state: 'hidden' });

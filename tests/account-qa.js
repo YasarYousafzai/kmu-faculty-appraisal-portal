@@ -104,6 +104,8 @@ function authHarness(hash, scenario = {}) {
   const ids = ['accountGuest', 'accountSignedIn', 'accountPasswordSetup', 'accountPasswordSetupIntro',
     'accountPasswordSetupForm', 'accountNewPassword', 'accountConfirmPassword', 'accountMessage',
     'accountStatus', 'accountModeBadge', 'accountEmail', 'accountPassword', 'accountDisplayName',
+    'accountShowSignUp', 'accountShowSignIn', 'accountSignUpPanel', 'accountSignInPanel',
+    'accountSignupForm', 'accountSignupEmail', 'accountSignupPassword', 'accountSignupConfirmPassword',
     'accountSignUp', 'accountRecover', 'accountForm', 'accountSignOut', 'accountNewCase',
     'accountSaveProfile', 'accountSyncDraftProfile',
     'accountAssesseeMode', 'accountAssessorMode', 'accountAdminMode', 'accountCasePanel',
@@ -258,20 +260,33 @@ function authHarness(hash, scenario = {}) {
     'URL error details should not be reflected into the page');
 
   const ordinary = authHarness(''); ordinary.ready(); ordinary.nodes.accountEmail.value = 'reset@example.edu.pk';
+  assert.equal(ordinary.nodes.accountSignUpPanel.hidden, false, 'New-user signup is visible by default');
+  assert.equal(ordinary.nodes.accountSignInPanel.hidden, true, 'Sign-in is a separate path');
+  await ordinary.nodes.accountShowSignIn.handlers.click({ preventDefault() {} });
+  assert.equal(ordinary.nodes.accountSignInPanel.hidden, false, 'Existing users can open sign-in');
   ordinary.nodes.accountPassword.value = 'old-password';
   await ordinary.nodes.accountRecover.handlers.click({ preventDefault() {} });
   assert.equal(ordinary.nodes.accountPassword.value, '', 'Recovery request must clear the sign-in password input');
   assert.ok(ordinary.calls[0].url.includes('/auth/v1/recover?redirect_to='), 'Recovery email request must use the auth API');
   assert.equal(JSON.parse(ordinary.calls[0].options.body).email, 'reset@example.edu.pk');
-  ordinary.nodes.accountEmail.value = 'new@example.edu.pk';
-  ordinary.nodes.accountPassword.value = 'signup-password';
+  await ordinary.nodes.accountShowSignUp.handlers.click({ preventDefault() {} });
+  assert.equal(ordinary.nodes.accountSignUpPanel.hidden, false, 'New users can open their own registration form');
+  ordinary.nodes.accountSignupEmail.value = 'new@example.edu.pk';
+  ordinary.nodes.accountSignupPassword.value = 'signup-password';
+  ordinary.nodes.accountSignupConfirmPassword.value = 'wrong-password';
   ordinary.nodes.accountDisplayName.value = 'Pilot Faculty';
   ordinary.nodes.accountDesignation.value = 'Professor';
   ordinary.nodes.accountLeadershipRole.value = 'None';
   ordinary.nodes.accountInstitute.value = 'KMU Institute of Basic Medical Sciences (KMU-IBMS), Peshawar';
   ordinary.nodes.accountCadre.value = 'BPS';
   ordinary.nodes.accountScholarIdentifier.value = 'https://scholar.google.com/citations?user=fictional';
-  await ordinary.nodes.accountSignUp.handlers.click({ preventDefault() {} });
+  await ordinary.nodes.accountSignupForm.handlers.submit({ preventDefault() {} });
+  assert.equal(ordinary.calls.filter(call => call.url.includes('/auth/v1/signup')).length, 0,
+    'Mismatched passwords must not create an account');
+  assert.match(ordinary.nodes.accountMessage.textContent, /two passwords do not match/i);
+  ordinary.nodes.accountSignupPassword.value = 'signup-password';
+  ordinary.nodes.accountSignupConfirmPassword.value = 'signup-password';
+  await ordinary.nodes.accountSignupForm.handlers.submit({ preventDefault() {} });
   const signup = ordinary.calls.find(call => call.url.includes('/auth/v1/signup?redirect_to='));
   assert.ok(signup,
     'Confirmation-required signup must use the allow-listed portal redirect');
@@ -283,7 +298,10 @@ function authHarness(hash, scenario = {}) {
   }, 'Job-related details should be captured at registration, without any assessor or administrator role');
   assert.equal(Object.hasOwn(signupBody.data, 'role'), false, 'The user cannot self-select an account role');
   assert.match(ordinary.nodes.accountMessage.textContent, /Check your email for a confirmation link/);
-  assert.equal(ordinary.nodes.accountPassword.value, '', 'Signup must clear the password input');
+  assert.equal(ordinary.nodes.accountSignInPanel.hidden, false, 'Registration leads to the existing-user sign-in path');
+  assert.equal(ordinary.nodes.accountEmail.value, 'new@example.edu.pk', 'Registration carries the email to sign-in');
+  assert.equal(ordinary.nodes.accountSignupPassword.value, '', 'Signup must clear the password input');
+  assert.equal(ordinary.nodes.accountSignupConfirmPassword.value, '', 'Signup must clear the confirmation input');
 
   const limited = authHarness('', { fetchOverride: ({ url }) => {
     if (!url.includes('/auth/v1/signup')) return null;
@@ -292,18 +310,19 @@ function authHarness(hash, scenario = {}) {
     }) };
   } });
   limited.ready();
-  limited.nodes.accountEmail.value = 'limited@example.edu.pk';
-  limited.nodes.accountPassword.value = 'signup-password';
+  limited.nodes.accountSignupEmail.value = 'limited@example.edu.pk';
+  limited.nodes.accountSignupPassword.value = 'signup-password';
+  limited.nodes.accountSignupConfirmPassword.value = 'signup-password';
   limited.nodes.accountDisplayName.value = 'Pilot Faculty';
   limited.nodes.accountDesignation.value = 'Professor';
   limited.nodes.accountLeadershipRole.value = 'None';
   limited.nodes.accountInstitute.value = 'KMU Institute of Basic Medical Sciences (KMU-IBMS), Peshawar';
   limited.nodes.accountCadre.value = 'BPS';
-  await limited.nodes.accountSignUp.handlers.click({ preventDefault() {} });
+  await limited.nodes.accountSignupForm.handlers.submit({ preventDefault() {} });
   assert.match(limited.nodes.accountMessage.textContent, /pilot email service has reached its sending limit/i,
     'Email quota errors should explain the service problem rather than suggest a profile correction');
   assert.match(limited.nodes.accountMessage.textContent, /do not keep retrying/i);
-  assert.equal(limited.nodes.accountPassword.value, '', 'Failed signup must clear the password input');
+  assert.equal(limited.nodes.accountSignupPassword.value, '', 'Failed signup must clear the password input');
   assert.equal(limited.calls.filter(call => call.url.includes('/auth/v1/signup')).length, 1,
     'The portal must not retry a rate-limited signup automatically');
 
