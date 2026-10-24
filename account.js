@@ -47,6 +47,8 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
   let accountGeneration = 0;
   let viewGeneration = 0;
   let signInAttempt = 0;
+  let authView = 'signup';
+  let registrationPending = false;
   class StaleAccountRequest extends Error {}
   function captureView() {
     return { accountGeneration, viewGeneration, userId: account.user?.id, mode: account.mode };
@@ -111,6 +113,16 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
   }
   function setText(id, value) { const node = $(id); if (node) node.textContent = String(value); }
   function show(id, visible) { const node = $(id); if (node) node.hidden = !visible; }
+  function setAuthView(view) {
+    authView = view === 'signin' ? 'signin' : 'signup';
+    show('accountSignUpPanel', authView === 'signup');
+    show('accountSignInPanel', authView === 'signin');
+    [['accountShowSignUp', 'signup'], ['accountShowSignIn', 'signin']].forEach(([id, value]) => {
+      const button = $(id);
+      button?.classList?.toggle('is-active', authView === value);
+      button?.setAttribute?.('aria-expanded', String(authView === value));
+    });
+  }
   function clearPrivatePanels() {
     ['myCaseList', 'assessorQueue', 'accountAdminUsers', 'adminFacultyRecords', 'adminAssessorId',
       'adminRevokeAssessorId', 'adminCaseId', 'adminAssignAssessorId', 'adminUnassignId']
@@ -528,7 +540,7 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     }
   }
   async function requestPasswordRecovery(email) {
-    if (!email) throw new Error('Enter your email / username first.');
+    if (!email) throw new Error('Enter your registered email address first.');
     const redirectTo = 'https://yasaryousafzai.github.io/kmu-faculty-appraisal-portal/';
     await request(`/auth/v1/recover?redirect_to=${encode(redirectTo)}`, {
       method: 'POST', body: { email }, authenticated: false
@@ -547,6 +559,8 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     if (result.access_token) {
       await authenticate(email, password);
     } else {
+      if ($('accountEmail')) $('accountEmail').value = email;
+      setAuthView('signin');
       setMessage('Registration requested. Check your email for a confirmation link, then sign in. Your employee profile was provided with registration; assessor access is never self-assigned.', 'success');
     }
   }
@@ -1032,18 +1046,31 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     };
   }
   function bind() {
+    $('accountShowSignUp')?.addEventListener('click', () => setAuthView('signup'));
+    $('accountShowSignIn')?.addEventListener('click', () => setAuthView('signin'));
     $('accountForm')?.addEventListener('submit', safeAction(async () => {
       const email = $('accountEmail').value.trim().toLowerCase(); const password = $('accountPassword').value;
       try { await authenticate(email, password); }
       finally { $('accountPassword').value = ''; }
     }));
-    $('accountSignUp')?.addEventListener('click', safeAction(async () => {
-      const email = $('accountEmail').value.trim().toLowerCase(); const password = $('accountPassword').value;
+    $('accountSignupForm')?.addEventListener('submit', safeAction(async () => {
+      if (registrationPending) return;
+      const email = $('accountSignupEmail').value.trim().toLowerCase();
+      const password = $('accountSignupPassword').value;
+      const confirmation = $('accountSignupConfirmPassword').value;
+      registrationPending = true;
+      if ($('accountSignUp')) $('accountSignUp').disabled = true;
       try {
-        if (!email || !password) throw new Error('Enter an email and password first.');
+        if (!email || !password) throw new Error('Enter the email address you chose as your username and a new password.');
         if (password.length < 8) throw new Error('Use at least 8 characters for your portal password.');
+        if (password !== confirmation) throw new Error('The two passwords do not match.');
         await register(email, password, readProfileInputs('registration'));
-      } finally { $('accountPassword').value = ''; }
+      } finally {
+        $('accountSignupPassword').value = '';
+        $('accountSignupConfirmPassword').value = '';
+        registrationPending = false;
+        if ($('accountSignUp')) $('accountSignUp').disabled = false;
+      }
     }));
     $('accountRecover')?.addEventListener('click', safeAction(async () => {
       $('accountPassword').value = '';
@@ -1095,9 +1122,11 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
       account.mode = 'demo'; account.selectedCaseId = null; account.selectedCaseStatus = null; account.reviewLoaded = false;
       clearPrivatePanels();
       populateEmployeeProfileForm();
-      ['accountEmail', 'accountPassword', 'accountDisplayName', 'accountDesignation',
+      ['accountEmail', 'accountPassword', 'accountSignupEmail', 'accountSignupPassword',
+        'accountSignupConfirmPassword', 'accountDisplayName', 'accountDesignation',
         'accountInstitute', 'accountCadre', 'accountScholarIdentifier'].forEach(id => { if ($(id)) $(id).value = ''; });
       if ($('accountLeadershipRole')) $('accountLeadershipRole').value = 'None';
+      setAuthView('signin');
       setObjectiveReadonly(false); setReviewReadonly(false); window.KMUCalculator.loadBlank();
       render(); setText('lastSavedIndicator', 'Local demo — no cloud case open');
       setMessage('Signed out. The calculator is back in local demo mode.', 'success');
@@ -1160,7 +1189,7 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     }));
   }
   document.addEventListener('DOMContentLoaded', () => {
-    populateProfileSelects(); bind(); render();
+    populateProfileSelects(); bind(); setAuthView(authView); render();
     if (pendingAuthRedirect) {
       void processAuthRedirect();
     }

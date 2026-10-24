@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://wiglqhoihnlmalfzqepk.supabase.co; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>KMU Faculty Appraisal Portal — Controlled Pilot</title>
-  <link rel="stylesheet" href="styles.css?v=20261015-name-help">
+  <link rel="stylesheet" href="styles.css?v=20261024-account-paths">
   <link rel="icon" type="image/png" href="kmu_logo.png">
 </head>
 <body>
@@ -65,61 +65,87 @@
       </div>
       <span id="accountModeBadge" class="account-badge">Local demo</span>
     </div>
+    <p id="accountMessage" class="account-message" role="status" aria-live="polite"></p>
     <div id="accountGuest" class="account-guest">
-      <p class="account-warning">Use an email address as your username. Registration creates an employee (assessee) account only; assessor and administrator access must be assigned separately by an administrator. Do not reuse a KMU password.</p>
-      <details class="account-guide" open>
-        <summary>Registration guide and role assignment</summary>
-        <ol>
-          <li>Enter your email address and a new password, then open <strong>Create an employee account</strong> below.</li>
-          <li>Enter your full name as recorded by KMU (including a surname if your record has one), substantive designation, any additional leadership appointment, current KMU institute/unit, and BPS, TTS or Fixed Pay service cadre. Use your appointment and posting order; do not include BPS in the designation.</li>
-          <li>Select <strong>Register employee account</strong>. Confirm your email if a link is sent, then return here and sign in. Existing invited accounts can complete missing job details in the Employee Portal after sign-in.</li>
-          <li>In the Employee Portal, start a year’s appraisal. The saved job profile is copied into the case; enter that year’s work assignment and evidence, save the draft, then submit it when complete.</li>
-        </ol>
-        <p>The portal administrator grants assessor access to a registered account and assigns submitted cases in the Administrator workspace. A portal grant does not replace KMU’s formal appointment or reporting order. An assessor sees only assigned cases.</p>
-      </details>
-      <form id="accountForm" class="account-form" autocomplete="on">
-        <label for="accountEmail">Email / username
-          <input id="accountEmail" type="email" autocomplete="username" required placeholder="name@example.edu.pk">
-        </label>
-        <label for="accountPassword">Password
-          <input id="accountPassword" type="password" autocomplete="current-password" minlength="8" required placeholder="At least 8 characters">
-        </label>
-        <div class="account-actions">
-          <button type="submit" class="btn btn-primary" id="accountSignIn">Sign in</button>
-        </div>
-      </form>
-      <details id="accountRegistrationDetails" class="account-registration">
-        <summary>Create an employee account — enter your job profile</summary>
-        <p class="account-note">Use your appointment and current posting order. These pilot lists do not establish that a post or unit has been formally notified. Your profile is self-declared and never grants assessor access.</p>
-        <div class="account-form account-profile-grid">
-          <div class="account-profile-name">
-            <div class="account-profile-name-heading">
-              <label for="accountDisplayName">Full name as recorded by KMU *</label>
-              <button type="button" class="help-tip" aria-label="Help with full name" data-help="Enter your name as it appears in your KMU appointment or service record. Include a surname if your record has one. A single official name is accepted; the field does not require two words.">?</button>
-            </div>
-            <input id="accountDisplayName" type="text" autocomplete="name" maxlength="160" placeholder="e.g., Dr Ayesha Khan">
+      <div class="account-path-choice" aria-label="Choose how to access the portal">
+        <button type="button" id="accountShowSignUp" class="account-path-button is-active" aria-controls="accountSignUpPanel" aria-expanded="true">
+          <strong>New user signup</strong><span>Create a faculty account</span>
+        </button>
+        <button type="button" id="accountShowSignIn" class="account-path-button" aria-controls="accountSignInPanel" aria-expanded="false">
+          <strong>Existing user sign-in</strong><span>Open your saved account</span>
+        </button>
+      </div>
+      <div id="accountSignUpPanel" class="account-auth-panel">
+        <h3>New user signup</h3>
+        <p class="account-note">Choose your email address as your portal username and create a new password. Enter your job details below, then confirm your email to activate your employee account. Do not reuse your KMU email password.</p>
+        <form id="accountSignupForm" autocomplete="on">
+          <div class="account-form account-credentials-grid">
+            <label for="accountSignupEmail">Username (your email address) *
+              <input id="accountSignupEmail" type="email" autocomplete="username" required placeholder="e.g., ayesha.khan@kmu.edu.pk">
+            </label>
+            <label for="accountSignupPassword">Create password *
+              <input id="accountSignupPassword" type="password" autocomplete="new-password" minlength="8" required placeholder="At least 8 characters">
+            </label>
+            <label for="accountSignupConfirmPassword">Confirm password *
+              <input id="accountSignupConfirmPassword" type="password" autocomplete="new-password" minlength="8" required placeholder="Enter the same password again">
+            </label>
           </div>
-          <label for="accountDesignation">Substantive designation *
-            <select id="accountDesignation"></select>
+          <h4>Your KMU job details</h4>
+          <p class="account-note">Use your appointment and current posting order. These pilot lists do not establish that a post or unit has been formally notified. Your profile is self-declared and never grants assessor access.</p>
+          <div class="account-form account-profile-grid">
+            <div class="account-profile-name">
+              <div class="account-profile-name-heading">
+                <label for="accountDisplayName">Full name as recorded by KMU *</label>
+                <button type="button" class="help-tip" aria-label="Help with full name" data-help="Enter your name as it appears in your KMU appointment or service record. Include a surname if your record has one. A single official name is accepted; the field does not require two words.">?</button>
+              </div>
+              <input id="accountDisplayName" type="text" autocomplete="name" maxlength="160" required placeholder="e.g., Dr Ayesha Khan">
+            </div>
+            <label for="accountDesignation">Substantive designation *
+              <select id="accountDesignation" required></select>
+            </label>
+            <label for="accountLeadershipRole">Additional leadership appointment
+              <select id="accountLeadershipRole"></select>
+            </label>
+            <label for="accountInstitute">Current KMU institute / unit *
+              <select id="accountInstitute" required></select>
+            </label>
+            <label for="accountCadre">Pay scale &amp; service cadre *
+              <select id="accountCadre" required></select>
+            </label>
+            <label for="accountScholarIdentifier">Google Scholar profile URL or ORCID iD (optional)
+              <button type="button" class="help-tip" aria-label="Help with scholarly profile" data-help="Enter a public Google Scholar profile URL or your ORCID iD, if you have one. This helps identify your publications but gives no points by itself. Leave blank if you do not have either.">?</button>
+              <input id="accountScholarIdentifier" type="text" maxlength="240" placeholder="e.g., https://scholar.google.com/citations?user=… or 0000-0002-1825-0097">
+            </label>
+          </div>
+          <button type="submit" class="btn btn-primary" id="accountSignUp">Create my employee account</button>
+        </form>
+        <details class="account-guide">
+          <summary>How signup and role assignment work</summary>
+          <ol>
+            <li>Enter the email address you will use as your portal username, a new password, and your KMU job details. Do not put BPS in the designation field.</li>
+            <li>Select <strong>Create my employee account</strong>, then confirm the email address using the link sent to you. Return to this page and choose <strong>Existing user sign-in</strong>.</li>
+            <li>In the Employee Portal, start your annual appraisal. Your saved job profile is copied into the new case; complete the year’s work assignment and evidence, save, then submit when ready.</li>
+          </ol>
+          <p>The portal administrator grants assessor access and assigns submitted cases. Registration alone creates an employee account, not an assessor or administrator role. Portal access does not replace a formal KMU appointment or reporting order.</p>
+        </details>
+      </div>
+      <div id="accountSignInPanel" class="account-auth-panel" hidden>
+        <h3>Existing user sign-in</h3>
+        <p class="account-note">Use the email address you registered with as your username. Existing invited accounts can complete missing job details in the Employee Portal after sign-in.</p>
+        <form id="accountForm" class="account-form" autocomplete="on">
+          <label for="accountEmail">Username (registered email address)
+            <input id="accountEmail" type="email" autocomplete="username" required placeholder="name@example.edu.pk">
           </label>
-          <label for="accountLeadershipRole">Additional leadership appointment
-            <select id="accountLeadershipRole"></select>
+          <label for="accountPassword">Password
+            <input id="accountPassword" type="password" autocomplete="current-password" minlength="8" required placeholder="Your portal password">
           </label>
-          <label for="accountInstitute">Current KMU institute / unit *
-            <select id="accountInstitute"></select>
-          </label>
-          <label for="accountCadre">Pay scale &amp; service cadre *
-            <select id="accountCadre"></select>
-          </label>
-          <label for="accountScholarIdentifier">Google Scholar profile URL or ORCID iD (optional)
-            <button type="button" class="help-tip" aria-label="Help with scholarly profile" data-help="Enter a public Google Scholar profile URL or your ORCID iD, if you have one. This helps identify your publications but gives no points by itself. Leave blank if you do not have either.">?</button>
-            <input id="accountScholarIdentifier" type="text" maxlength="240" placeholder="e.g., https://scholar.google.com/citations?user=… or 0000-0002-1825-0097">
-          </label>
-        </div>
-        <button type="button" class="btn btn-secondary" id="accountSignUp">Register employee account</button>
-      </details>
-      <button type="button" class="account-text-button" id="accountRecover">Forgot password? Email me a reset link</button>
-      <p class="account-note">Email confirmation may be required. Passwords are sent directly to the authentication service and are not stored in the website files or browser draft.</p>
+          <div class="account-actions">
+            <button type="submit" class="btn btn-primary" id="accountSignIn">Sign in</button>
+          </div>
+        </form>
+        <button type="button" class="account-text-button" id="accountRecover">Forgot password? Email me a reset link</button>
+      </div>
+      <p class="account-note">Passwords go directly to the authentication service; they are not stored in this website’s files or browser draft.</p>
       <p class="account-note">For this controlled pilot, sign-in lasts only in the current tab. Refreshing or opening another tab requires signing in again.</p>
       <p class="account-note" id="accountEmailDeliveryNote">A KMU-domain SMTP sender is configured for this controlled pilot, but delivery should be tested before wider invitations. Email confirmation remains required. If a message does not arrive, check your spam folder and contact the portal administrator; do not repeatedly request new links or share your password. Email setup does not constitute approval of this portal as an official personnel system.</p>
     </div>
@@ -227,7 +253,6 @@
         </div>
       </div>
     </div>
-    <p id="accountMessage" class="account-message" role="status" aria-live="polite"></p>
   </section>
 
   <!-- In-Progress Draft Recovery Banner -->
@@ -1951,7 +1976,7 @@
   </footer>
 
   <script src="app.js?v=20261020-annual-clinical-evidence"></script>
-  <script src="account.js?v=20261021-smtp-guidance"></script>
+  <script src="account.js?v=20261024-account-paths"></script>
 
   <div style="display:none;">
     <span id="top_pip_status"></span>
