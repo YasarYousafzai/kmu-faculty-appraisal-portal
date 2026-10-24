@@ -203,6 +203,13 @@ body {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
 }
+.account-demo-link { margin-top: 1rem; }
+body[data-portal-screen="account"] #stageBanner,
+body[data-portal-screen="account"] #draftRecoveryBanner,
+body[data-portal-screen="account"] .wizard-progress-bar,
+body[data-portal-screen="account"] #appraisalWorkspace,
+body[data-portal-screen="account"] .header-actions > :not(#headerAccountButton) { display: none !important; }
+body[data-portal-screen="appraisal"] #accountPage { display: none !important; }
 .account-heading, .account-actions, .account-list-row {
   display: flex;
   align-items: center;

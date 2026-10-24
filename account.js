@@ -47,7 +47,8 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
   let accountGeneration = 0;
   let viewGeneration = 0;
   let signInAttempt = 0;
-  let authView = 'signup';
+  let authView = null;
+  let portalScreen = 'account';
   let registrationPending = false;
   class StaleAccountRequest extends Error {}
   function captureView() {
@@ -114,7 +115,7 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
   function setText(id, value) { const node = $(id); if (node) node.textContent = String(value); }
   function show(id, visible) { const node = $(id); if (node) node.hidden = !visible; }
   function setAuthView(view) {
-    authView = view === 'signin' ? 'signin' : 'signup';
+    authView = view === 'signin' || view === 'signup' ? view : null;
     show('accountSignUpPanel', authView === 'signup');
     show('accountSignInPanel', authView === 'signin');
     [['accountShowSignUp', 'signup'], ['accountShowSignIn', 'signin']].forEach(([id, value]) => {
@@ -122,6 +123,19 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
       button?.classList?.toggle('is-active', authView === value);
       button?.setAttribute?.('aria-expanded', String(authView === value));
     });
+  }
+  function toggleAuthView(view) { setAuthView(authView === view ? null : view); }
+  function setPortalScreen(screen, updateAddress = true) {
+    const canOpenAppraisal = account.mode === 'demo' || account.caseOpen;
+    portalScreen = screen === 'appraisal' && canOpenAppraisal ? 'appraisal' : 'account';
+    document.body.dataset.portalScreen = portalScreen;
+    show('headerAccountButton', portalScreen === 'appraisal');
+    if (updateAddress && window.history?.pushState && window.location?.pathname) {
+      const params = new URLSearchParams(window.location.search || '');
+      params.set('page', portalScreen);
+      const next = `${window.location.pathname}?${params.toString()}`;
+      window.history.pushState({ portalScreen }, '', next);
+    }
   }
   function clearPrivatePanels() {
     ['myCaseList', 'assessorQueue', 'accountAdminUsers', 'adminFacultyRecords', 'adminAssessorId',
@@ -364,6 +378,7 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     show('accountSignedIn', signed);
     show('appraisalWorkspace', !signed || account.caseOpen);
     show('stageBanner', !signed || account.caseOpen);
+    if (portalScreen === 'appraisal' && signed && !account.caseOpen) setPortalScreen('account');
     show('profileSnapshotNotice', signed && account.caseOpen);
     setText('profileSnapshotNotice', account.mode === 'assessor'
       ? 'These are the employee’s submitted job details for this case. They are read-only for the assessor.'
@@ -671,6 +686,7 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
       account.reviewLoaded = false; account.caseOpen = false;
       setObjectiveReadonly(false); setReviewReadonly(false);
       window.KMUCalculator.loadBlank(); render();
+      setPortalScreen('account');
       setText('lastSavedIndicator', 'Cloud draft saved');
       try {
         await listOwnCases();
@@ -735,6 +751,7 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
           account.reviewLoaded = false; account.caseOpen = true;
           setObjectiveReadonly(false); window.KMUCalculator.restoreDraft(draftFromObjective(current.objective_payload));
           setObjectiveReadonly(current.status !== 'draft'); setReviewReadonly(true); render();
+          setPortalScreen('appraisal');
           if (current.status === 'reviewed') {
             const reviews = await rest('assessor_reviews', `select=case_id,subjective_payload&case_id=eq.${encode(row.id)}`);
             ensureCurrent(clickView);
@@ -798,6 +815,7 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
           setObjectiveReadonly(false); setReviewReadonly(false);
           window.KMUCalculator.restoreDraft(draftFromObjective(current.objective_payload));
           setObjectiveReadonly(true); setReviewReadonly(current.status !== 'submitted'); render();
+          setPortalScreen('appraisal');
           window.KMUCalculator.openAssignedCaseForReview();
           if (current.status === 'reviewed') {
             const reviews = await rest('assessor_reviews', `select=case_id,assessor_id,subjective_payload&case_id=eq.${encode(row.id)}`);
@@ -963,6 +981,7 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
       setObjectiveReadonly(false); setReviewReadonly(false);
       window.KMUCalculator.restoreDraft(draftFromObjective(selected.objective_payload));
       setObjectiveReadonly(true); setReviewReadonly(true); render();
+      setPortalScreen('appraisal');
       if (selected.status === 'reviewed') {
         const reviews = await rest('assessor_reviews',
           `select=case_id,subjective_payload&case_id=eq.${encode(caseId)}`);
@@ -999,6 +1018,7 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     account.ownCases = null;
     setObjectiveReadonly(false); setReviewReadonly(false); window.KMUCalculator.loadBlank();
     clearLocalRecoveryNotice(); render();
+    setPortalScreen('account');
     const view = captureView();
     if (mode === 'assessee') { await loadMyProfile(); await listOwnCases(); }
     if (mode === 'assessor') await listAssignedCases();
@@ -1015,6 +1035,7 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     account.reviewLoaded = false; account.caseOpen = true;
     setObjectiveReadonly(false); window.KMUCalculator.loadBlank();
     applySavedProfileToNewCase(); render();
+    setPortalScreen('appraisal');
     setMessage('New appraisal opened with your saved employee profile. Complete this cycle’s assignment and evidence, then save the cloud draft explicitly.', 'success');
     return true;
   }
@@ -1046,8 +1067,10 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
     };
   }
   function bind() {
-    $('accountShowSignUp')?.addEventListener('click', () => setAuthView('signup'));
-    $('accountShowSignIn')?.addEventListener('click', () => setAuthView('signin'));
+    $('headerAccountButton')?.addEventListener('click', () => setPortalScreen('account'));
+    $('openDemoCalculator')?.addEventListener('click', () => setPortalScreen('appraisal'));
+    $('accountShowSignUp')?.addEventListener('click', () => toggleAuthView('signup'));
+    $('accountShowSignIn')?.addEventListener('click', () => toggleAuthView('signin'));
     $('accountForm')?.addEventListener('submit', safeAction(async () => {
       const email = $('accountEmail').value.trim().toLowerCase(); const password = $('accountPassword').value;
       try { await authenticate(email, password); }
@@ -1126,9 +1149,10 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
         'accountSignupConfirmPassword', 'accountDisplayName', 'accountDesignation',
         'accountInstitute', 'accountCadre', 'accountScholarIdentifier'].forEach(id => { if ($(id)) $(id).value = ''; });
       if ($('accountLeadershipRole')) $('accountLeadershipRole').value = 'None';
-      setAuthView('signin');
+      setAuthView(null);
       setObjectiveReadonly(false); setReviewReadonly(false); window.KMUCalculator.loadBlank();
       render(); setText('lastSavedIndicator', 'Local demo — no cloud case open');
+      setPortalScreen('account');
       setMessage('Signed out. The calculator is back in local demo mode.', 'success');
       // Revoke the old session after clearing every private view. A slow logout
       // response must never keep a previous employee's workspace on screen.
@@ -1152,6 +1176,7 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
       account.reviewLoaded = false; account.caseOpen = false;
       setObjectiveReadonly(false); setReviewReadonly(false);
       window.KMUCalculator.loadBlank(); render();
+      setPortalScreen('account');
       $('accountAdminPanel')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
       setMessage('Returned to the administrator’s faculty records.', 'success');
     }));
@@ -1190,6 +1215,10 @@ const KMU_ACCOUNT_CONFIG = Object.freeze({
   }
   document.addEventListener('DOMContentLoaded', () => {
     populateProfileSelects(); bind(); setAuthView(authView); render();
+    setPortalScreen(pendingAuthRedirect ? 'account'
+      : new URLSearchParams(window.location?.search || '').get('page') || 'account', false);
+    window.addEventListener?.('popstate', () => setPortalScreen(
+      new URLSearchParams(window.location?.search || '').get('page') || 'account', false));
     if (pendingAuthRedirect) {
       void processAuthRedirect();
     }

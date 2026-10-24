@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="styles.css?v=20261024-account-paths">
   <link rel="icon" type="image/png" href="kmu_logo.png">
 </head>
-<body>
+<body data-portal-screen="account">
   <div id="printBlockedNotice" class="print-blocked-notice" role="alert">
     <h1>Incomplete Draft — Work Done Report Not Printable</h1>
     <p>Complete all required identity, workload, evidence and Appraising Officer fields before printing the draft work done report.</p>
@@ -26,6 +26,7 @@
         </div>
       </div>
       <div class="header-actions">
+        <button type="button" class="btn btn-secondary no-print" id="headerAccountButton" hidden>My account</button>
         <span id="lastSavedIndicator" aria-live="polite" style="font-size:0.75rem; color:#f1d5a5; margin-right:4px; font-weight:600;">Not stored on this browser</span>
         <button type="button" class="btn btn-secondary" id="headerSaveButton" onclick="saveAndReturnLater()">
           <span>💾</span> Save & Return Later
@@ -57,25 +58,27 @@
     <span id="stageBannerText">Complete the faculty sections, review and save Section E provisional objective scores, then continue to committee assessment in this same-browser pilot.</span>
   </section>
 
-  <section class="account-shell no-print" aria-labelledby="accountTitle">
+  <section class="account-shell no-print" id="accountPage" aria-labelledby="accountTitle">
     <div class="account-heading">
       <div>
-        <h2 id="accountTitle">Portal account</h2>
+        <h2 id="accountTitle">Portal account — registration and sign-in</h2>
         <p id="accountStatus" role="status">Local demo mode — no shared case or assessor access.</p>
       </div>
       <span id="accountModeBadge" class="account-badge">Local demo</span>
     </div>
     <p id="accountMessage" class="account-message" role="status" aria-live="polite"></p>
     <div id="accountGuest" class="account-guest">
+      <p class="account-note">Choose an option to open its form.</p>
       <div class="account-path-choice" aria-label="Choose how to access the portal">
-        <button type="button" id="accountShowSignUp" class="account-path-button is-active" aria-controls="accountSignUpPanel" aria-expanded="true">
+        <button type="button" id="accountShowSignUp" class="account-path-button" aria-controls="accountSignUpPanel" aria-expanded="false">
           <strong>New user signup</strong><span>Create a faculty account</span>
         </button>
         <button type="button" id="accountShowSignIn" class="account-path-button" aria-controls="accountSignInPanel" aria-expanded="false">
           <strong>Existing user sign-in</strong><span>Open your saved account</span>
         </button>
       </div>
-      <div id="accountSignUpPanel" class="account-auth-panel">
+      <div class="account-demo-link"><button type="button" class="btn btn-secondary" id="openDemoCalculator">Explore the local demo calculator</button></div>
+      <div id="accountSignUpPanel" class="account-auth-panel" hidden>
         <h3>New user signup</h3>
         <p class="account-note">Choose your email address as your portal username and create a new password. Enter your job details below, then confirm your email to activate your employee account. Do not reuse your KMU email password.</p>
         <form id="accountSignupForm" autocomplete="on">
@@ -1976,7 +1979,7 @@
   </footer>
 
   <script src="app.js?v=20261020-annual-clinical-evidence"></script>
-  <script src="account.js?v=20261024-account-paths"></script>
+  <script src="account.js?v=20261024-separate-account-page"></script>
 
   <div style="display:none;">
     <span id="top_pip_status"></span>
