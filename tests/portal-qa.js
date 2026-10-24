@@ -51,6 +51,11 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
   await page.goto(`http://127.0.0.1:${server.address().port}/`, { waitUntil: 'networkidle' });
+  assert(await page.locator('#accountPage').isVisible() && await page.locator('#appraisalWorkspace').isHidden(),
+    'Registration and sign-in must open on their own page, separate from appraisal.');
+  await page.locator('#openDemoCalculator').click();
+  assert(await page.locator('#accountPage').isHidden() && await page.locator('#appraisalWorkspace').isVisible(),
+    'The demo calculator must open as a separate page view.');
 
   const emailGuidance = await page.locator('#accountEmailDeliveryNote').innerText();
   assert(emailGuidance.includes('KMU-domain SMTP sender is configured') &&
@@ -425,9 +430,16 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
       headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify(payload) });
   });
   await accountPage.goto(`http://127.0.0.1:${server.address().port}/`, { waitUntil: 'networkidle' });
+  assert(await accountPage.locator('#accountPage').isVisible()
+    && await accountPage.locator('#appraisalWorkspace').isHidden(),
+  'Account access must be a separate initial page.');
+  assert(await accountPage.locator('#accountSignUpPanel').isHidden()
+    && await accountPage.locator('#accountSignInPanel').isHidden(),
+  'Both account forms should stay closed until a faculty member chooses one.');
+  await accountPage.locator('#accountShowSignUp').click();
   assert(await accountPage.locator('#accountSignUpPanel').isVisible()
     && await accountPage.locator('#accountSignInPanel').isHidden(),
-  'New faculty should see a distinct signup path first.');
+  'New faculty can expand only the signup form.');
   for (const selector of ['#accountSignupEmail', '#accountSignupPassword', '#accountSignupConfirmPassword',
     '#accountDisplayName', '#accountDesignation', '#accountLeadershipRole',
     '#accountInstitute', '#accountCadre']) {
@@ -457,6 +469,7 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
     'The saved registration profile should populate the employee portal');
   assert(await accountPage.locator('#appraisalWorkspace').isHidden(),
     'Employee profile view should not start an appraisal implicitly');
+  await accountPage.locator('#accountNewCase').click();
   await accountPage.locator('[data-wizard="tab-teaching"]').click();
   assert(await accountPage.locator('#appraisalWorkspace').isVisible(),
     'Selecting Teaching should open a new unsaved faculty case when no cloud case exists');
@@ -492,9 +505,11 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
     'The saved draft must reopen with its employee-profile snapshot');
   rejectNextSave = true;
   await accountPage.locator('#headerSaveButton').click();
-  await accountPage.locator('#accountMessage').getByText('Not saved: Synthetic save rejection').waitFor();
+  await accountPage.waitForFunction(() => document.getElementById('accountMessage')?.textContent
+    .includes('Not saved: Synthetic save rejection'));
   assert(await accountPage.locator('#appraisalWorkspace').isVisible(),
     'A rejected save must keep the open appraisal visible for correction');
+  await accountPage.locator('#headerAccountButton').click();
   await accountPage.locator('#accountAssessorMode').click();
   await accountPage.waitForFunction(() => window.KMUAccount?.mode === 'assessor');
   await accountPage.locator('#assessorQueue').getByText('No cases are assigned to your account.').waitFor();
@@ -527,6 +542,7 @@ async function result(page) { return page.evaluate(() => window.KMUCalculator.la
   assert(await accountPage.locator('#input_emp_name').inputValue() === 'Historical Case Name'
     && await accountPage.locator('#input_emp_name').isDisabled(),
     'Administrator view must show the immutable case identity read-only, not the current roster name');
+  await accountPage.locator('#headerAccountButton').click();
   await accountPage.locator('#adminCloseCase').click();
   await accountPage.locator('#appraisalWorkspace').waitFor({ state: 'hidden' });
   await accountPage.locator('#accountSignOut').click();

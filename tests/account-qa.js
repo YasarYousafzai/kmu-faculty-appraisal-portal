@@ -45,7 +45,7 @@ const context = {
   appraisalState: { activeWeights: { teaching: 30, research: 30, service: 20, clinical: 0 } },
   NUMERIC_INPUT_IDS: ['input_actual_wu', 'input_pub_high_lead', 'input_clin_admin',
     'input_clin_opd_sessions', 'input_clin_patient_contact_hours'],
-  Blob, Date, fetch: async () => { networkCalls += 1; throw new Error('No network expected'); },
+  Blob, Date, URLSearchParams, fetch: async () => { networkCalls += 1; throw new Error('No network expected'); },
   console
 };
 vm.runInNewContext(source, context, { filename: 'account.js' });
@@ -260,8 +260,8 @@ function authHarness(hash, scenario = {}) {
     'URL error details should not be reflected into the page');
 
   const ordinary = authHarness(''); ordinary.ready(); ordinary.nodes.accountEmail.value = 'reset@example.edu.pk';
-  assert.equal(ordinary.nodes.accountSignUpPanel.hidden, false, 'New-user signup is visible by default');
-  assert.equal(ordinary.nodes.accountSignInPanel.hidden, true, 'Sign-in is a separate path');
+  assert.equal(ordinary.nodes.accountSignUpPanel.hidden, true, 'Signup remains closed until selected');
+  assert.equal(ordinary.nodes.accountSignInPanel.hidden, true, 'Sign-in remains closed until selected');
   await ordinary.nodes.accountShowSignIn.handlers.click({ preventDefault() {} });
   assert.equal(ordinary.nodes.accountSignInPanel.hidden, false, 'Existing users can open sign-in');
   ordinary.nodes.accountPassword.value = 'old-password';
@@ -269,6 +269,8 @@ function authHarness(hash, scenario = {}) {
   assert.equal(ordinary.nodes.accountPassword.value, '', 'Recovery request must clear the sign-in password input');
   assert.ok(ordinary.calls[0].url.includes('/auth/v1/recover?redirect_to='), 'Recovery email request must use the auth API');
   assert.equal(JSON.parse(ordinary.calls[0].options.body).email, 'reset@example.edu.pk');
+  await ordinary.nodes.accountShowSignIn.handlers.click({ preventDefault() {} });
+  assert.equal(ordinary.nodes.accountSignInPanel.hidden, true, 'Clicking an open path collapses it');
   await ordinary.nodes.accountShowSignUp.handlers.click({ preventDefault() {} });
   assert.equal(ordinary.nodes.accountSignUpPanel.hidden, false, 'New users can open their own registration form');
   ordinary.nodes.accountSignupEmail.value = 'new@example.edu.pk';
